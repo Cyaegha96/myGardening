@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.board.BoardCommentMapper">
+
+    <!-- 게시글 기준 댓글 리스트 + BEST → 최신 정렬 -->
+    <select id="getByBoardId"
+            resultType="com.ggirick.gardening_back.dto.board.BoardCommentResponseDTO">
+        SELECT
+            c.id,
+            c.contents,
+            c.writer_uid,
+            c.board_id,
+            c.ref_comment_id,
+            c.status,
+            c.created_at,
+            c.updated_at,
+
+            u.nickname AS writerNickname,
+            u.profile_url AS writerProfileUrl,
+
+            -- 좋아요 개수
+            (
+                SELECT COUNT(*)
+                FROM board_comment_like l
+                WHERE l.comment_id = c.id
+            ) AS likeCount,
+
+            -- 내가 좋아요 눌렀는지 여부 (0 or 1)
+            (
+                SELECT COUNT(*)
+                FROM board_comment_like l2
+                WHERE l2.comment_id = c.id
+                  AND   l2.user_uid = #{loginUid}
+            ) AS liked
+        FROM board_comment c
+                 LEFT JOIN user_info u ON c.writer_uid = u.uid
+        WHERE c.board_id = #{boardId}
+        ORDER BY
+            likeCount DESC,   -- BEST (좋아요 많은 순)
+            c.created_at DESC -- 최근 순
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="getById"
+            resultType="com.ggirick.gardening_back.dto.board.BoardCommentResponseDTO">
+        SELECT
+            *
+        FROM board_comment
+        WHERE id = #{id}
+    </select>
+
+    <!-- 댓글 등록 -->
+    <insert id="insert">
+        INSERT INTO board_comment(
+        id,
+        writer_uid,
+        contents,
+        ref_comment_id,
+        board_id
+        )
+        VALUES(
+        board_comment_seq.nextval,
+        #{writerUid},
+        #{contents},
+        #{refCommentId},
+        #{boardId}
+        )
+        <selectKey keyProperty="id" resultType="int" order="AFTER">
+            SELECT board_comment_seq.CURRVAL FROM dual
+        </selectKey>
+    </insert>
+
+
+    <!-- 댓글 수정 -->
+    <update id="update">
+        UPDATE board_comment
+        SET
+            contents = #{contents}
+        WHERE id = #{id}
+          AND writer_uid = #{writerUid}
+    </update>
+
+
+    <!-- 댓글 삭제 (Soft Delete - 상태만 변경) -->
+    <update id="delete">
+        UPDATE board_comment
+        SET status = 'DELETE'
+        WHERE id = #{id}
+    </update>
+
+    <!-- 댓글 규제 (BLOCKED - 상태만 변경) -->
+    <update id="blockComment">
+        UPDATE board_comment
+        SET status = 'BLOCKED'
+        WHERE id = #{id}
+    </update>
+
+    <!-- 좋아요 여부 존재 체크 -->
+    <select id="existsLike" resultType="int">
+        SELECT COUNT(*)
+        FROM board_comment_like
+        WHERE comment_id = #{commentId}
+          AND user_uid = #{loginUid}
+    </select>
+
+    <!-- 좋아요 추가 -->
+    <insert id="insertLike">
+        INSERT INTO board_comment_like
+            (id, comment_id, user_uid)
+        VALUES (
+                board_comment_like_seq.NEXTVAL,
+                #{commentId},
+                #{loginUid}
+               )
+    </insert>
+
+    <!-- 좋아요 삭제 -->
+    <delete id="deleteLike">
+        DELETE FROM board_comment_like
+        WHERE comment_id = #{commentId}
+          AND user_uid = #{loginUid}
+    </delete>
+</mapper>

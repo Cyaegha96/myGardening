@@ -24,7 +24,8 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class PlantService {
+public class
+PlantService {
 
     private final PlantMapper plantMapper;
     private static final String MODEL_NAME = "gemini-2.5-flash";
@@ -429,5 +430,88 @@ public class PlantService {
                 // 필수 필드를 지정하여 Gemini가 반드시 이 항목들을 채우도록 유도합니다.
                 "required", requiredFields
         );
+    }
+
+    /**
+     * PlantNet API를 호출하여 식물의 bestMatch 이름을 가져옵니다. GCS에 저장 X
+     * @param imageFile 식물 이미지 파일 (MultipartFile)
+     * @param organ 식물 기관 (예: "flower")
+     * @return bestMatch 이름이 담긴 Optional<String>
+     */
+    // ⭐ GCS 저장 없이 이미지 분석해서 내용만 가져옴.
+    public Optional<String> identifyPlantImageOnly(MultipartFile imageFile, String organ,String userUid) throws IOException {
+        if (imageFile.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // 1. MultipartFile에서 RequestBody 생성
+        MediaType mediaType = MediaType.parse(imageFile.getContentType() != null ? imageFile.getContentType() : "image/jpeg");
+        // ⭐ 파일의 바이트 배열을 직접 사용합니다.
+        RequestBody imageRequestBody = RequestBody.create(imageFile.getBytes(), mediaType);
+        String imageName = imageFile.getOriginalFilename() != null ? imageFile.getOriginalFilename() : "uploaded_image";
+
+        // 2. OkHttp Request Body 구성 (Multipart)
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                // ⭐ 파일의 바이트 배열로 생성한 RequestBody 사용
+                .addFormDataPart("images", imageName, imageRequestBody)
+                .addFormDataPart("organs", organ)
+                .build();
+
+        // 3. PlantNet API 호출 (기존 코드와 동일)
+        String url = BASE_URL + PROJECT + "?api-key=" + API_KEY;
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+        System.out.println("3");
+
+        // 4. OkHttp 요청 실행 및 응답 처리
+        try (Response response = httpClient.newCall(request).execute()) {
+
+            System.out.println("응답 코드 = " + response.code());
+
+            if (!response.isSuccessful()) {
+                System.out.println("응답 실패 Body = " + response.body().string());
+                return Optional.empty();
+            }
+
+            String responseBody = response.body().string();
+            System.out.println("API 응답: " + responseBody);
+
+            // 5. JSON 파싱
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode bestMatchNode = root.path("bestMatch");
+
+
+            // PlantNet API의 응답 구조에 따라 bestMatch가 없거나 null일 수 있습니다.
+            if (bestMatchNode.isMissingNode() || bestMatchNode.isNull()) {
+                System.out.println(bestMatchNode);
+                return Optional.empty(); // bestMatch가 없으면 빈 Optional 반환
+            }
+
+            String bestMatch = bestMatchNode.asText();
+            System.out.println(bestMatch);
+
+            if (bestMatch.isEmpty()) {
+                System.out.println("bestMatch 비어있음" + bestMatch);
+                return Optional.empty(); // bestMatch가 비어있으면 빈 Optional 반환
+            }
+
+            // 검색 이력을 로그로 저장
+            PlantSearchRequestLogDTO logDTO = PlantSearchRequestLogDTO.builder()
+                    .apiResponse(responseBody)
+                    .matchedScientificName(bestMatch)
+                    .userUid(userUid)
+                    .build();
+            System.out.println("ScientificName : " + bestMatch );
+            plantMapper.insertPlantSearchRequestLog(logDTO);
+
+            return Optional.of(bestMatch);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e; // 호출한 곳에서 예외 처리
+        }
     }
 }

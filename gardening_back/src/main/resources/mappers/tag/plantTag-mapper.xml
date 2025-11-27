@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ggirick.gardening_back.mappers.tag.PlantTagMapper">
+
+    <!-- 정확한 학명 기반 태그 조회 -->
+    <select id="getTagsByScientificName" resultType="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
+        SELECT
+            t.TAG_ID,
+            t.TAG_NAME,
+            t.PARENT_TAG_ID,
+            t.DESCRIPTION
+        FROM plant_tag_with w
+                 JOIN plant_tag t ON w.TAG_ID = t.TAG_ID
+        WHERE w.PLANT_SCIENTIFIC_NAME = #{scientificName}
+    </select>
+
+    <!-- LIKE 기반 학명 검색 -->
+    <select id="getTagsByScientificNameLike"
+            resultType="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
+        SELECT DISTINCT
+            t.TAG_ID,
+            t.TAG_NAME,
+            t.PARENT_TAG_ID,
+            t.DESCRIPTION
+        FROM plant_tag t
+                 JOIN plant_tag_with w ON t.TAG_ID = w.TAG_ID
+        WHERE LOWER(w.PLANT_SCIENTIFIC_NAME) LIKE LOWER(#{nameLike})
+    </select>
+
+
+    <!-- 태그 ID 목록을 기반으로 여러 태그 조회 -->
+    <select id="getTagsByIds" resultType="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
+        SELECT
+        TAG_ID,
+        TAG_NAME,
+        PARENT_TAG_ID,
+        DESCRIPTION,
+        TO_CHAR(CREATED_AT, 'YYYY-MM-DD HH24:MI:SS') AS CREATED_AT,
+        TO_CHAR(UPDATED_AT, 'YYYY-MM-DD HH24:MI:SS') AS UPDATED_AT
+        FROM plant_tag
+        WHERE TAG_ID IN
+        <foreach collection="tagIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

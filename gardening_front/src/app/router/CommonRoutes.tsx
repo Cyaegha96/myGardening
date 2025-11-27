@@ -12,6 +12,7 @@ const InitialCompleteProfilePage = lazy(() => import("@/pages/auth/InitialComple
 const EditCompleteProfilePage = lazy(() => import("@/pages/auth/EditCompleteProfilePage"));
 const SearchPlantPage = lazy(() => import("@/pages/searchPlant/SearchPlantPage"));
 const ScheduleRoutes = lazy(() => import("./ScheduleRoutes"));
+const BoardRoutes = lazy(() => import("./BoardRoutes"));
 
 export function CommonRoutes() {
     return (
@@ -21,6 +22,7 @@ export function CommonRoutes() {
                 <Route path="/auth/login" element={<LoginPage />} />
                 <Route path="/auth/register" element={<RegisterPage />} />
                 <Route path="/oauth/redirect" element={<OAuthRedirectHandler />} />
+                <Route path="/board/*" element={<BoardRoutes/>}/>
                 <Route path="*" element={<HomePage />} />
 
                 {/* 로그인 필요 라우트 그룹 */}
