@@ -46,5 +46,17 @@
             #{id}
         </foreach>
     </select>
+    <select id="getTagsAll">
+        SELECT * FROM PLANT_TAG
+    </select>
+    <insert id="insertPlantTags">
+        INSERT ALL
+        <foreach collection="tagIds" item="tagId">
+            INTO PLANT_TAG_WITH (PLANT_SCIENTIFIC_NAME, TAG_ID)
+            VALUES (#{scientificName}, #{tagId})
+        </foreach>
+        SELECT * FROM dual
+    </insert>
+
 
 </mapper>

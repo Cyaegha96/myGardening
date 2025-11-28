@@ -16,4 +16,11 @@ public interface PlantTagMapper {
 
     // 태그 ID 리스트 검색
     List<PlantTagDTO> getTagsByIds(@Param("tagIds") List<Integer> tagIds);
+
+    List<PlantTagDTO> getTagsAll();
+
+    void insertPlantTags(
+            @Param("scientificName") String scientificName,
+            @Param("tagIds") List<Integer> tagIds
+    );
 }

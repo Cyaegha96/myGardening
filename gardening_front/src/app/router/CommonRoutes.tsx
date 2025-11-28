@@ -3,6 +3,9 @@ import {lazy, Suspense} from "react";
 import {ProtectedRoute} from "@/app/router/ProtectedRoute.tsx";
 import FlowerShop from "@/pages/flowerShop/FlowerShop.tsx";
 import TerrariumEditPage from "@/pages/terrarium/TerrariumEditPage.tsx";
+import SearchPlantDictPage from "@/pages/searchPlant/SearchPlantDictPage.tsx";
+import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
+import PlantThree from "@/pages/test/PlantThree.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
@@ -31,9 +34,12 @@ export function CommonRoutes() {
                     <Route path="/auth/dashboard" element={<DashboardPage />} />
                     <Route path="/oauth/initial-complete-profile" element={<InitialCompleteProfilePage />} />
                     <Route path="/oauth/edit-complete-profile" element={<EditCompleteProfilePage />} />
-                    <Route path="/plant-search" element={<SearchPlantPage />} />
+                    <Route path="/plant-search/image" element={<SearchPlantPage />} />
                     <Route path="/schedule" element={<ScheduleRoutes />} />
                     <Route path="flower-shop" element={<FlowerShop/>}></Route>
+                    <Route path="/plant-search/dict" element={<SearchPlantDictPage/>} />
+                    <Route path="/plant-search" element={<SearchPlantMainPage/>} />
+                    <Route path="/plant-test" element={<PlantThree/>}></Route>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                 </Route>
             </Routes>

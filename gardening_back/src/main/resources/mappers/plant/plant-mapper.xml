@@ -3,8 +3,69 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ggirick.gardening_back.mappers.plant.PlantMapper">
+    <resultMap id="PlantInfoMap" type="com.ggirick.gardening_back.dto.plant.PlantInfoDTO">
+        <result property="scientificName" column="scientificName"/>
+        <result property="commonName" column="commonName"/>
+        <result property="family" column="family"/>
+        <result property="genus" column="genus"/>
+        <result property="origin" column="origin"/>
+        <result property="environment" column="environment"/>
+        <result property="light" column="light"/>
+        <result property="temperatureHumidity" column="temperatureHumidity"/>
+        <result property="watering" column="watering"/>
+        <result property="soil" column="soil"/>
+        <result property="fertilizer" column="fertilizer"/>
+        <result property="potRepot" column="potRepot"/>
+        <result property="propagation" column="propagation"/>
+        <result property="pestsTips" column="pestsTips"/>
+        <result property="commonUses" column="commonUses"/>
+        <result property="culturalSignificance" column="culturalSignificance"/>
+        <result property="description" column="description"/>
+        <result property="sampleImageUrl" column="sampleImageUrl"/>
 
+        <!-- tags 컬렉션 매핑 -->
+        <collection property="tags" ofType="com.ggirick.gardening_back.dto.tag.PlantTagDTO"
+                    column="scientificName" select="com.ggirick.gardening_back.mappers.tag.PlantTagMapper.getTagsByScientificNameLike"/>
+    </resultMap>
+    <select id="getAllPlantInfo" resultMap="PlantInfoMap">
+        SELECT
+            COMMON_NAME       AS commonName,
+            COMMON_USES       AS commonUses,
+            CULTURAL_SIGNIFICANCE AS culturalSignificance,
+            DESCRIPTION       AS description,
+            ENVIRONMENT       AS environment,
+            FAMILY            AS family,
+            FERTILIZER        AS fertilizer,
+            GENUS             AS genus,
+            LIGHT             AS light,
+            ORIGIN            AS origin,
+            PESTS_TIPS        AS pestsTips,
+            POT_REPOT         AS potRepot,
+            PROPAGATION       AS propagation,
+            SAMPLE_IMAGE_URL  AS sampleImageUrl,
+            SCIENTIFIC_NAME   AS scientificName,
+            SOIL              AS soil,
+            TEMPERATURE_HUMIDITY AS temperatureHumidity,
+            WATERING          AS watering
+        FROM PLANT_INFO
+        WHERE SAMPLE_IMAGE_URL IS NOT NULL
+        ORDER BY COMMON_NAME
+    </select>
+    <select id="getAllPlantInfoScientificName">
+        SELECT
+            COMMON_NAME      AS commonName,
+            SAMPLE_IMAGE_URL AS sampleImageUrl,
+            SCIENTIFIC_NAME  AS scientificName
+        FROM PLANT_INFO
+        WHERE SAMPLE_IMAGE_URL IS NOT NULL
+        order by COMMON_NAME
+    </select>
 
+    <update id="updatePlantSampleImage">
+        update PLANT_INFO
+        set SAMPLE_IMAGE_URL = #{sampleImageUrl}
+        where SCIENTIFIC_NAME = #{scientificName}
+    </update>
     <select id="getPlantInfo">
         SELECT
             SCIENTIFIC_NAME      AS scientificName,
@@ -116,4 +177,14 @@
                     SYSTIMESTAMP
                 )
     </insert>
+    <select id="randomSearchRequestFile">
+        SELECT *
+        FROM (
+        SELECT url
+        FROM PLANT_SEARCH_REQUEST_FILE
+        ORDER BY DBMS_RANDOM.VALUE
+        )
+        WHERE ROWNUM &lt;= 10
+
+    </select>
 </mapper>

@@ -7,6 +7,8 @@ import com.ggirick.gardening_back.dto.plant.PlantSearchRequestLogDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface PlantMapper {
 
@@ -15,4 +17,8 @@ public interface PlantMapper {
     void insertPlantInfoRequestFile(PlantInfoRequestFileDTO plantInfoRequestFileDTO);
     void insertPlantSearchRequestFile(PlantSearchRequestFileDTO plantSearchRequestFileDTO);
     long insertPlantSearchRequestLog(PlantSearchRequestLogDTO plantSearchRequestLogDTO);
+    List<PlantInfoDTO> getAllPlantInfo();
+    void updatePlantSampleImage(@Param("scientificName")String scientificName, @Param("sampleImageUrl")String sampleImageUrl);
+    List<PlantInfoDTO> getAllPlantInfoScientificName();
+    List<String> randomSearchRequestFile();
 }
