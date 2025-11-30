@@ -1,9 +1,12 @@
 package com.ggirick.gardening_back.dto.plant;
 
+import com.ggirick.gardening_back.dto.tag.PlantTagDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -28,5 +31,5 @@ public class PlantInfoDTO {
     private String culturalSignificance;
     private String description;
     private String sampleImageUrl;
-
+    private List<PlantTagDTO> tags;
 }

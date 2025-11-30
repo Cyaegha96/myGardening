@@ -46,6 +46,18 @@ export const useSearchPlantModel = () => {
             return;
         }
 
+        // 허용 확장자 리스트
+        const allowedExtensions = ['png', 'jpg', 'jpeg','jfif'];
+
+        const fileName = files[0].name.toLowerCase();
+        const fileExtension = fileName.split('.').pop();
+
+        if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+            alert(`허용되지 않는 파일 형식입니다. (${allowedExtensions.join(', ')})만 업로드 가능합니다.`);
+            return;
+        }
+
+
         setIsUploading(true);
         try {
             const formData = new FormData();
@@ -59,6 +71,7 @@ export const useSearchPlantModel = () => {
                 alert('해당 식물 정보를 찾을 수 없습니다.');
             } else if (response.status >= 200 && response.status < 300) {
                 const result: PlantDetail = response.data;
+                console.log(result);
                 setAnalysisResult(result);
 
                 addToHistory({

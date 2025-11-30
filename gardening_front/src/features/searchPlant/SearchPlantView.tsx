@@ -1,11 +1,14 @@
 import { type PlantDetail } from '@/entities/searchPlant/searchPlantStore.ts';
 import { Card, CardContent } from '@/shared/shadcn/components/ui/card';
 import { Button } from '@/shared/shadcn/components/ui/button';
+import { Badge } from '@/shared/shadcn/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shared/shadcn/components/ui/accordion';
-import { Loader2, Leaf, XCircle, Info, Sun, Thermometer, Droplet, Layers, Zap } from 'lucide-react';
+import { Loader2, Leaf, XCircle, Info, Sun, Thermometer, Droplet, Layers, Zap, Flower } from 'lucide-react';
 import Lottie from "lottie-react";
 import sprout from "../../../public/assets/lottie/PlantLoading.json";
 import {TypingAnimation} from "@/shared/shadcn/components/ui/typing-animation.tsx";
+import {badgeColors} from "@/shared/utils/badgeColors.ts";
+import React from "react";
 
 interface Props {
     filePreview?: string;
@@ -55,6 +58,18 @@ export const PlantDetailDisplay = ({ detail }: { detail: PlantDetail }) => (
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 italic">
             (학명: *{detail.scientificName}*, {detail.family})
         </p>
+        <div className="flex flex-wrap gap-2">
+            {detail.tags &&
+                detail.tags.map((tag, index) => (
+                    <Badge
+                        key={tag.tagId}
+                        className={badgeColors[index % badgeColors.length]} // 색상 배열에서 순환
+                    >
+                        {tag.tagName}
+                    </Badge>
+                ))}
+        </div>
+
         <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
                 <AccordionTrigger><Info className="mr-2 h-4 w-4 text-green-500" />기본 정보 및 특징</AccordionTrigger>
@@ -129,6 +144,21 @@ export const PlantDetailDisplay = ({ detail }: { detail: PlantDetail }) => (
                     <TypingAnimation
                         words={[
                             `분갈이: ${detail.potRepot}\n\n번식: ${detail.propagation} \n\n병충해/팁: ${detail.pestsTips}\n\n용도: ${detail.commonUses}`
+                        ]}
+                        typeSpeed={50}
+                        deleteSpeed={50}
+                        loop={false}
+                        className="whitespace-pre-line"
+
+                    />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-7">
+                <AccordionTrigger><Flower  className="mr-2 h-4 w-4 text-pink-300" />용도와 문화적 의미</AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                    <TypingAnimation
+                        words={[
+                            `용도: ${detail.commonUses} \n\n 문화:${detail.culturalSignificance}`
                         ]}
                         typeSpeed={50}
                         deleteSpeed={50}

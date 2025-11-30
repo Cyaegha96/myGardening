@@ -1,32 +1,49 @@
 package com.ggirick.gardening_back.services.plant;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ggirick.gardening_back.dto.plant.PlantInfoDTO;
 import com.ggirick.gardening_back.dto.plant.PlantSearchRequestLogDTO;
+import com.ggirick.gardening_back.dto.tag.PlantTagDTO;
 import com.ggirick.gardening_back.mappers.plant.PlantMapper;
+import com.ggirick.gardening_back.mappers.tag.PlantTagMapper;
 import com.ggirick.gardening_back.services.file.FileService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.genai.Client;
+import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
 import lombok.RequiredArgsConstructor;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class PlantService {
+public class
+PlantService {
 
     private final PlantMapper plantMapper;
+    private final PlantTagMapper plantTagMapper;
     private static final String MODEL_NAME = "gemini-2.5-flash";
 
     private final ObjectMapper objectMapper;
@@ -55,7 +72,7 @@ public class PlantService {
      * @param organ 식물 기관 (예: "flower")
      * @return bestMatch 이름이 담긴 Optional<String>
      */
-    public Optional<String> identifyPlantName(String sourcePath, String organ) throws IOException {
+    public Optional<String> identifyPlantName(String sourcePath, String organ) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         MediaType mediaType = MediaType.parse("image/jpeg");
         RequestBody imageRequestBody = null;
         String imageName = "uploaded_image.jpg";
@@ -106,8 +123,37 @@ public class PlantService {
                 .url(url)
                 .post(requestBody)
                 .build();
+
+        X509TrustManager x509 = new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[]{};
+            }
+        };
+
+        // 등록할 "신뢰" 관리자 배열 생성 후 추가
+                TrustManager[] trustAllCerts = new TrustManager[]{x509};
+
+        // Java의 SSLContext 획득 및 위에 선언한 "신뢰" 관리자 배열을 등록
+                SSLContext sslContext = SSLContext.getInstance("SSL");
+                sslContext.init(null, trustAllCerts, new SecureRandom());
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .sslSocketFactory(sslContext.getSocketFactory(), x509)
+                .build();
+
         // 3. OkHttp 요청 실행 및 응답 처리
-        try (Response response = httpClient.newCall(request).execute()) {
+        try (
+                Response response = client.newCall(request).execute()
+                ) {
             if (!response.isSuccessful()) {
                 throw new IOException("Unexpected code " + response);
             }
@@ -138,7 +184,7 @@ public class PlantService {
      * @return bestMatch 이름이 담긴 Optional<String>
      */
 // ⭐ String sourcePath 대신 MultipartFile imageFile을 받도록 변경
-    public PlantInfoDTO identifyPlantName(MultipartFile imageFile, String organ,String userUid) throws IOException {
+    public PlantInfoDTO identifyPlantName(MultipartFile imageFile, String organ,String userUid) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         if (imageFile.isEmpty()) {
             return null;
         }
@@ -164,9 +210,42 @@ public class PlantService {
                 .post(requestBody)
                 .build();
 
-        
+
+//        /*
+//        OkHttp3 클라언트쪽에서 사용하는 api가 신뢰할 수 없느 인증서일 경우 호출 에러가 발생함. :PKIX path building failed
+//        따라서 SSL인증서를 무시하는 코드를 작성해주었는데
+//        http 환경에서ㅡ,혹은 로컬 서버에서 발생하는 오류이니 배포시에는 아래 코드를 삭제하거나 다른 방법을 강구하는게 좋을 듯하다
+//         */
+//
+//        X509TrustManager x509 = new X509TrustManager() {
+//            @Override
+//            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+//            }
+//
+//            @Override
+//            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+//            }
+//
+//            @Override
+//            public X509Certificate[] getAcceptedIssuers() {
+//                return new X509Certificate[]{};
+//            }
+//        };
+//
+//        // 등록할 "신뢰" 관리자 배열 생성 후 추가
+//        TrustManager[] trustAllCerts = new TrustManager[]{x509};
+//
+//        // Java의 SSLContext 획득 및 위에 선언한 "신뢰" 관리자 배열을 등록
+//        SSLContext sslContext = SSLContext.getInstance("SSL");
+//        sslContext.init(null, trustAllCerts, new SecureRandom());
+//
+        OkHttpClient client = new OkHttpClient.Builder()
+//                .sslSocketFactory(sslContext.getSocketFactory(), x509)
+                .build();
+
+
         // 4. OkHttp 요청 실행 및 응답 처리
-        try (Response response = httpClient.newCall(request).execute()) {
+        try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 // 응답이 성공적이지 않을 경우 예외 발생
 
@@ -264,18 +343,11 @@ public class PlantService {
             PlantInfoDTO dto = getPlantInfo(scientificName);
             if (dto != null) { return Optional.of(dto); } // DB에 있으면 DB 정보 반환
 
-          
-
-            // 3. Gemini에게 질문할 Prompt 구성
-            String prompt = String.format(
-                    "식물 학명 '%s'에 대한 상세 정보(특징, 생육 환경, 관리 방법)를 사용자가 이해하기 쉽게 한국어로 요약해 줘. https://worldofsucculents.com/,https://www.nature.go.kr/ 같이 신뢰성 있는 사이트를 참고해줘 ",
-                    scientificName
-            );
 
             // 4. Gemini API 호출
             //   String geminiResponse = generateTextFromTextInput(prompt);
 
-            PlantInfoDTO plantInfoDTO = getPlantInfoFromGemini(prompt);
+            PlantInfoDTO plantInfoDTO = getPlantInfoFromGemini(scientificName);
             plantMapper.insertPlantInfo(plantInfoDTO);
             // 5. Gemini 응답 반환
             return Optional.of(plantInfoDTO);
@@ -317,22 +389,43 @@ public class PlantService {
 
             if (dto != null) {
                 // DB에 있으면 DB 정보 반환
-                dto.setSampleImageUrl(imgUrl);
+
+                //만약 이미지 세팅이 안되어 있는 식물이라면 db 업데이트
+                if(dto.getSampleImageUrl() ==null) {
+                    plantMapper.updatePlantSampleImage(dto.getScientificName(), imgUrl);
+                    dto.setSampleImageUrl(imgUrl);
+                }
+
+            //만약 해당 식물의 태그가 등록이 안되어 있는 식물이라면 gemini에게 태그 요청
+                if (plantTagMapper.getTagsByScientificName(scientificName).isEmpty()) {
+                    List<PlantTagDTO> tagIds = getPlantTags(dto.getScientificName());
+
+                           dto.setTags(tagIds);
+
+                    plantTagMapper.insertPlantTags(dto.getScientificName(),tagIds.stream()
+                            .map(PlantTagDTO::getTagId)
+                            .collect(Collectors.toList()));
+                }else{
+                   dto.setTags(plantTagMapper.getTagsByScientificName(scientificName));
+                }
+
                 return Optional.of(dto);
             }
 
-            // 3. Gemini에게 질문할 Prompt 구성
-            String prompt = String.format(
-                    "식물 학명 '%s'에 대한 상세 정보(특징, 생육 환경, 관리 방법)를 사용자가 이해하기 쉽게 한국어로 요약해 줘. https://worldofsucculents.com/,https://www.nature.go.kr/ 같이 신뢰성 있는 사이트를 참고해줘 ",
-                    scientificName
-            );
 
             // 4. Gemini API 호출 및 DB 저장
-            PlantInfoDTO plantInfoDTO = getPlantInfoFromGemini(prompt);
+            PlantInfoDTO plantInfoDTO = getPlantInfoFromGemini(scientificName);
             // ⭐ 학명을 DTO에 설정 (DB 저장 및 반환 시 사용)
             plantInfoDTO.setScientificName(scientificName);
             plantInfoDTO.setSampleImageUrl(imgUrl);
             plantMapper.insertPlantInfo(plantInfoDTO);
+
+            //만약 해당 식물의 태그가 등록이 안되어 있는 식물이라면 db에 태그 추가
+
+            plantTagMapper.insertPlantTags(plantInfoDTO.getScientificName(),plantInfoDTO.getTags().stream()
+                        .map(PlantTagDTO::getTagId)
+                        .collect(Collectors.toList()));
+
 
             // 5. Gemini 응답 (PlantInfoDTO) 반환
             return Optional.of(plantInfoDTO);
@@ -368,9 +461,20 @@ public class PlantService {
                         .responseJsonSchema(createPlantInfoSchemaMap())
                         .build();
 
+        String plantTagsData = plantTagMapper.getTagsAll().stream()
+                .map(tag -> String.format("id=%d, name=%s", tag.getTagId(), tag.getTagName()))
+                .collect(Collectors.joining("\n"));
+
         String prompt = String.format(
-                "식물 학명 '%s'에 대한 상세 정보를 제공해. 응답은 오직 JSON 형식으로만 작성해야 하며, 요청된 모든 필드를 채워야 해.",
-                scientificName // 입력받은 학명을 프롬프트에 사용
+                "식물 학명 '%s'에 대한 상세 정보를 제공하고, 아래 PLANT_TAG 데이터베이스를 참고하여 선택된 태그들을 최대 5개까지 골라 JSON 배열로 응답하세요. " +
+                        "각 항목은 { \"tagId\": 숫자, \"tagName\": 문자열 } 형태여야 합니다.\n. " +
+                        "식물 학명 에 대한 상세 정보(특징, 생육 환경, 관리 방법)를 사용자가 이해하기 쉽게 한국어로 요약해 줘야합니다." +
+                        "https://worldofsucculents.com/,https://www.nature.go.kr/ 같이 신뢰성 있는 사이트를 참고하세요." +
+                        "응답은 반드시 JSON 형식으로 작성해야 하며, 모든 필드를 채워야 합니다.\n\n" +
+                        "### PLANT_TAG 데이터베이스\n%s",
+                scientificName, // 입력받은 학명을 프롬프트에 사용
+                plantTagsData
+
         );
 
         GenerateContentResponse response =
@@ -400,7 +504,7 @@ public class PlantService {
         // DTO의 필드명(camelCase)을 JSON 키로 사용합니다.
         ImmutableMap<String, Object> properties = ImmutableMap.<String, Object>builder()
                 .put("scientificName", ImmutableMap.of("type", "string", "description", "식물의 학명입니다."))
-                .put("commonName", ImmutableMap.of("type", "string", "description", "식물의 한국어 일반적인 이름입니다."))
+                .put("commonName", ImmutableMap.of("type", "string", "description", "식물의 한국어 일반적인 이름입니다. 만약 통상적으로 한국에서 해당 식물을 부르는 이름이 있다면 통칭을 씁니다."))
                 .put("family", ImmutableMap.of("type", "string", "description", "식물의 과(Family)입니다."))
                 .put("genus", ImmutableMap.of("type", "string", "description", "식물의 속(Genus)입니다."))
                 .put("origin", ImmutableMap.of("type", "string", "description", "식물의 원산지 또는 자생지입니다."))
@@ -414,8 +518,21 @@ public class PlantService {
                 .put("propagation", ImmutableMap.of("type", "string", "description", "식물 번식 방법입니다.200자 정도로 서술"))
                 .put("pestsTips", ImmutableMap.of("type", "string", "description", "주요 해충 정보 및 방제 팁입니다.200자 정도로 서술"))
                 .put("commonUses", ImmutableMap.of("type", "string", "description", "식물의 일반적인 용도입니다.200자 정도로 서술"))
-                .put("culturalSignificance", ImmutableMap.of("type", "string", "description", "식물의 문화적 또는 역사적 의미입니다.200자 정도로 서술"))
-                .put("description", ImmutableMap.of("type", "string", "description", "식물의 외형 및 특징에 대한 상세 설명입니다.200자 정도로 서술"))
+                .put("culturalSignificance", ImmutableMap.of("type", "string", "description", "식물의 문화적 또는 역사적 의미입니다.200자 정도로 서술. 한국에서의 해당 식물의 의의도 포함해주세요"))
+                .put("description", ImmutableMap.of("type", "string", "description", "식물의 외형 및 특징에 대한 상세 설명입니다.200자 정도로 서술."))
+                .put("tags", ImmutableMap.of(
+                        "type", "array",
+                        "items", ImmutableMap.of(
+                                "type", "object",
+                                "properties", ImmutableMap.of(
+                                        "tagId", ImmutableMap.of("type", "integer", "description", "태그 고유 ID"),
+                                        "tagName", ImmutableMap.of("type", "string", "description", "태그명")
+                                ),
+                                "required", ImmutableList.of("tagId", "tagName")
+                        ),
+                        "description", "선택된 태그 ID와 이름 매핑 배열"
+                ))
+
                 .build();
 
         // 2. 스키마 최상위 구조 정의
@@ -429,5 +546,147 @@ public class PlantService {
                 // 필수 필드를 지정하여 Gemini가 반드시 이 항목들을 채우도록 유도합니다.
                 "required", requiredFields
         );
+    }
+
+    /**
+     * PlantNet API를 호출하여 식물의 bestMatch 이름을 가져옵니다. GCS에 저장 X
+     * @param imageFile 식물 이미지 파일 (MultipartFile)
+     * @param organ 식물 기관 (예: "flower")
+     * @return bestMatch 이름이 담긴 Optional<String>
+     */
+    // ⭐ GCS 저장 없이 이미지 분석해서 내용만 가져옴.
+    public Optional<String> identifyPlantImageOnly(MultipartFile imageFile, String organ,String userUid) throws IOException {
+        if (imageFile.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // 1. MultipartFile에서 RequestBody 생성
+        MediaType mediaType = MediaType.parse(imageFile.getContentType() != null ? imageFile.getContentType() : "image/jpeg");
+        // ⭐ 파일의 바이트 배열을 직접 사용합니다.
+        RequestBody imageRequestBody = RequestBody.create(imageFile.getBytes(), mediaType);
+        String imageName = imageFile.getOriginalFilename() != null ? imageFile.getOriginalFilename() : "uploaded_image";
+
+        // 2. OkHttp Request Body 구성 (Multipart)
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                // ⭐ 파일의 바이트 배열로 생성한 RequestBody 사용
+                .addFormDataPart("images", imageName, imageRequestBody)
+                .addFormDataPart("organs", organ)
+                .build();
+
+        // 3. PlantNet API 호출 (기존 코드와 동일)
+        String url = BASE_URL + PROJECT + "?api-key=" + API_KEY;
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+        System.out.println("3");
+
+        // 4. OkHttp 요청 실행 및 응답 처리
+        try (Response response = httpClient.newCall(request).execute()) {
+
+            System.out.println("응답 코드 = " + response.code());
+
+            if (!response.isSuccessful()) {
+                System.out.println("응답 실패 Body = " + response.body().string());
+                return Optional.empty();
+            }
+
+            String responseBody = response.body().string();
+            System.out.println("API 응답: " + responseBody);
+
+            // 5. JSON 파싱
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode bestMatchNode = root.path("bestMatch");
+
+
+            // PlantNet API의 응답 구조에 따라 bestMatch가 없거나 null일 수 있습니다.
+            if (bestMatchNode.isMissingNode() || bestMatchNode.isNull()) {
+                System.out.println(bestMatchNode);
+                return Optional.empty(); // bestMatch가 없으면 빈 Optional 반환
+            }
+
+            String bestMatch = bestMatchNode.asText();
+            System.out.println(bestMatch);
+
+            if (bestMatch.isEmpty()) {
+                System.out.println("bestMatch 비어있음" + bestMatch);
+                return Optional.empty(); // bestMatch가 비어있으면 빈 Optional 반환
+            }
+
+            // 검색 이력을 로그로 저장
+            PlantSearchRequestLogDTO logDTO = PlantSearchRequestLogDTO.builder()
+                    .apiResponse(responseBody)
+                    .matchedScientificName(bestMatch)
+                    .userUid(userUid)
+                    .build();
+            System.out.println("ScientificName : " + bestMatch );
+            plantMapper.insertPlantSearchRequestLog(logDTO);
+
+            return Optional.of(bestMatch);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e; // 호출한 곳에서 예외 처리
+        }
+    }
+
+    //일단 잘 불러오는지 테스트
+    public List<PlantInfoDTO> getAllPlantInfo() {
+
+        return plantMapper.getAllPlantInfo();
+    }
+
+    public List<PlantInfoDTO> getAllPlantInfoScientificName() {
+        return plantMapper.getAllPlantInfoScientificName();
+    }
+
+
+    private String buildPlantTagsPrompt(String scientificName,List<PlantTagDTO> plantTags) {
+
+
+        String plantTagsData = plantTags.stream()
+                .map(tag -> String.format("id=%d, name=%s", tag.getTagId(), tag.getTagName()))
+                .collect(Collectors.joining("\n"));
+
+
+        return "당신은 전문 식물 분류 시스템입니다. 다음 PLANT_TAG 데이터베이스를 참고하여 주어진 식물에 적합한 태그 ID를 3개에서 7개까지 선택해야 합니다. 이는 식물의 학명에 대해 학술적인 정보를 바탕으로 합니다. 해당 식물을 키우는데 있어서 어울리지 않는 태그는 고르지 않습니다"
+                + "\n\n### PLANT_TAG 데이터베이스\n"
+                + plantTagsData
+                + "\n\n### 요청 식물 학명\n"
+                + scientificName
+                + "\n\n### 응답 형식\n"
+                + "아래 PLANT_TAG 데이터베이스를 참고하여 선택된 태그들을 최대 5개까지 골라 JSON 배열로 응답하세요. 각 항목은 { \"tagId\": 숫자, \"tagName\": 문자열 } 형태여야 합니다.";
+    }
+
+    public List<PlantTagDTO> getPlantTags(String scientificName) throws Exception {
+        List<PlantTagDTO> plantTags = plantTagMapper.getTagsAll();
+
+        // 2. 프롬프트 구성: DTO 리스트를 문자열로 변환하여 프롬프트에 삽입
+        String prompt = buildPlantTagsPrompt(scientificName, plantTags);
+
+        GenerateContentResponse response =
+                geminiClient.models.generateContent(
+                        MODEL_NAME,
+                        prompt ,
+                        null);
+
+
+        // 4. 응답 텍스트 추출
+        String responseText = response.text();
+
+        responseText = responseText.replaceAll("```json\\n|```", "").trim();
+
+        ObjectMapper mapper = new ObjectMapper();
+        List<PlantTagDTO> tagIds = mapper.readValue(
+                responseText,
+                new TypeReference<List<PlantTagDTO>>() {}
+        );
+
+        return tagIds;
+    }
+
+    public List<String> randomSearchRequestFile(){
+        return plantMapper.randomSearchRequestFile();
     }
 }

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.board.BoardMapper">
+
+    <!-- 커서 기반 목록 -->
+    <select id="getListByCursor" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT *
+        FROM (
+        SELECT
+        b.ID,
+        b.TITLE,
+        b.CONTENTS,
+
+        -- 대표 이미지 1장 (thumbnail)
+        (
+        SELECT URL
+        FROM (
+        SELECT bf.URL
+        FROM BOARD_FILE bf
+        WHERE bf.BOARD_ID = b.ID
+        ORDER BY bf.ID
+        )
+        WHERE ROWNUM = 1
+        ) AS thumbnail,
+
+        -- 댓글 수
+        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+
+        b.VIEW_COUNT AS viewCount,
+        b.LIKE_COUNT AS likeCount,
+        b.CREATED_AT,
+        b.UPDATED_AT,
+        b.IS_NOTIFICATION,
+
+        u.UUID AS writerUid,
+        u.NICKNAME AS writerNickname,
+        u.PROFILE_IMAGE AS writerProfileImage,
+        u.BIO AS writerBio
+
+        FROM BOARD b
+        JOIN USER_INFO u ON b.WRITER_UID = u.UUID
+
+        <where>
+            <if test="cursorId != null">
+                AND b.ID &lt; #{cursorId}
+            </if>
+        </where>
+
+        ORDER BY b.ID DESC
+        )
+        WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+    <!-- Top3 게시글 조회 -->
+    <select id="getTop3List" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT *
+        FROM (
+        SELECT
+        b.ID AS ID,
+        b.TITLE,
+        b.CONTENTS,
+
+        -- 썸네일 1장 (Oracle-safe)
+        (
+        SELECT URL
+        FROM (
+        SELECT bf.URL
+        FROM BOARD_FILE bf
+        WHERE bf.BOARD_ID = b.ID
+        ORDER BY bf.ID
+        )
+        WHERE ROWNUM = 1
+        ) AS thumbnail,
+
+        -- 댓글 수
+        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+
+        b.VIEW_COUNT,
+        b.LIKE_COUNT,
+        b.CREATED_AT,
+        b.UPDATED_AT,
+        b.IS_NOTIFICATION,
+
+        u.UUID AS writerUid,
+        u.NICKNAME AS writerNickname,
+        u.PROFILE_URL AS writerProfileImage,
+        u.BIO AS writerBio
+
+        FROM BOARD b
+        JOIN USER_INFO u ON b.WRITER_UID = u.UUID
+        ORDER BY b.LIKE_COUNT DESC, b.ID DESC
+        )
+        WHERE ROWNUM &lt;= 3
+    </select>
+
+    <!-- 상세 조회 -->
+    <select id="getDetailById" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT
+            b.ID,
+            b.TITLE,
+            b.CONTENTS,
+
+            -- 썸네일 1장
+            (
+                SELECT URL
+                FROM (
+                         SELECT bf.URL
+                         FROM BOARD_FILE bf
+                         WHERE bf.BOARD_ID = b.ID
+                         ORDER BY bf.ID
+                     )
+                WHERE ROWNUM = 1
+            ) AS thumbnail,
+
+            b.VIEW_COUNT AS viewCount,
+            b.LIKE_COUNT AS likeCount,
+            b.CREATED_AT,
+            b.UPDATED_AT,
+            b.IS_NOTIFICATION,
+
+            u.UUID AS writerUid,
+            u.NICKNAME AS writerNickname,
+            u.PROFILE_IMAGE AS writerProfileImage,
+            u.BIO AS writerBio
+
+        FROM BOARD b
+                 JOIN USER_INFO u ON b.WRITER_UID = u.UUID
+        WHERE b.ID = #{id}
+    </select>
+
+    <!-- 공지사항 -->
+    <select id="getNotificationList" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT *
+        FROM BOARD
+        WHERE IS_NOTIFICATION = 'Y'
+        ORDER BY ID DESC
+    </select>
+
+    <!-- 게시글 등록 -->
+    <!-- 파일 등록을 위한 selectKey -->
+    <insert id="insert">
+        INSERT INTO board(id, title, writer_uid, contents, is_notification)
+        VALUES (
+        board_seq.nextval, #{title}, #{writerUid}, #{contents}, #{isNotification}
+        )
+        <selectKey resultType="int" keyProperty="id" order="AFTER">
+            select board_seq.currval from dual
+        </selectKey>
+    </insert>
+
+    <!-- 수정 -->
+    <update id="update" parameterType="com.ggirick.gardening_back.dto.board.BoardDTO">
+        UPDATE BOARD
+        SET TITLE           = #{title},
+            CONTENT         = #{content},
+            IS_NOTIFICATION = #{isNotification}
+        WHERE ID = #{id}
+    </update>
+
+    <!-- 삭제 -->
+    <delete id="delete">
+        DELETE
+        FROM BOARD
+        WHERE ID = #{id}
+    </delete>
+
+    <!-- 조회수 증가 -->
+    <update id="increaseViewCount">
+        UPDATE BOARD
+        SET VIEW_COUNT = VIEW_COUNT + 1
+        WHERE ID = #{id}
+    </update>
+</mapper>
