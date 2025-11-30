@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chat")
@@ -31,7 +33,9 @@ public class ChatController {
         try {
             // 처리 실패 테스트용
 //            throw new RuntimeException("Test fail!");
-            System.out.println(msg);
+            String body = new String(msg.getBody(), StandardCharsets.UTF_8);
+            System.out.println("받은 메시지: " + body);
+            channel.basicAck(tag, false);
 
         } catch (Exception e) {
             // requeue=false 로 DLX로 보내기
