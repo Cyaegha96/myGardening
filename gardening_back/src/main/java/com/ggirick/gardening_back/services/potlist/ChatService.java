@@ -17,7 +17,7 @@ public class ChatService {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String objectToJson = objectMapper.writeValueAsString(chat);
-            rabbitTemplate.convertAndSend("hello.exchange", "hello.key", objectToJson);
+            rabbitTemplate.convertAndSend("hello1.exchange", "hello1.key", objectToJson);
         }
         catch (Exception e) {
             log.error("sendMessageError", e);
