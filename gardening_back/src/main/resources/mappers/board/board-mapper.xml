@@ -51,8 +51,9 @@
         LEFT JOIN USER_INFO u ON u.UUID = b.WRITER_UID
 
         <where>
+            b.STATUS = 'active'
             <if test="cursorId != null">
-                b.ID &lt; #{cursorId}
+                AND b.ID &lt; #{cursorId}
             </if>
         </where>
 
@@ -101,8 +102,9 @@
 
         FROM BOARD b
         JOIN USER_INFO u ON u.UUID = b.WRITER_UID
+        WHERE b.STATUS = 'active'
 
-        <!-- 🔥 좋아요 많은 순 → 최신순 정렬 -->
+        <!-- 좋아요 많은 순 → 최신순 정렬 -->
         ORDER BY
         (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID) DESC,
         b.ID DESC
@@ -123,7 +125,8 @@
 
                (SELECT COUNT(*)
                 FROM BOARD_COMMENT c
-                WHERE c.BOARD_ID = b.ID)                                   AS commentCount,
+                WHERE c.BOARD_ID = b.ID
+                AND c.STATUS = 'active')                                   AS commentCount,
 
                (SELECT COUNT(*)
                 FROM BOARD_BOOKMARK bm
@@ -145,6 +148,7 @@
         FROM BOARD b
                  JOIN USER_INFO u ON b.WRITER_UID = u.UUID
         WHERE b.ID = #{id}
+          AND STATUS = 'active'
     </select>
 
     <!-- 공지사항 -->
@@ -171,17 +175,18 @@
     <update id="update" parameterType="com.ggirick.gardening_back.dto.board.BoardDTO">
         UPDATE BOARD
         SET TITLE           = #{title},
-            CONTENT         = #{content},
+            CONTENTS         = #{contents},
             IS_NOTIFICATION = #{isNotification}
         WHERE ID = #{id}
     </update>
 
     <!-- 삭제 -->
-    <delete id="delete">
-        DELETE
-        FROM BOARD
+    <update id="delete">
+        UPDATE BOARD
+        SET STATUS = 'delete',
+            UPDATED_AT = CURRENT_TIMESTAMP
         WHERE ID = #{id}
-    </delete>
+    </update>
 
     <!-- 조회수 증가 -->
     <update id="increaseViewCount">
@@ -189,4 +194,109 @@
         SET VIEW_COUNT = VIEW_COUNT + 1
         WHERE ID = #{id}
     </update>
+
+    <!-- 검색 결과 게시글 목록 -->
+    <select id="searchBoards" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+
+        SELECT
+        b.ID                                             AS id,
+        b.TITLE,
+        b.CONTENTS,
+
+        -- 조회수
+        b.VIEW_COUNT,
+
+        -- 공지 여부
+        b.IS_NOTIFICATION,
+
+        -- 작성/수정일
+        b.CREATED_AT,
+        b.UPDATED_AT,
+
+        -- 댓글 수
+        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+
+        -- 좋아요 수
+        (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID)    AS likeCount,
+
+        -- 북마크 수
+        (SELECT COUNT(*) FROM BOARD_BOOKMARK bm WHERE bm.BOARD_ID = b.ID) AS bookmarkCount,
+
+        -- 썸네일 1개
+        (
+        SELECT URL
+        FROM BOARD_FILE bf
+        WHERE bf.BOARD_ID = b.ID
+        AND ROWNUM = 1
+        ) AS thumbnail,
+
+        -- 작성자 정보
+        u.UUID        AS writerUid,
+        u.NICKNAME    AS writerNickname,
+        u.PROFILE_URL AS writerProfileImage,
+        u.BIO         AS writerBio
+
+        FROM BOARD b
+        JOIN USER_INFO u
+        ON b.WRITER_UID = u.UUID
+
+        WHERE 1 = 1
+        AND b.STATUS = 'active'
+
+        <!-- 작성자 검색 -->
+        <if test="type == 'writer' and keyword != null and keyword != ''">
+            AND u.NICKNAME LIKE '%' || #{keyword} || '%'
+        </if>
+
+        <!-- 내용 검색 (제목 + 내용) -->
+        <if test="type == 'content' and keyword != null and keyword != ''">
+            AND (
+            b.TITLE    LIKE '%' || #{keyword} || '%'
+            OR b.CONTENTS LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+
+        <!-- 작성자 + 내용 -->
+        <if test="type == 'all' and keyword != null and keyword != ''">
+            AND (
+            u.NICKNAME LIKE '%' || #{keyword} || '%'
+            OR b.TITLE LIKE '%' || #{keyword} || '%'
+            OR b.CONTENTS LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+
+        <!-- 태그 검색: BOARD_TAG_MAPPING + BOARD_TAG 에서 keyword 찾기 -->
+        <if test="type == 'tag' and keyword != null and keyword != ''">
+            AND EXISTS (
+            SELECT 1
+            FROM BOARD_TAG_MAPPING m
+            JOIN BOARD_TAG t
+            ON m.TAG_ID = t.ID
+            WHERE m.BOARD_ID = b.ID
+            AND t.NAME LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+
+        <!-- (선택) 상단의 태그 필터(부모 태그 등)로 한번 더 제한하고 싶으면 여기에서 AND 추가 -->
+
+        ORDER BY
+        b.IS_NOTIFICATION DESC,   -- 공지 먼저
+        b.ID DESC
+
+    </select>
+
+    <!-- 부모 태그 기반으로 게시글 필터링 -->
+    <select id="searchBoardsByTags" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT DISTINCT b.*
+        FROM BOARD b
+        JOIN BOARD_TAG_MAPPING m ON b.ID = m.BOARD_ID
+        JOIN BOARD_TAG t ON m.TAG_ID = t.ID
+        WHERE t.NAME IN
+        <foreach item="tag" collection="tagNames" open="(" separator="," close=")">
+            #{tag}
+        </foreach>
+        AND b.STATUS = 'active'
+        ORDER BY b.ID DESC
+    </select>
+
 </mapper>

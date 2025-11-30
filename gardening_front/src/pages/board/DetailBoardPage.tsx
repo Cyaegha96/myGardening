@@ -1,43 +1,47 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import {
     BoardControllerApi,
     BoardLikeControllerApi,
     BoardBookmarkControllerApi,
-    type BoardResponseDTO
+    type BoardResponseDTO,
 } from "@/shared/api";
-import BoardDetailHeader from "@/entities/board/ui/BoardDetailHeader";
-import BoardDetailContents from "@/entities/board/ui/BoardDetailContents";
-import { useParams } from "react-router-dom";
+import BoardDetailHeader from "@/widgets/board/BoardDetailHeader";
+import BoardDetailContents from "@/widgets/board/BoardDetailContents";
+import BoardDetailComments from "@/widgets/board/BoardDetailComments";
+import { useParams, useNavigate } from "react-router-dom";
+import useUserStore from "@/app/store/userStore";
 
 export default function DetailBoardPage() {
     const { id } = useParams<{ id: string }>();
     const boardId = Number(id);
+    const navigate = useNavigate();
 
+    // 게시글 데이터
     const [data, setData] = useState<BoardResponseDTO | null>(null);
 
-    // 클라이언트 상태
+    // 로그인 UID
+    const loginUid = useUserStore(state => state.uid);
+
+    // 좋아요 & 북마크 상태
     const [liked, setLiked] = useState(false);
     const [bookmarked, setBookmarked] = useState(false);
-
     const [likeCount, setLikeCount] = useState(0);
     const [bookmarkCount, setBookmarkCount] = useState(0);
 
-    const likeAPI = new BoardLikeControllerApi();
-    const bookmarkAPI = new BoardBookmarkControllerApi();
+    // 댓글 토글
+    const commentRef = useRef<HTMLDivElement | null>(null);
+    const [commentOpen, setCommentOpen] = useState(false);
 
+    // 상세 조회
     useEffect(() => {
-        const board = new BoardControllerApi();
+        const api = new BoardControllerApi();
 
-        board.detail(boardId)
+        api.detail(boardId)
             .then((res) => {
                 const dto = res.data;
-
                 setData(dto);
-
-                // 서버에서 가져온 실제 값 반영
                 setLiked(dto.liked ?? false);
                 setBookmarked(dto.bookmarked ?? false);
-
                 setLikeCount(dto.likeCount ?? 0);
                 setBookmarkCount(dto.bookmarkCount ?? 0);
             })
@@ -45,49 +49,92 @@ export default function DetailBoardPage() {
     }, [boardId]);
 
     if (!data) {
-        return <div className="w-full flex justify-center mt-10">로딩중...</div>;
+        return (
+            <div className="w-full flex justify-center mt-10">
+                로딩중...
+            </div>
+        );
     }
 
-    // ❤️ 좋아요 토글
+    // 좋아요 토글
     const handleLike = async () => {
+        const api = new BoardLikeControllerApi();
         const prev = liked;
         const next = !prev;
 
         setLiked(next);
-        setLikeCount((c) => (next ? c + 1 : c - 1)); // 애니메이션 대상
+        setLikeCount(c => next ? c + 1 : c - 1);
 
         try {
-            if (next) await likeAPI.insertLike(boardId);
-            else await likeAPI.deleteLike(boardId);
-        } catch (e) {
-            console.error("좋아요 토글 실패:", e);
+            if (next) await api.insertLike(boardId);
+            else await api.deleteLike(boardId);
+        } catch (err) {
+            console.error("좋아요 토글 실패:", err);
             setLiked(prev);
-            setLikeCount((c) => (prev ? c + 1 : c - 1)); // 롤백
+            setLikeCount(c => prev ? c + 1 : c - 1);
         }
     };
 
-    // ⭐ 북마크 토글
+    // 북마크 토글
     const handleBookmark = async () => {
+        const api = new BoardBookmarkControllerApi();
         const prev = bookmarked;
         const next = !prev;
 
         setBookmarked(next);
-        setBookmarkCount((c) => (next ? c + 1 : c - 1));
+        setBookmarkCount(c => next ? c + 1 : c - 1);
 
         try {
-            if (next) await bookmarkAPI.insertBookmark(boardId);
-            else await bookmarkAPI.deleteBookmark(boardId);
-        } catch (e) {
-            console.error("북마크 토글 실패:", e);
+            if (next) await api.insertBookmark(boardId);
+            else await api.deleteBookmark(boardId);
+        } catch (err) {
+            console.error("북마크 토글 실패:", err);
             setBookmarked(prev);
-            setBookmarkCount((c) => (prev ? c + 1 : c - 1)); // 롤백
+            setBookmarkCount(c => prev ? c + 1 : c - 1);
         }
+    };
+
+    // 게시글 삭제
+    const handleDelete = async () => {
+        if (!confirm("정말 삭제하시겠습니까?")) return;
+
+        try {
+            const api = new BoardControllerApi();
+            await api.deleteBoard(boardId);
+
+            alert("삭제되었습니다.");
+            navigate("/board");
+        } catch (err) {
+            console.error("삭제 실패:", err);
+            alert("삭제 중 오류가 발생했습니다.");
+        }
+    };
+
+    // 댓글 영역으로 스크롤
+    const handleToggleComments = () => {
+        setCommentOpen((open) => {
+            const next = !open;
+
+            // 댓글을 "여는 순간"에만 스크롤
+            if (!open) {
+                setTimeout(() => {
+                    commentRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+                }, 50);
+            }
+
+            return next;
+        });
     };
 
     return (
         <div className="w-full flex flex-col items-center bg-[#f0f8f1] min-h-screen py-10">
+            {/* 헤더 */}
             <BoardDetailHeader data={data} />
 
+            {/* 본문 + 좋아요/북마크/수정/삭제 */}
             <BoardDetailContents
                 data={data}
                 liked={liked}
@@ -96,7 +143,21 @@ export default function DetailBoardPage() {
                 bookmarkCount={bookmarkCount}
                 onLike={handleLike}
                 onBookmark={handleBookmark}
+                loginUid={loginUid ?? undefined}
+                onEdit={() => navigate(`/board/edit/${boardId}`)}
+                onDelete={handleDelete}
+                onToggleComments={handleToggleComments}
+                commentOpen={commentOpen}
             />
+
+            {/* 댓글 영역 */}
+            {commentOpen && (
+                <div ref={commentRef} className="w-full flex justify-center mt-2">
+                    <div className="w-full max-w-2xl">
+                        <BoardDetailComments boardId={boardId} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

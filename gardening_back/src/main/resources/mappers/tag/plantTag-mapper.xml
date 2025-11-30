@@ -58,5 +58,13 @@
         SELECT * FROM dual
     </insert>
 
-
+    <!-- 부모 태그 목록 가져오기 -->
+    <select id="getTagParentList" resultType="com.ggirick.gardening_back.dto.tag.PlantTagParentDTO">
+        SELECT
+            TAG_ID,
+            TAG_NAME,
+            DESCRIPTION
+        FROM PLANT_TAG_PARENT
+        ORDER BY TAG_ID
+    </select>
 </mapper>

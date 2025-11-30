@@ -11,4 +11,6 @@ export type ActivityProps = {
 
     onLike: () => void;       // 좋아요 클릭
     onBookmark: () => void;   // 북마크 클릭
+
+    onToggleComments: () => void; // 댓글창 토글
 };

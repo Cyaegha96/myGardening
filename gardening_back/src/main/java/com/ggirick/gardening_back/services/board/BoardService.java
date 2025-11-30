@@ -210,8 +210,25 @@ public class BoardService {
         // 파일 삭제
         boardFileService.deleteFileByBoardId(id);
 
+        // soft delete (status -> delete)
         return boardMapper.delete(id);
     }
+
+    // 검색 게시글 목록 조회
+    public List<BoardResponseDTO> searchBoards(String keyword, String type, String tagName) {
+
+        // 빈 문자열은 null 처리
+        if (keyword != null && keyword.trim().isEmpty()) keyword = null;
+        if (tagName != null && tagName.trim().isEmpty()) tagName = null;
+
+        return boardMapper.searchBoards(keyword, type, tagName);
+    }
+
+    // 부모 태그 기반으로 게시글 필터링
+    public List<BoardResponseDTO> searchBoardsByTags(List<String> tagNames) {
+        return boardMapper.searchBoardsByTags(tagNames);
+    }
+
 
     // HTML 태그 이스케이프용 공통 메서드
     private String safeText(String text) {

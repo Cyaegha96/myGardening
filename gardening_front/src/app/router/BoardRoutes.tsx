@@ -15,6 +15,7 @@ export default function BoardRoutes(){
 
             {/* 로그인 필요 있음 */}
             <Route path="write" element={<ProtectedRoute><WriteBoardPage/></ProtectedRoute>}/>
+            <Route path="edit/:id" element={<ProtectedRoute><WriteBoardPage/></ProtectedRoute>}/>
         </Routes>
     );
 }

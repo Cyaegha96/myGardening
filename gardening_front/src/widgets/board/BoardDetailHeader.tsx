@@ -1,5 +1,5 @@
 import type { BoardResponseDTO } from "@/shared/api";
-import { Button } from "@/shared/shadcn/components/ui/button";
+import { Button } from "@/shared/shadcn/components/ui/button.tsx";
 
 export default function BoardDetailHeader({ data }: { data: BoardResponseDTO }) {
     return (

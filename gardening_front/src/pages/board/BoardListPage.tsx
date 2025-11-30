@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
     BoardControllerApi,
-    type BoardResponseDTO
+    type BoardResponseDTO,
+    PlantTagControllerApi,
+    type PlantTagParentDTO
 } from "@/shared/api";
-import { BoardListCard } from "@/entities/board/ui/BoardListCard";
-import { BoardNoImageCard } from "@/entities/board/ui/BoardNoImageCard";
 import { useNavigate, useLocation } from "react-router-dom";
+import BoardSearchFilter from "@/widgets/board/BoardSearchFilter";
+import BoardTop3Section from "@/widgets/board/BoardTop3Section";
+import BoardListSection from "@/widgets/board/BoardListSection";
 
 export default function BoardListPage() {
     const navigate = useNavigate();
@@ -19,65 +22,76 @@ export default function BoardListPage() {
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
 
+    // 부모 태그 리스트
+    const [tagParents, setTagParents] = useState<PlantTagParentDTO[]>([]);
+
+    // 검색 상태
+    const [isSearching, setIsSearching] = useState(false);
+
+    // 검색 결과 없음 여부
+    const [searchEmpty, setSearchEmpty] = useState(false);
+
+    const firstLoad = useRef(true);
     const loaderRef = useRef<HTMLDivElement | null>(null);
 
-    /** ⭐ 초기 로딩 — Top3 + 첫 페이지 전체 게시글 */
-    useEffect(() => {
-        const loadInitial = async () => {
-            try {
-                // 1) Top3 가져오기
-                const top = await api.getTop3List();
-                setTop3(top.data);
+    // 전체 게시글 + Top3 로딩
+    const loadInitialBoards = async () => {
+        setLoading(true);
+        try {
+            const top = await api.getTop3List();
+            setTop3(top.data);
 
-                // 2) 전체 최신 게시글 9개 (Top3 제거 X)
-                const listResp = await api.getList(undefined, 9);
-                const list = listResp.data;
+            const listResp = await api.getList(undefined, 9);
+            const list = listResp.data;
 
-                setBoards(list);
+            setBoards(list);
 
-                if (list.length > 0) {
-                    setCursorId(list[list.length - 1].id);
-                }
-
-                setHasMore(list.length >= 9);
-            } catch (e) {
-                console.error("초기 로딩 실패:", e);
+            if (list.length > 0) {
+                setCursorId(list[list.length - 1].id);
             }
-        };
 
-        loadInitial();
+            setHasMore(list.length >= 9);
+            setSearchEmpty(false);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    // 첫 페이지 로딩
+    useEffect(() => {
+        if (firstLoad.current) {
+            firstLoad.current = false;
+            setIsSearching(false);
+        }
+        loadInitialBoards();
     }, [location.pathname]);
 
-    /** ⭐ 추가 페이지 로딩 */
+    // 무한스크롤 추가 로딩
     const loadMore = useCallback(async () => {
-        if (!cursorId || loading || !hasMore) return;
+        if (!cursorId || loading || !hasMore || isSearching) return;
 
         setLoading(true);
-
         try {
             const resp = await api.getList(cursorId, 9);
-            const newItems = resp.data;
+            const items = resp.data;
 
-            if (newItems.length === 0) {
+            if (items.length === 0) {
                 setHasMore(false);
             } else {
-                setBoards((prev) => [...prev, ...newItems]);
-                setCursorId(newItems[newItems.length - 1].id);
+                setBoards(prev => [...prev, ...items]);
+                setCursorId(items[items.length - 1].id);
             }
-        } catch (e) {
-            console.error("추가 로딩 실패:", e);
+        } finally {
+            setLoading(false);
         }
+    }, [cursorId, loading, hasMore, isSearching]);
 
-        setLoading(false);
-    }, [cursorId, loading, hasMore]);
-
-    /** ⭐ IntersectionObserver */
+    // IntersectionObserver 설정
     useEffect(() => {
         if (!loaderRef.current) return;
 
         const observer = new IntersectionObserver(
-            (entries) => {
+            entries => {
                 if (entries[0].isIntersecting) loadMore();
             },
             { threshold: 1 }
@@ -87,44 +101,91 @@ export default function BoardListPage() {
         return () => observer.disconnect();
     }, [loadMore]);
 
-    /** 상세 페이지 이동 */
+    // 상세 이동
     const handleCardClick = (id: number) => {
         navigate(`/board/${id}`);
     };
 
+    // 일반 검색
+    const handleSearch = async (keyword: string, searchType: string) => {
+        if (!keyword.trim()) {
+            setIsSearching(false);
+            await loadInitialBoards();
+            return;
+        }
+
+        setIsSearching(true);
+        setLoading(true);
+
+        try {
+            const res = await api.searchBoards(keyword, searchType);
+            setBoards(res.data);
+            setSearchEmpty(res.data.length === 0);
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 부모 태그 기반 필터링
+    const handleFilterParent = async (parentTagId: number) => {
+        if (!parentTagId) {
+            setIsSearching(false);
+            await loadInitialBoards();
+            return;
+        }
+
+        setIsSearching(true);
+        setLoading(true);
+
+        try {
+            const res = await api.searchBoardsByTags([String(parentTagId)]);
+            setBoards(res.data);
+            setSearchEmpty(res.data.length === 0);
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 부모 태그 목록 로딩
+    useEffect(() => {
+        const api = new PlantTagControllerApi();
+        api.getTagParents()
+            .then(res => setTagParents(res.data))
+            .catch(() => setTagParents([]));
+    }, []);
+
     return (
         <main className="mx-auto h-full w-full max-w-5xl px-4 py-12">
 
-            {/* TOP3 */}
-            <h2 className="text-xl font-bold mb-4">인기 게시글 Top 3</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-10">
-                {top3.map((item) =>
-                    item.thumbnail ? (
-                        <BoardListCard key={item.id} {...item} onClick={handleCardClick} />
-                    ) : (
-                        <BoardNoImageCard key={item.id} {...item} onClick={handleCardClick} />
-                    )
-                )}
-            </div>
+            <BoardSearchFilter
+                tagParents={tagParents}
+                onSearch={handleSearch}
+                onParentSelect={handleFilterParent}
+            />
 
-            <hr/>
+            {!isSearching && (
+                <>
+                    <BoardTop3Section items={top3} onClick={handleCardClick} />
+                    <hr />
+                </>
+            )}
 
-            {/* 전체 게시글 */}
-            <h2 className="text-xl font-bold mt-4 mb-4">전체 게시글</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-10">
-                {boards.map((item) =>
-                    item.thumbnail ? (
-                        <BoardListCard key={item.id} {...item} onClick={handleCardClick} />
-                    ) : (
-                        <BoardNoImageCard key={item.id} {...item} onClick={handleCardClick} />
-                    )
-                )}
-            </div>
+            {isSearching && searchEmpty ? (
+                <div className="py-20 text-center text-gray-500">
+                    검색 결과가 없습니다.
+                </div>
+            ) : (
+                <BoardListSection items={boards} onClick={handleCardClick} />
+            )}
 
-            {/* 로딩 영역 */}
-            {hasMore && (
-                <div ref={loaderRef} className="h-10 flex justify-center items-center">
-                    {loading && <span>로딩 중...</span>}
+            {hasMore && !isSearching && (
+                <div
+                    ref={loaderRef}
+                    className="h-10 flex justify-center items-center"
+                >
+                    ...
                 </div>
             )}
         </main>

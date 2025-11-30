@@ -162,16 +162,84 @@ public class BoardController {
 
     // 6. 게시글 삭제
     @Operation(
-            summary = "게시글 삭제",
-            description = "게시글 및 연관된 파일/태그를 모두 삭제한다."
+            summary = "게시글 soft 삭제",
+            description = "게시글 및 연관된 파일/태그를 모두 삭제한다." +
+                    "단, 게시물은 soft delete로 상태만 delete로 변경한다."
     )
     @ApiResponse(responseCode = "200", description = "삭제 성공")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBoard(@PathVariable int id) {
 
-        int deleted = boardService.delete(id);
-        if (deleted == 0) return ResponseEntity.notFound().build();
+        int updated = boardService.delete(id);
+        if (updated == 0) return ResponseEntity.notFound().build();
 
         return ResponseEntity.ok().build();
     }
+
+    // 게시글 검색
+    @Operation(
+            summary = "게시글 검색",
+            description = """
+                게시글 검색 API입니다.
+                검색 타입(type)에 따라 조건이 달라집니다.
+
+                type 설명
+                - writer : 작성자 닉네임 검색
+                - content : 제목 + 내용 검색
+                - all : 작성자 + 제목 + 내용 전체 검색
+                - tag : 태그 기반 검색 (tagName 모델로 검색)
+
+                tagName:
+                PLANT_TAG_PARENT.TAG_NAME 값 기반 필터링
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "검색 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = BoardResponseDTO.class))
+                    )
+            )
+    })
+    @GetMapping("/search")
+    public ResponseEntity<List<BoardResponseDTO>> searchBoards(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String tagName
+    ) {
+        List<BoardResponseDTO> list = boardService.searchBoards(keyword, type, tagName);
+        return ResponseEntity.ok(list);
+    }
+
+    // 부모 태그 기반 게시글 필터링
+    @Operation(
+            summary = "부모 태그 기반 게시글 필터링",
+            description = """
+            부모 태그명(tagName) 또는 여러 태그 목록을 전달하여
+            해당 태그가 포함된 게시글을 필터링합니다.
+
+            사용 예:
+            ["PLANT_TYPE"]
+            ["PLANT_TYPE", "USE_CASE"]
+            """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "필터링 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = BoardResponseDTO.class))
+                    )
+            )
+    })
+    @PostMapping("/search/tag")
+    public ResponseEntity<List<BoardResponseDTO>> searchBoardsByTags(
+            @RequestBody List<String> tagNames
+    ) {
+        return ResponseEntity.ok(boardService.searchBoardsByTags(tagNames));
+    }
+
 }
