@@ -1,7 +1,7 @@
 import { Button } from "@/shared/shadcn/components/ui/button";
-import DomeGallery from "@/shared/shadcn/components/DomeGallery.tsx";
+// import DomeGallery from "@/shared/shadcn/components/DomeGallery.tsx";
 import {Link} from "react-router-dom";
-import PlantThree from "@/pages/test/PlantThree.tsx";
+// import PlantThree from "@/pages/test/PlantThree.tsx";
 
 export function Hero() {
     return (
@@ -38,7 +38,7 @@ export function Hero() {
             <section style={{ overflowX: 'hidden' }}>
                 <div style={{width: '100vw', height: '100vh'}} >
 
-                    <DomeGallery/>
+                    {/*<DomeGallery/>*/}
                 </div>
                 <div
                     style={{

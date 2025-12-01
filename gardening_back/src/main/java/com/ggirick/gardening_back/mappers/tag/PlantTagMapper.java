@@ -1,6 +1,7 @@
 package com.ggirick.gardening_back.mappers.tag;
 
 import com.ggirick.gardening_back.dto.tag.PlantTagDTO;
+import com.ggirick.gardening_back.dto.tag.PlantTagParentDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -23,4 +24,11 @@ public interface PlantTagMapper {
             @Param("scientificName") String scientificName,
             @Param("tagIds") List<Integer> tagIds
     );
+
+    // 부모 태그 목록 가져오기
+    List<PlantTagParentDTO> getTagParentList();
+
+    // 부모 기준 자식 태그 ID 전체 가져오기
+    List<String> getChildTagNames(@Param("parentTagId") int parentTagId);
+
 }
