@@ -220,6 +220,7 @@ public class AuthService {
         }
 
         String sessionId = redisService.getSessionIdByRefreshToken(refreshToken);
+        System.out.print("로그아웃할 세션 아이디:"+sessionId);
         int updated = 0;
 
         if (sessionId != null) {
@@ -247,7 +248,7 @@ public class AuthService {
                 .sessionId(sessionId)
                 .userUid(userInfo.getUid())
                 .provider(userInfo.getProvider())
-                .refreshToken(refreshToken)
+  //              .refreshToken(refreshToken)
                 .expiresAt(refreshExpDate)
                 .ipAddress(ipAddress)
                 .isRevoked("N")

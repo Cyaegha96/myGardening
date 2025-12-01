@@ -2,7 +2,6 @@ package com.ggirick.gardening_back.services.auth;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.ggirick.gardening_back.utils.JWTUtil;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -37,10 +36,9 @@ public class RedisService {
                             Map<String, Object> sessionData, long ttlMs) {
         String hash = JWTUtil.sha256(refreshToken);
 
-        // 세션 목록에 push
-        String listKey= "user:" + userUid + ":sessions";
+        // 세션 목록에 push (세션 목록은 ttl을 걸지 않음)
+        String listKey = "user:" + userUid + ":sessions";
         redis.opsForList().leftPush(listKey, sessionId);
-        redis.expire(listKey, ttlMs, TimeUnit.MILLISECONDS);
 
         // 2) refreshTokenHash → sessionId 매핑
         redis.opsForValue().set("ref:" + hash, sessionId, ttlMs, TimeUnit.MILLISECONDS);
@@ -88,21 +86,20 @@ public class RedisService {
         log.debug("logout-refKey: {}", refKey);
 
         String sessionId = (String) redis.opsForValue().get(refKey);
-
-        log.debug("logout-sessionId: {}", sessionId);
         if (sessionId != null) {
-        // 2) session 데이터 삭제
-                    redis.delete("session:" + sessionId);
-        // 3) ref:{hash} 삭제
-                    redis.delete(refKey);
-        // 4) user:{uid}:sessions 리스트에서 제거
-        // 먼저 session 데이터에서 uid 가져오기
-        Map<String, Object> sessionData = (Map<String, Object>) redis.opsForValue().get("session:" + sessionId);
-       if (sessionData != null && sessionData.get("uid") != null)
-       { String uid = sessionData.get("uid").toString();
-           String listKey = "user:" + uid + ":sessions"; redis.opsForList().remove(listKey, 1, sessionId);
-           // 리스트에서 해당 sessionId 제거
-            } }
+            // 먼저 uid 가져오기
+            Map<String, Object> sessionData = (Map<String, Object>) redis.opsForValue().get("session:" + sessionId);
+            if (sessionData != null && sessionData.get("uid") != null) {
+                String uid = sessionData.get("uid").toString();
+                String listKey = "user:" + uid + ":sessions";
+                redis.opsForList().remove(listKey, 0, sessionId);
+            }
+
+            // 그 다음 삭제
+            redis.delete("session:" + sessionId);
+            redis.delete(refKey);
+        }
+
     }
 
 
