@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PotListDTO {
+public class PotListDetailDTO {
     @Schema(description = "시퀀스")
     int id;
     @Schema(description = "제목")
@@ -37,4 +37,11 @@ public class PotListDTO {
     Timestamp updatedAt;
     @Schema(description = "끌어올리기 한 날짜")
     Timestamp bumpedAt;
+
+    @Schema(description = "작성자 이름")
+    String writerName;
+    @Schema(description = "북마크 수")
+    String bookmarkCount;
+    @Schema(description = "활성된 채팅 수")
+    String chatroomCount;
 }

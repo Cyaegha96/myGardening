@@ -23,6 +23,8 @@ public class PotListPatchDTO {
     int price;
     @Schema(description = "거래 장소")
     String location;
+    @Schema(description = "썸네일 url")
+    String thumbnail;
     @Schema(description = "조회수")
     int view_count;
     @Schema(description = "수정일")

@@ -120,7 +120,7 @@ public class PotListController {
 
     @Operation(
             summary = "분양글 끌어올리기",
-            description = "해당 분양글을 목록 상단으로 끌어올립니다(업데이트 시간 변경)."
+            description = "해당 분양글을 목록 상단으로 끌어올립니다(bumped 시간 변경)."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "끌어올리기 성공"),
@@ -128,6 +128,21 @@ public class PotListController {
     })
     @PostMapping("/{id}/refresh")
     public ResponseEntity<Void> refreshPot(
+            @Parameter(description = "분양글 ID") @PathVariable Long id
+    ) {
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "분양글 신고하기",
+            description = "해당 분양글을 신고합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "신고 성공"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
+    })
+    @PostMapping("/{id}/report")
+    public ResponseEntity<Void> reportPot(
             @Parameter(description = "분양글 ID") @PathVariable Long id
     ) {
         return ResponseEntity.ok().build();
