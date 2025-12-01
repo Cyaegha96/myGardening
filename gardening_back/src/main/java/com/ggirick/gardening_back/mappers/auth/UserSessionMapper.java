@@ -21,4 +21,6 @@ public interface UserSessionMapper {
 
     // 4. 특정 사용자의 모든 세션 무효화 (추가 로그아웃 옵션)
     int revokeAllUserSessions(@Param("uid") String uid);
+
+    UserSessionDTO selectSessionById(@Param("sessionId") String sessionId);
 }
