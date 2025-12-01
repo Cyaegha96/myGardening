@@ -103,11 +103,11 @@ export default function ChatDrawer() {
                             {chatRooms.map((room) => (
                                 <div
                                     key={room.id}
-                                    className="flex flex-col p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+                                    className="flex flex-col p-3 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer"
                                     onClick={() => setSelectedRoom(room)}
                                 >
                                     <p className="font-semibold">{room.name}</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                    <p className="text-sm text-gray-500 truncate">
                                         {room.lastMessage}
                                     </p>
                                 </div>
@@ -128,8 +128,8 @@ export default function ChatDrawer() {
                                         <div
                                             className={`max-w-[70%] px-4 py-2 rounded-lg ${
                                                 msg.sender === "user"
-                                                    ? "bg-green-600 text-white"
-                                                    : "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                    ? "bg-green-700 text-white"
+                                                    : "bg-gray-200 text-gray-900"
                                             }`}
                                         >
                                             {msg.text}
@@ -145,10 +145,10 @@ export default function ChatDrawer() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder="메시지를 입력하세요..."
-                                    className="flex-1 px-3 py-2 border rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    className="flex-1 px-3 py-2 border rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
                                     onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                                 />
-                                <Button onClick={sendMessage} className="bg-green-600 hover:bg-green-700 text-white">
+                                <Button onClick={sendMessage} className="bg-green-700 hover:bg-green-800 text-white h-full">
                                     전송
                                 </Button>
                             </div>
