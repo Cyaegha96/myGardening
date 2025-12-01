@@ -4,51 +4,106 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ggirick.gardening_back.mappers.board.BoardCommentMapper">
 
-    <!-- 게시글 기준 댓글 리스트 + BEST → 최신 정렬 -->
+    <!-- 게시글 기준 댓글 리스트 + 최신 정렬 -->
     <select id="getByBoardId"
             resultType="com.ggirick.gardening_back.dto.board.BoardCommentResponseDTO">
         SELECT
-            c.id,
-            c.contents,
-            c.writer_uid,
-            c.board_id,
-            c.ref_comment_id,
-            c.status,
-            c.created_at,
-            c.updated_at,
+            id,
+            contents,
+            writer_uid,
+            board_id,
+            ref_comment_id,
+            status,
+            created_at,
+            updated_at,
+            writerNickname,
+            writerProfileUrl,
+            likeCount,
+            liked
+        FROM (
+                 SELECT
+                     c.id,
+                     c.contents,
+                     c.writer_uid,
+                     c.board_id,
+                     c.ref_comment_id,
+                     c.status,
+                     c.created_at,
+                     c.updated_at,
 
-            u.nickname AS writerNickname,
-            u.profile_url AS writerProfileUrl,
+                     u.nickname                        AS writerNickname,
+                     u.profile_url                     AS writerProfileUrl,
 
-            -- 좋아요 개수
-            (
-                SELECT COUNT(*)
-                FROM board_comment_like l
-                WHERE l.comment_id = c.id
-            ) AS likeCount,
+                     (SELECT COUNT(*)
+                      FROM board_comment_like l
+                      WHERE l.comment_id = c.id)       AS likeCount,
 
-            -- 내가 좋아요 눌렀는지 여부 (0 or 1)
-            (
-                SELECT COUNT(*)
-                FROM board_comment_like l2
-                WHERE l2.comment_id = c.id
-                  AND   l2.user_uid = #{loginUid}
-            ) AS liked
+                     (SELECT COUNT(*)
+                      FROM board_comment_like l2
+                      WHERE l2.comment_id = c.id
+                        AND l2.user_uid = #{loginUid}) AS liked
+                 FROM board_comment c
+                          LEFT JOIN user_info u ON c.writer_uid = u.uuid
+                 WHERE c.board_id = #{boardId}
+             ) t
+        ORDER BY t.created_at DESC
+    </select>
+
+    <!-- 베스트 댓글 Top3 -->
+    <select id="getBestComments"
+            resultType="com.ggirick.gardening_back.dto.board.BoardCommentResponseDTO">
+
+        SELECT *
+        FROM (
+        SELECT
+        c.id,
+        c.contents,
+        c.writer_uid,
+        c.board_id,
+        c.ref_comment_id,
+        c.status,
+        c.created_at,
+        c.updated_at,
+
+        u.nickname AS writerNickname,
+        u.profile_url AS writerProfileUrl,
+
+        /* 좋아요 수 */
+        (SELECT COUNT(*)
+        FROM board_comment_like l
+        WHERE l.comment_id = c.id) AS likeCount,
+
+        /* 로그인한 사용자가 좋아요 눌렀는지 */
+        (SELECT COUNT(*)
+        FROM board_comment_like l2
+        WHERE l2.comment_id = c.id
+        AND l2.user_uid = #{loginUid}) AS liked
+
         FROM board_comment c
-                 LEFT JOIN user_info u ON c.writer_uid = u.uid
+        LEFT JOIN user_info u ON u.uuid = c.writer_uid
+
         WHERE c.board_id = #{boardId}
-        ORDER BY
-            likeCount DESC,   -- BEST (좋아요 많은 순)
-            c.created_at DESC -- 최근 순
+        AND c.status = 'active'
+        AND c.ref_comment_id = 0     <!-- 최상위 댓글만 -->
+        AND (
+        SELECT COUNT(*)
+        FROM board_comment_like l3
+        WHERE l3.comment_id = c.id
+        ) &gt;= 1
+
+        ORDER BY likeCount DESC, c.created_at DESC
+        )
+        WHERE ROWNUM &lt;= 3
+
     </select>
 
     <!-- 단건 조회 -->
     <select id="getById"
             resultType="com.ggirick.gardening_back.dto.board.BoardCommentResponseDTO">
-        SELECT
-            *
+        SELECT *
         FROM board_comment
         WHERE id = #{id}
+          AND c.status = 'active'
     </select>
 
     <!-- 댓글 등록 -->
@@ -76,8 +131,7 @@
     <!-- 댓글 수정 -->
     <update id="update">
         UPDATE board_comment
-        SET
-            contents = #{contents}
+        SET contents = #{contents}
         WHERE id = #{id}
           AND writer_uid = #{writerUid}
     </update>
@@ -86,14 +140,14 @@
     <!-- 댓글 삭제 (Soft Delete - 상태만 변경) -->
     <update id="delete">
         UPDATE board_comment
-        SET status = 'DELETE'
+        SET status = 'delete'
         WHERE id = #{id}
     </update>
 
     <!-- 댓글 규제 (BLOCKED - 상태만 변경) -->
     <update id="blockComment">
         UPDATE board_comment
-        SET status = 'BLOCKED'
+        SET status = 'blocked'
         WHERE id = #{id}
     </update>
 
@@ -109,16 +163,15 @@
     <insert id="insertLike">
         INSERT INTO board_comment_like
             (id, comment_id, user_uid)
-        VALUES (
-                board_comment_like_seq.NEXTVAL,
+        VALUES (board_comment_like_seq.NEXTVAL,
                 #{commentId},
-                #{loginUid}
-               )
+                #{loginUid})
     </insert>
 
     <!-- 좋아요 삭제 -->
     <delete id="deleteLike">
-        DELETE FROM board_comment_like
+        DELETE
+        FROM board_comment_like
         WHERE comment_id = #{commentId}
           AND user_uid = #{loginUid}
     </delete>

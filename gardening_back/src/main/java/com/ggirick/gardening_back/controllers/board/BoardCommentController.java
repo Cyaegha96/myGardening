@@ -81,6 +81,38 @@ public class BoardCommentController {
         return ResponseEntity.ok().build();
     }
 
+    // 베스트 댓글 3개 조회
+    @Operation(
+            summary = "베스트 댓글 조회 (Top3)",
+            description = "좋아요 수 기준으로 베스트 댓글 Top3를 반환한다. "
+                    + "최상위 댓글만 포함되며, 대댓글은 포함되지 않는다. "
+                    + "삭제/규제된 댓글은 정책에 맞게 대체 문구로 표시된다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "베스트 댓글 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(
+                                    schema = @Schema(implementation = BoardCommentResponseDTO.class)
+                            )
+                    )
+            )
+    })
+    @GetMapping("/best")
+    public ResponseEntity<List<BoardCommentResponseDTO>> getBestComments(
+            @PathVariable int boardId,
+            @AuthenticationPrincipal UserTokenDTO userInfo
+    ) {
+        String loginUid = (userInfo != null) ? userInfo.getUid() : null;
+
+        List<BoardCommentResponseDTO> list =
+                boardCommentService.getBestComments(boardId, loginUid);
+
+        return ResponseEntity.ok(list);
+    }
+
     // 댓글 수정
     @Operation(
             summary = "댓글 수정",

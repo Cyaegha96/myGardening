@@ -14,6 +14,10 @@ public interface BoardCommentMapper {
     List<BoardCommentResponseDTO> getByBoardId(@Param("boardId") int boardId,
                                                @Param("loginUid") String loginUid);
 
+    // 베스트 댓글 3개 조회
+    List<BoardCommentResponseDTO> getBestComments(@Param("boardId") int boardId,
+                                                  @Param("loginUid") String loginUid);
+
     // 단건 조회 (권한 체크용 등)
     BoardCommentResponseDTO getById(int id);
 

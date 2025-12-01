@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "댓글 응답 DTO")
 public class BoardCommentDTO {
     @Schema(description = "댓글 고유 번호", example = "5")
     private int id;
