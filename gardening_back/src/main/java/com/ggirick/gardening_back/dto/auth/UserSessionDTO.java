@@ -12,7 +12,7 @@ public class UserSessionDTO {
     private String sessionId;
     private String userUid;
     private String provider;
-    private String refreshToken;
+    //private String refreshToken;
     private Date expiresAt;
     private String ipAddress;
     private String isRevoked;

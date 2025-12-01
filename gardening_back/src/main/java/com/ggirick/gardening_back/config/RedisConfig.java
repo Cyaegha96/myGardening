@@ -1,5 +1,6 @@
 package com.ggirick.gardening_back.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,14 +20,25 @@ import java.time.Duration;
 @Configuration
 public class RedisConfig {
 
-    private String host = "10.5.5.1";
-    private int port = 6379;
+
+    @Value("${spring.data.redis.host}")
+    private String host;
+
+    @Value("${spring.data.redis.port}")
+    private int port;
+
+    @Value("${spring.data.redis.password}")
+    private String password;
 
     @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
+    public RedisConnectionFactory redisConnectionFactory()
+    {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(host);
         config.setPort(port);
+        if (password != null && !password.isEmpty()) {
+            config.setPassword(password);
+        }
         return new LettuceConnectionFactory(config);
     }
 
