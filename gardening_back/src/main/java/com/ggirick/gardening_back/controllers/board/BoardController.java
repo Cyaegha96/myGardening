@@ -217,12 +217,15 @@ public class BoardController {
     @Operation(
             summary = "부모 태그 기반 게시글 필터링",
             description = """
-            부모 태그명(tagName) 또는 여러 태그 목록을 전달하여
-            해당 태그가 포함된 게시글을 필터링합니다.
+            부모 태그 ID(parentTagId)를 전달하면,
+            해당 부모 태그에 속한 '자식 태그들'이 포함된 게시글만 필터링하여 조회합니다.
 
-            사용 예:
-            ["PLANT_TYPE"]
-            ["PLANT_TYPE", "USE_CASE"]
+            요청 방식:
+            GET /board/filter/tag?parentTagId=3
+
+            동작:
+            1. parentTagId로 자식 태그들을 조회한 뒤
+            2. 자식 태그가 하나라도 매핑된 게시글만 반환합니다.
             """
     )
     @ApiResponses({
@@ -233,13 +236,17 @@ public class BoardController {
                             mediaType = "application/json",
                             array = @ArraySchema(schema = @Schema(implementation = BoardResponseDTO.class))
                     )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 parentTagId 요청 (예: 음수, 존재하지 않는 ID)"
             )
     })
-    @PostMapping("/search/tag")
-    public ResponseEntity<List<BoardResponseDTO>> searchBoardsByTags(
-            @RequestBody List<String> tagNames
+    @GetMapping("/filter/tag")
+    public ResponseEntity<List<BoardResponseDTO>> filterBoardsByParentTag(
+            @RequestParam int parentTagId
     ) {
-        return ResponseEntity.ok(boardService.searchBoardsByTags(tagNames));
+        return ResponseEntity.ok(boardService.filterBoardsByParentTag(parentTagId));
     }
 
 }

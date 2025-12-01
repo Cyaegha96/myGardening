@@ -70,4 +70,9 @@ public class PlantTagService {
         }
         return raw;
     }
+
+    // 부모 기준 자식 태그 ID 전체 가져오기
+    public List<String> getChildTagNames(int parentTagId) {
+        return plantTagMapper.getChildTagNames(parentTagId);
+    }
 }

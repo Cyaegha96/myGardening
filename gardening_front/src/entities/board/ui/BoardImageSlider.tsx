@@ -1,14 +1,13 @@
-import { useState } from "react";
+import {useState} from "react";
 
 interface BoardImageSliderProps {
-    images: string[];     // 이미지 URL 리스트
-    fallback?: string;    // 이미지 없는 경우 대체 이미지
+    images: string[];
+    fallback?: string;
 }
 
-export default function BoardImageSlider({ images, fallback }: BoardImageSliderProps) {
+export default function BoardImageSlider({images, fallback}: BoardImageSliderProps) {
     const [current, setCurrent] = useState(0);
 
-    // 이미지가 완전히 없고 fallback도 없다면 → 컴포넌트 렌더링 안 함
     if (images.length === 0 && !fallback) {
         return null;
     }
@@ -23,47 +22,62 @@ export default function BoardImageSlider({ images, fallback }: BoardImageSliderP
 
     return (
         <div className="w-full flex justify-center mb-4 relative">
-            <div className="w-[90%] rounded-md overflow-hidden relative">
-
+            <div
+                className="
+                            relative
+                            overflow-hidden
+                            rounded-md
+                            flex
+                            justify-center
+                            items-center
+                            w-[90%]
+                            mx-auto
+                        "
+            >
                 <img
                     src={displayImage}
                     alt="board image"
-                    className="w-full aspect-square object-cover transition-all duration-300"
+                    className="
+                                w-full
+                                h-auto
+                                object-cover
+                                object-center          /* 정중앙 기준으로 자르기 */
+                                transition-all
+                                duration-300
+                            "
                 />
-
-                {/* 좌우 버튼 */}
-                {images.length > 1 && (
-                    <>
-                        <button
-                            onClick={prevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-2 hover:bg-black/60 transition"
-                        >
-                            {"<"}
-                        </button>
-
-                        <button
-                            onClick={nextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-2 hover:bg-black/60 transition"
-                        >
-                            {">"}
-                        </button>
-                    </>
-                )}
-
-                {/* dot indicator */}
-                {images.length > 1 && (
-                    <div className="absolute bottom-3 w-full flex justify-center gap-2">
-                        {images.map((_, idx) => (
-                            <div
-                                key={idx}
-                                className={`w-2 h-2 rounded-full transition ${
-                                    idx === current ? "bg-white" : "bg-white/40"
-                                }`}
-                            ></div>
-                        ))}
-                    </div>
-                )}
             </div>
+
+            {images.length > 1 && (
+                <>
+                    <button
+                        onClick={prevImage}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-2 hover:bg-black/60 transition"
+                    >
+                        {"<"}
+                    </button>
+
+                    <button
+                        onClick={nextImage}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-2 hover:bg-black/60 transition"
+                    >
+                        {">"}
+                    </button>
+                </>
+            )}
+
+            {images.length > 1 && (
+                <div className="absolute bottom-3 w-full flex justify-center gap-2">
+                    {images.map((_, idx) => (
+                        <div
+                            key={idx}
+                            className={`w-2 h-2 rounded-full transition ${
+                                idx === current ? "bg-white" : "bg-white/40"
+                            }`}
+                        ></div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

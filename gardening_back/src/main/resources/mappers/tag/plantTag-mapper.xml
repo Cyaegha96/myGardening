@@ -67,4 +67,11 @@
         FROM PLANT_TAG_PARENT
         ORDER BY TAG_ID
     </select>
+
+    <!-- 부모 태그 기준 자식 태그 ID 전체 가져오기 -->
+    <select id="getChildTagNames" resultType="string">
+        SELECT TAG_NAME
+        FROM PLANT_TAG
+        WHERE PARENT_TAG_ID = #{parentTagId}
+    </select>
 </mapper>

@@ -286,16 +286,37 @@
     </select>
 
     <!-- 부모 태그 기반으로 게시글 필터링 -->
-    <select id="searchBoardsByTags" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
-        SELECT DISTINCT b.*
+    <select id="searchBoardsByTagNames" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT
+        b.ID AS id,
+        b.TITLE,
+        b.CONTENTS,
+        b.VIEW_COUNT,
+        b.IS_NOTIFICATION,
+        b.CREATED_AT,
+        b.UPDATED_AT,
+        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+        (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID) AS likeCount,
+        (SELECT COUNT(*) FROM BOARD_BOOKMARK bm WHERE bm.BOARD_ID = b.ID) AS bookmarkCount,
+        (SELECT URL FROM BOARD_FILE bf WHERE bf.BOARD_ID = b.ID AND ROWNUM = 1) AS thumbnail,
+        u.UUID AS writerUid,
+        u.NICKNAME AS writerNickname,
+        u.PROFILE_URL AS writerProfileImage,
+        u.BIO AS writerBio
         FROM BOARD b
-        JOIN BOARD_TAG_MAPPING m ON b.ID = m.BOARD_ID
-        JOIN BOARD_TAG t ON m.TAG_ID = t.ID
-        WHERE t.NAME IN
-        <foreach item="tag" collection="tagNames" open="(" separator="," close=")">
-            #{tag}
+        JOIN USER_INFO u
+        ON b.WRITER_UID = u.UUID
+        WHERE b.STATUS = 'active'
+        AND EXISTS (
+        SELECT 1
+        FROM BOARD_TAG_MAPPING m
+        JOIN BOARD_TAG t ON t.ID = m.TAG_ID
+        WHERE m.BOARD_ID = b.ID
+        AND t.NAME IN
+        <foreach collection="tagNames" item="name" open="(" close=")" separator=",">
+            #{name}
         </foreach>
-        AND b.STATUS = 'active'
+        )
         ORDER BY b.ID DESC
     </select>
 

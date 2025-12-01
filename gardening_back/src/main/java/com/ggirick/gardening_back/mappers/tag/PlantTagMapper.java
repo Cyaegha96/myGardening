@@ -28,4 +28,7 @@ public interface PlantTagMapper {
     // 부모 태그 목록 가져오기
     List<PlantTagParentDTO> getTagParentList();
 
+    // 부모 기준 자식 태그 ID 전체 가져오기
+    List<String> getChildTagNames(@Param("parentTagId") int parentTagId);
+
 }

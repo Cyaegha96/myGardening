@@ -7,7 +7,7 @@ import {
 } from "@/shared/api";
 import BoardDetailHeader from "@/widgets/board/BoardDetailHeader";
 import BoardDetailContents from "@/widgets/board/BoardDetailContents";
-import BoardDetailComments from "@/widgets/board/BoardDetailComments";
+import BoardDetailComments from "@/widgets/comment/BoardDetailComments.tsx";
 import { useParams, useNavigate } from "react-router-dom";
 import useUserStore from "@/app/store/userStore";
 

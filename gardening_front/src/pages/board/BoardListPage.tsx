@@ -57,7 +57,7 @@ export default function BoardListPage() {
         }
     };
 
-    // 첫 페이지 로딩
+    // 초기 로딩
     useEffect(() => {
         if (firstLoad.current) {
             firstLoad.current = false;
@@ -66,7 +66,7 @@ export default function BoardListPage() {
         loadInitialBoards();
     }, [location.pathname]);
 
-    // 무한스크롤 추가 로딩
+    // 무한스크롤 추가로딩
     const loadMore = useCallback(async () => {
         if (!cursorId || loading || !hasMore || isSearching) return;
 
@@ -101,13 +101,14 @@ export default function BoardListPage() {
         return () => observer.disconnect();
     }, [loadMore]);
 
-    // 상세 이동
+    // 상세로 이동
     const handleCardClick = (id: number) => {
         navigate(`/board/${id}`);
     };
 
     // 일반 검색
     const handleSearch = async (keyword: string, searchType: string) => {
+        // 검색어 없으면 전체 목록 복구
         if (!keyword.trim()) {
             setIsSearching(false);
             await loadInitialBoards();
@@ -139,7 +140,8 @@ export default function BoardListPage() {
         setLoading(true);
 
         try {
-            const res = await api.searchBoardsByTags([String(parentTagId)]);
+            // GET /board/filter/tag?parentTagId=3
+            const res = await api.filterBoardsByParentTag(parentTagId);
             setBoards(res.data);
             setSearchEmpty(res.data.length === 0);
             setHasMore(false);
@@ -159,12 +161,14 @@ export default function BoardListPage() {
     return (
         <main className="mx-auto h-full w-full max-w-5xl px-4 py-12">
 
+            {/* 검색 + 태그 필터 */}
             <BoardSearchFilter
                 tagParents={tagParents}
                 onSearch={handleSearch}
                 onParentSelect={handleFilterParent}
             />
 
+            {/* 검색 중이 아닐 때만 TOP3 표시 */}
             {!isSearching && (
                 <>
                     <BoardTop3Section items={top3} onClick={handleCardClick} />
@@ -172,6 +176,7 @@ export default function BoardListPage() {
                 </>
             )}
 
+            {/* 게시글 목록 또는 검색 결과 없음 표시 */}
             {isSearching && searchEmpty ? (
                 <div className="py-20 text-center text-gray-500">
                     검색 결과가 없습니다.
@@ -180,12 +185,13 @@ export default function BoardListPage() {
                 <BoardListSection items={boards} onClick={handleCardClick} />
             )}
 
+            {/* 무한스크롤 로딩 */}
             {hasMore && !isSearching && (
                 <div
                     ref={loaderRef}
                     className="h-10 flex justify-center items-center"
                 >
-                    ...
+                    로딩중 ...
                 </div>
             )}
         </main>

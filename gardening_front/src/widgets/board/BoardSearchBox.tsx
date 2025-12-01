@@ -42,7 +42,7 @@ export default function BoardSearchBox({ onSearch }: BoardSearchBoxProps) {
 
             {/* 버튼 */}
             <Button
-                variant="secondary"
+                variant="outline"
                 size="icon"
                 onClick={() => onSearch(keyword, searchType)}
                 className="aspect-square rounded-md"
