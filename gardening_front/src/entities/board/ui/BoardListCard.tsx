@@ -101,7 +101,7 @@ const BoardListCard = ({
 
                     <div className="flex flex-col leading-tight">
                         <span className="font-semibold text-sm">{writerNickname}</span>
-                        <span className="text-xs text-gray-500">@{writerBio}</span>
+                        <span className="text-xs text-gray-500">{writerBio}</span>
                     </div>
                 </div>
 

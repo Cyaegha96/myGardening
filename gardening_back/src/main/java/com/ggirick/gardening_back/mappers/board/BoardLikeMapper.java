@@ -16,13 +16,7 @@ public interface BoardLikeMapper {
     int deleteLike(@Param("boardId") int boardId, @Param("loginUid") String loginUid);
 
     // 좋아요 여부
-    boolean isLiked(@Param("boardId") int boardId, @Param("loginUid") String loginUid);
-
-    // 좋아요 수 증가
-    int increaseLikeCount(int boardId);
-
-    // 좋아요 수 감소
-    int decreaseLikeCount(int boardId);
+    int isLiked(@Param("boardId") int boardId, @Param("loginUid") String loginUid);
 
     // 내 좋아요 목록 조회
     List<BoardResponseDTO> getLikedList(String userUid);

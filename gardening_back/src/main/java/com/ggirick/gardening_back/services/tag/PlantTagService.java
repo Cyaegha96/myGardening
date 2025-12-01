@@ -2,6 +2,7 @@ package com.ggirick.gardening_back.services.tag;
 
 import com.ggirick.gardening_back.dto.plant.PlantInfoDTO;
 import com.ggirick.gardening_back.dto.tag.PlantTagDTO;
+import com.ggirick.gardening_back.dto.tag.PlantTagParentDTO;
 import com.ggirick.gardening_back.mappers.tag.PlantTagMapper;
 import com.ggirick.gardening_back.services.plant.PlantService;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,21 @@ public class PlantTagService {
         return plantTagMapper.getTagsByIds(tagIds);
     }
 
+    // 부모 태그 목록 가져오기
+    public List<PlantTagParentDTO> getTagParentList() {
+        List<PlantTagParentDTO> raw = plantTagMapper.getTagParentList();
 
+        // description 뒤에 "태그" 제거
+        for (PlantTagParentDTO dto : raw) {
+            if (dto.getDescription() != null && dto.getDescription().contains("태그")) {
+                dto.setDescription(dto.getDescription().replace("태그", "").trim());
+            }
+        }
+        return raw;
+    }
 
+    // 부모 기준 자식 태그 ID 전체 가져오기
+    public List<String> getChildTagNames(int parentTagId) {
+        return plantTagMapper.getChildTagNames(parentTagId);
+    }
 }

@@ -2,6 +2,7 @@ package com.ggirick.gardening_back.controllers.tag;
 
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.tag.PlantTagDTO;
+import com.ggirick.gardening_back.dto.tag.PlantTagParentDTO;
 import com.ggirick.gardening_back.services.plant.PlantService;
 import com.ggirick.gardening_back.services.tag.PlantTagService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -104,5 +105,31 @@ public class PlantTagController {
     ) {
         List<PlantTagDTO> tags = plantTagService.getTagsByIds(tagIds);
         return ResponseEntity.ok(tags);
+    }
+
+    // 식물 부모 태그 목록 조회
+    @Operation(
+            summary = "식물 부모 태그 목록 조회",
+            description = """
+                PLANT_TAG_PARENT 테이블에서 조회하는 API입니다.
+                tagName 은 서버 필터용 값이고,
+                description 은 화면 표시용 텍스트입니다.
+                description 뒤의 '태그' 문자열은 서버단에서 자동 제거하여 내려갑니다.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = PlantTagParentDTO.class))
+                    )
+            )
+    })
+    @GetMapping("/tagParent")
+    public ResponseEntity<List<PlantTagParentDTO>> getTagParents() {
+        List<PlantTagParentDTO> list = plantTagService.getTagParentList();
+        return ResponseEntity.ok(list);
     }
 }

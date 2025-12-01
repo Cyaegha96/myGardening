@@ -11,10 +11,11 @@ export default function BoardRoutes(){
         <Routes>
             {/* 로그인 필요 없음 */}
             <Route path="/" element={<BoardPage/>}/>
-            <Route path="detail" element={<DetailBoardPage/>}/>
+            <Route path=":id" element={<DetailBoardPage/>}/>
 
             {/* 로그인 필요 있음 */}
             <Route path="write" element={<ProtectedRoute><WriteBoardPage/></ProtectedRoute>}/>
+            <Route path="edit/:id" element={<ProtectedRoute><WriteBoardPage/></ProtectedRoute>}/>
         </Routes>
     );
 }

@@ -4,18 +4,22 @@ import {CommonRoutes} from '@/app/router/index.js';
 import {useEffect} from "react";
 import {getStoredTokens} from "@/entities/auth/api.ts";
 import {type AuthState, useAuthStore} from "@/entities/auth/useAuthStore.tsx";
+import useUserStore from "@/app/store/userStore";
 import {Toaster} from "sonner";
 
 function App() {
     //기본 로그인
-    const setTokens = useAuthStore((s:AuthState) => s.setTokens);
+    const setTokens = useAuthStore((s: AuthState) => s.setTokens);
+    const initUser = useUserStore(state => state.init);
 
     useEffect(() => {
-        const { access, refresh } = getStoredTokens();
+        const {access, refresh} = getStoredTokens();
         if (access && refresh) {
             setTokens(access, refresh);
+            // UID 저장
+            initUser();
         }
-    }, [setTokens]);
+    }, [setTokens, initUser]);
 
     return (
         <BrowserRouter>

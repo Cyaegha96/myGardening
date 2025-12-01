@@ -16,6 +16,14 @@
                  )
     </insert>
 
+    <!-- 좋아요 여부 -->
+    <select id="isLiked" resultType="int">
+        SELECT COUNT(*)
+        FROM BOARD_LIKE
+        WHERE BOARD_ID = #{boardId}
+          AND USER_UID = #{loginUid}
+    </select>
+
     <!-- 좋아요 취소 -->
     <delete id="deleteLike">
         DELETE FROM BOARD_LIKE
@@ -30,20 +38,6 @@
         WHERE BOARD_ID = #{boardId}
           AND USER_UID = #{loginUid}
     </select>
-
-    <!-- 좋아요 카운트 증가 -->
-    <update id="increaseLikeCount">
-        UPDATE BOARD
-        SET LIKE_COUNT = LIKE_COUNT + 1
-        WHERE ID = #{boardId}
-    </update>
-
-    <!-- 좋아요 카운트 감소 -->
-    <update id="decreaseLikeCount">
-        UPDATE BOARD
-        SET LIKE_COUNT = LIKE_COUNT - 1
-        WHERE ID = #{boardId}
-    </update>
 
     <!-- 내 좋아요 게시글 목록 조회 -->
     <select id="getLikedList" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
