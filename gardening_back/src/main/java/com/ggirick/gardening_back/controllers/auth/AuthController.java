@@ -96,6 +96,9 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody LogoutRequestDTO request) {
+        System.out.println("로그아웃 호출");
+        System.out.println(request.getAccessToken());
+        System.out.println(request.getRefreshToken());
         try {
             int revokedCount = authService.logout(request);
 
