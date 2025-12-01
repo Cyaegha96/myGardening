@@ -19,7 +19,7 @@ import java.time.Duration;
 @Configuration
 public class RedisConfig {
 
-    private String host = "localhost";
+    private String host = "10.5.5.1";
     private int port = 6379;
 
     @Bean
