@@ -3,6 +3,7 @@ package com.ggirick.gardening_back.filters;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.mappers.auth.UserMapper;
+import com.ggirick.gardening_back.services.auth.RedisService;
 import com.ggirick.gardening_back.utils.JWTUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,6 +28,8 @@ public class JWTFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
 
     private final UserMapper userMapper;
+
+    private final RedisService redisService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -56,12 +59,22 @@ public class JWTFilter extends OncePerRequestFilter {
         String accessToken = header.substring(7);
 
         try {
+
+
+
             // 2. Access Token 검증
             DecodedJWT djwt = jwtUtil.verifyToken(accessToken);
 
             // 3. 토큰에서 기본 정보 추출 (UID와 Provider는 필수 클레임)
             String uid = djwt.getClaim("uid").asString();
             String provider = djwt.getClaim("provider").asString();
+
+            //블랙리스트 제어
+            //만약 블랙리스트에 등록된 토큰이라면 revoked
+            if (redisService.isBlacklisted(accessToken)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token is revoked.");
+                return; }
 
             // 4. UserTokenDTO 생성 (SecurityContext의 Principal로 사용)
             UserTokenDTO userTokenDTO = UserTokenDTO.builder()
