@@ -1,0 +1,157 @@
+package com.ggirick.gardening_back.services.auth;
+
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.ggirick.gardening_back.utils.JWTUtil;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RedisService {
+
+    private final RedisTemplate<String, Object> redis;
+
+    private static final String BLACKLIST_PREFIX = "blacklist:";
+
+    private final JWTUtil jwtUtil;
+    /**
+     * Redis 세션 저장
+     *
+     * 저장 구조:
+     *
+     * 1) user:{uid}:sessions  ← [sessionId, ...]
+     * 2) ref:{sha256}         ← sessionId
+     * 3) session:{sessionId}  ← sessionData(Map)
+     */
+    public void saveSession(String userUid, String sessionId, String refreshToken,
+                            Map<String, Object> sessionData, long ttlMs) {
+        String hash = JWTUtil.sha256(refreshToken);
+
+        // 세션 목록에 push
+        String listKey= "user:" + userUid + ":sessions";
+        redis.opsForList().leftPush(listKey, sessionId);
+        redis.expire(listKey, ttlMs, TimeUnit.MILLISECONDS);
+
+        // 2) refreshTokenHash → sessionId 매핑
+        redis.opsForValue().set("ref:" + hash, sessionId, ttlMs, TimeUnit.MILLISECONDS);
+
+
+        // 3) session:{sessionId} 에 세션 데이터 저장
+        redis.opsForValue().set("session:" + sessionId, sessionData, ttlMs, TimeUnit.MILLISECONDS);
+
+
+    }
+
+    /**
+     * refreshToken 기반 세션 조회
+     */
+    public Map<String, Object> getSessionByRefreshToken(String refreshToken) {
+        String hash = JWTUtil.sha256(refreshToken);
+        String refKey = "ref:" + hash;
+
+        // refreshTokenHash → sessionId 조회
+        String sessionId = (String) redis.opsForValue().get(refKey);
+        if (sessionId == null) return null;
+
+        // sessionId로 실제 세션 데이터 조회
+        String sessionKey = "session:" + sessionId;
+        return (Map<String, Object> ) redis.opsForValue().get(sessionKey);
+    }
+
+    public String getSessionIdByRefreshToken(String refreshToken) {
+        String hash = JWTUtil.sha256(refreshToken);
+        String refKey = "ref:" + hash;
+
+        // refreshTokenHash → sessionId 조회
+       return (String) redis.opsForValue().get(refKey);
+
+    }
+
+
+    /**
+     * 단일 세션 삭제 (로그아웃)
+     */
+    public void deleteSession(String refreshToken) {
+        String hash = JWTUtil.sha256(refreshToken);
+        String refKey = "ref:" + hash;
+
+        log.debug("logout-refKey: {}", refKey);
+
+        String sessionId = (String) redis.opsForValue().get(refKey);
+
+        log.debug("logout-sessionId: {}", sessionId);
+        if (sessionId != null) {
+        // 2) session 데이터 삭제
+                    redis.delete("session:" + sessionId);
+        // 3) ref:{hash} 삭제
+                    redis.delete(refKey);
+        // 4) user:{uid}:sessions 리스트에서 제거
+        // 먼저 session 데이터에서 uid 가져오기
+        Map<String, Object> sessionData = (Map<String, Object>) redis.opsForValue().get("session:" + sessionId);
+       if (sessionData != null && sessionData.get("uid") != null)
+       { String uid = sessionData.get("uid").toString();
+           String listKey = "user:" + uid + ":sessions"; redis.opsForList().remove(listKey, 1, sessionId);
+           // 리스트에서 해당 sessionId 제거
+            } }
+    }
+
+
+    /**
+     * 유저 전체 세션 삭제 (전체 로그아웃)
+     */
+    public void deleteAllSessionsByUid(String uid) {
+        String listKey = "user:" + uid + ":sessions";
+
+        List<Object> all = redis.opsForList().range(listKey, 0, -1);
+        if (all != null) {
+            for (Object obj : all) {
+                String sessionId = (String) obj;
+
+                // 세션 상세 데이터 제거
+                redis.delete("session:" + sessionId);
+            }
+        }
+
+        // 목록 삭제
+        redis.delete(listKey);
+
+        // ref:{hash}도 삭제해야 하지만 hash를 모르므로
+        // refresh 과정에서 자동 만료되도록 TTL 로 해결
+    }
+
+
+    /*
+    블랙리스트 등록
+     */
+    public void addBlacklist(String accessToken) {
+        String key = BLACKLIST_PREFIX + accessToken;
+        // key 조회용 => data 중요하지 않음
+        // Access Token 만료 시간 기준 계산
+        DecodedJWT decoded = jwtUtil.verifyToken(accessToken);
+        Date expiration = decoded.getExpiresAt();
+        long now = System.currentTimeMillis();
+        long remainingMillis = expiration.getTime() - now;
+
+        if (remainingMillis > 0) {
+            redis.opsForValue().set(key, "", Duration.ofMillis(remainingMillis));
+        }
+    }
+
+    /*
+    블랙리스트 조회
+     */
+    public boolean isBlacklisted(String token) {
+        String key = BLACKLIST_PREFIX + token;
+        return redis.opsForValue().get(key) != null;
+    }
+}
