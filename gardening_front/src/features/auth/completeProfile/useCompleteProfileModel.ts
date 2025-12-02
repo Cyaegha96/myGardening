@@ -4,6 +4,8 @@ import {completeProfile, existPhoneCheck, getUserInfo} from '@/entities/auth/api
 import type { FieldErrors} from '@/features/auth/completeProfile/types.ts';
 import { AxiosError } from 'axios';
 import {toInternationalPhone, toLocalPhone} from "@/shared/utils/phoneConfig.ts";
+import {useUserInfoStore} from "@/widgets/header/useUserInfoStore.jsx.ts";
+import axiosInterceptor from "@/shared/api/axiosInterceptor.ts";
 export default function useCompleteProfileModel() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -21,7 +23,7 @@ export default function useCompleteProfileModel() {
   const [birthDate, setBirthDate] = useState('');
     const [phoneCheckMsg, setPhoneCheckMsg] = useState('');
     const [phoneAvailable, setPhoneAvailable] = useState<boolean | null>(null); // null = 아직 모름
-
+    const [file, setFile] = useState('');
   const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -112,6 +114,37 @@ export default function useCompleteProfileModel() {
         }
     };
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) return;
+        setFile(e.target.files[0]);
+    };
+
+    const uploadProfileImage = async () => {
+        if (!file) return null;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "mygardening/uploads/");
+
+        try {
+            const res = await axiosInterceptor.post(
+                `/file/upload`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    }
+                }
+            );
+
+            return res.data.url;
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    };
+
+
     const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault();
 
@@ -133,6 +166,14 @@ export default function useCompleteProfileModel() {
         setLoading(true);
 
         try {
+
+            let uploadedUrl = profileUrl;
+
+            if (file) {
+                uploadedUrl = await uploadProfileImage();
+                setProfileUrl(uploadedUrl);
+            }
+
             await completeProfile({
                 name,
                 nickname,
@@ -142,9 +183,11 @@ export default function useCompleteProfileModel() {
                 addressDetail,
                 zipcode,
                 bio,
-                profileUrl,
+                profileUrl:uploadedUrl,
                 birthDate,
             });
+
+            useUserInfoStore.getState().setUserInfo({nickname:nickname, profileUrl: uploadedUrl });
             navigate('/auth/dashboard');
         } catch (err: unknown) {
             const axiosError = err as AxiosError;
@@ -185,6 +228,8 @@ export default function useCompleteProfileModel() {
       setErrors,
       phoneCheckMsg,
       phoneAvailable,
+      file, setFile,
+      handleFileSelect,
     handleSubmit,
       handlePhoneBlur,
   } as const;
