@@ -29,7 +29,7 @@ public class RedisService {
      * 저장 구조:
      *
      * 1) user:{uid}:sessions  ← [sessionId, ...]
-     * 2) ref:{sha256}         ← sessionId
+     * 2) ref:{sha256(refreshToken)}         ← sessionId
      * 3) session:{sessionId}  ← sessionData(Map)
      */
     public void saveSession(String userUid, String sessionId, String refreshToken,

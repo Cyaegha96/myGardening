@@ -24,7 +24,7 @@ import {
 import {ListItem} from "@/features/header/index.js";
 import {useNavigate} from "react-router-dom";
 import{ useAuthStore, type AuthState} from "@/entities/auth/useAuthStore.tsx";
-import {getUserInfo} from "@/entities/auth/api.ts";
+import {useUserInfoStore} from "@/widgets/header/useUserInfoStore.jsx.ts";
 
 
 export function Header() {
@@ -32,7 +32,7 @@ export function Header() {
     const scrolled = useScroll(10);
     const navigate = useNavigate();
     const accessToken = useAuthStore((s: AuthState) => s.accessToken);
-    const [userInfo, setUserInfo] = useState<{ nickname?: string; profileUrl?: string }>({});
+    const { userInfo, fetchUserInfo } = useUserInfoStore();
     React.useEffect(() => {
         if (open) {
             document.body.style.overflow = 'hidden';
@@ -45,16 +45,9 @@ export function Header() {
     }, [open]);
     useEffect(() => {
         if (!accessToken) return;
-
-        (async () => {
-            try {
-                const data = await getUserInfo();
-                setUserInfo(data);
-            } catch (e) {
-                console.error('정보 불러오기 실패', e);
-            }
-        })();
+        fetchUserInfo();
     }, [accessToken]);
+
     return (
         <header
             className={cn('sticky top-0 z-50 w-full border-b border-transparent', {
