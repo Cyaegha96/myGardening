@@ -1,7 +1,7 @@
-package com.ggirick.gardening_back.services.potlist;
+package com.ggirick.gardening_back.services.potList;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ggirick.gardening_back.dto.potlist.ChatDTO;
+import com.ggirick.gardening_back.dto.potList.ChatDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

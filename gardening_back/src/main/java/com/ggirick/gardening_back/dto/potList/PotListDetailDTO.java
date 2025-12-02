@@ -1,5 +1,7 @@
-package com.ggirick.gardening_back.dto.potlist;
+package com.ggirick.gardening_back.dto.potList;
 
+import com.ggirick.gardening_back.enums.potList.PotListStatus;
+import com.ggirick.gardening_back.enums.potList.PotListType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -20,11 +22,11 @@ public class PotListDetailDTO {
     @Schema(description = "작성자")
     String writerUid;
     @Schema(description = "글 종류(팝니다, 삽니다)")
-    String type;
+    PotListType type;
     @Schema(description = "글 상태(거래 전, 거래 완료)")
-    String status;
+    PotListStatus status;
     @Schema(description = "가격")
-    int price;
+    Integer price;
     @Schema(description = "거래 장소")
     String location;
     @Schema(description = "썸네일 url")
@@ -40,7 +42,7 @@ public class PotListDetailDTO {
 
     @Schema(description = "작성자 이름")
     String writerName;
-    @Schema(description = "북마크 수")
+    @Schema(description = "북마크(찜) 수")
     String bookmarkCount;
     @Schema(description = "활성된 채팅 수")
     String chatroomCount;

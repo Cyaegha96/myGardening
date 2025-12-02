@@ -1,7 +1,7 @@
-package com.ggirick.gardening_back.controllers.potlist;
+package com.ggirick.gardening_back.controllers.potList;
 
-import com.ggirick.gardening_back.dto.potlist.ChatDTO;
-import com.ggirick.gardening_back.services.potlist.ChatService;
+import com.ggirick.gardening_back.dto.potList.ChatDTO;
+import com.ggirick.gardening_back.services.potList.ChatService;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;

@@ -1,6 +1,6 @@
-package com.ggirick.gardening_back.controllers.potlist;
+package com.ggirick.gardening_back.controllers.potList;
 
-import com.ggirick.gardening_back.services.potlist.PotListService;
+import com.ggirick.gardening_back.services.potList.PotListService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

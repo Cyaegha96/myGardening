@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {Button} from '@/shared/shadcn/components/ui/button.tsx';
 import {cn} from '@/shared/shadcn/lib/utils.ts';
 import {MenuToggleIcon} from '@/shared/shadcn/components/ui/menu-toggle-icon.tsx';
@@ -23,7 +23,7 @@ import {
 } from "@/entities/header/index.js";
 import {ListItem} from "@/features/header/index.js";
 import {useNavigate} from "react-router-dom";
-import{ useAuthStore, type AuthState} from "@/entities/auth/useAuthStore.tsx";
+import {type AuthState, useAuthStore} from "@/entities/auth/useAuthStore.tsx";
 import {useUserInfoStore} from "@/widgets/header/useUserInfoStore.jsx.ts";
 
 
@@ -32,7 +32,7 @@ export function Header() {
     const scrolled = useScroll(10);
     const navigate = useNavigate();
     const accessToken = useAuthStore((s: AuthState) => s.accessToken);
-    const { userInfo, fetchUserInfo } = useUserInfoStore();
+    const {userInfo, fetchUserInfo} = useUserInfoStore();
     React.useEffect(() => {
         if (open) {
             document.body.style.overflow = 'hidden';
@@ -131,7 +131,7 @@ export function Header() {
                                 대시보드
                             </Button>
                             <Button variant="outline" onClick={() => navigate('/oauth/edit-complete-profile')}>
-                               내정보 수정
+                                내정보 수정
                             </Button>
                         </>
                     ) : (
@@ -153,7 +153,8 @@ export function Header() {
                     <MenuToggleIcon open={open} className="size-5" duration={300}/>
                 </Button>
             </nav>
-            <MobileMenu open={open} className="flex flex-col justify-between gap-2 overflow-y-auto">
+            <MobileMenu open={open} onClick={() => setOpen(false)}
+                        className="flex flex-col justify-between gap-2 overflow-y-auto">
                 <NavigationMenu className="max-w-full">
                     <div className="flex w-full flex-col gap-y-2">
                         <span className="text-sm">가드닝</span>

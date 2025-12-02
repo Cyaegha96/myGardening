@@ -1,4 +1,4 @@
-package com.ggirick.gardening_back.dto.potlist;
+package com.ggirick.gardening_back.dto.potList;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -24,7 +24,7 @@ public class PotListDTO {
     @Schema(description = "글 상태(거래 전, 거래 완료)")
     String status;
     @Schema(description = "가격")
-    int price;
+    Integer price;
     @Schema(description = "거래 장소")
     String location;
     @Schema(description = "썸네일 url")

@@ -1,4 +1,4 @@
-package com.ggirick.gardening_back.dto.potlist;
+package com.ggirick.gardening_back.dto.potList;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -21,8 +21,6 @@ public class ChatDTO {
     String content;
     @Schema(description = "읽음 여부")
     String isRead;
-    @Schema(description = "생성 일자")
-    Timestamp createdAt;
-    @Schema(description = "수정 일자")
-    Timestamp updatedAt;
+    @Schema(description = "전송 일자")
+    Timestamp sentAt;
 }
