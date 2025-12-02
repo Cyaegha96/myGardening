@@ -50,6 +50,8 @@ public class BoardResponseDTO {
     private int likeCount;
     @Schema(description = "댓글수", example = "33")
     private int commentCount;
+    @Schema(description = "북마크 수", example = "12")
+    private int bookmarkCount;
 
     // 작성, 수정 일자
     @Schema(description = "작성일자", example = "yyyy-mm-dd HH-MM-SS")

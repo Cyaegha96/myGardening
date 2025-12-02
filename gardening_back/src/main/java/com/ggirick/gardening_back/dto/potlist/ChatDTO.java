@@ -21,8 +21,6 @@ public class ChatDTO {
     String content;
     @Schema(description = "읽음 여부")
     String isRead;
-    @Schema(description = "채팅 상태")
-    String status;
     @Schema(description = "생성 일자")
     Timestamp createdAt;
     @Schema(description = "수정 일자")

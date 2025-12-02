@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.schedule.ScheduleMapper">
+    <!--    분양글 찜-->
+    <insert id="bookmarkPot">
+        INSERT
+        INTO pot_listing_bookmark(id, pot_listing_id, user_uid, created_at)
+        VALUES(pot_listing_bookmark_seq.nextval, #{id}, #{userUid}, sysdate)
+    </insert>
+
+    <!--    분양글 찜 해제-->
+    <delete id="unBookmarkPot">
+        DELETE pot_listing_bookmark WHERE pot_listing_id=#{id} AND user_uid=#{userUid}
+    </delete>
+</mapper>

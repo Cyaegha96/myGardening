@@ -59,6 +59,6 @@ public class BoardCommentResponseDTO {
     private boolean liked;   // 내가 좋아요 눌렀는지 여부
 
     // 상태
-    @Schema(description = "댓글 상태", example = "ACTIVE/DELETE/BLOCKED")
+    @Schema(description = "댓글 상태", example = "active/delete/blocked")
     private String status;       // UI에서 판단용
 }

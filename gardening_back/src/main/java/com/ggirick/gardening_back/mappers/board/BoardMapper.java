@@ -36,4 +36,14 @@ public interface BoardMapper {
 
     // 조회수 증가
     int increaseViewCount(int id);
+
+    // 검색 게시글 목록 조회
+    List<BoardResponseDTO> searchBoards(
+            @Param("keyword") String keyword,
+            @Param("type") String type,
+            @Param("tagName") String tagName
+    );
+
+    // 부모 태그 기반으로 게시글 필터링
+    List<BoardResponseDTO> searchBoardsByTagNames(@Param("tagNames") List<String> tagNames);
 }

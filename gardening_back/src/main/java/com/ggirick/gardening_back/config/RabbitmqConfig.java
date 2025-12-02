@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitmqConfig {
+
     @Value("${spring.rabbitmq.host}")
     private String host;
 
@@ -27,29 +28,69 @@ public class RabbitmqConfig {
     @Value("${spring.rabbitmq.port}")
     private int port;
 
+    /** 메인 익스체인지 */
     @Bean
     DirectExchange directExchange() {
-        return new DirectExchange("hello.exchange");
+        return new DirectExchange("hello1.exchange");
     }
 
+    /** DLX 익스체인지 */
+    @Bean
+    DirectExchange dlxExchange() {
+        return new DirectExchange("dlx");
+    }
+
+    /** 원본 큐 */
     @Bean
     Queue queue() {
-        return new Queue("hello.queue", false);
+        Queue queue = new Queue("hello1.queue", true);
+        queue.addArgument("x-dead-letter-exchange", "dlx");
+        queue.addArgument("x-dead-letter-routing-key", "delay.key");
+        return queue;
     }
 
+    /** 딜레이 큐 (TTL 1초) */
     @Bean
-    Binding binding(DirectExchange directExchange, Queue queue) {
-        return BindingBuilder.bind(queue).to(directExchange).with("hello.key");
+    public Queue delayQueue() {
+        Queue queue = new Queue("hello1.dead.queue", true);
+        queue.addArgument("x-message-ttl", 1000);
+        queue.addArgument("x-dead-letter-exchange", "dlx");
+        queue.addArgument("x-dead-letter-routing-key", "main.key");
+        return queue;
+    }
+
+    /** 원본 큐 바인딩 */
+    @Bean
+    Binding bindingMain() {
+        return BindingBuilder.bind(queue())
+                .to(dlxExchange())     // DLX가 재전송 시 여기로 보냄
+                .with("main.key");
+    }
+
+    /** 딜레이 큐 바인딩 */
+    @Bean
+    Binding bindingDelay() {
+        return BindingBuilder.bind(delayQueue())
+                .to(dlxExchange())
+                .with("delay.key");
+    }
+
+    // Producer가 이용할 실제 exchange
+    @Bean
+    Binding producerBinding() {
+        return BindingBuilder.bind(queue())
+                .to(directExchange())
+                .with("hello1.key");
     }
 
     @Bean
     ConnectionFactory connectionFactory() {
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
-        connectionFactory.setHost(host);
-        connectionFactory.setPort(port);
-        connectionFactory.setUsername(username);
-        connectionFactory.setPassword(password);
-        return connectionFactory;
+        CachingConnectionFactory factory = new CachingConnectionFactory();
+        factory.setHost(host);
+        factory.setPort(port);
+        factory.setUsername(username);
+        factory.setPassword(password);
+        return factory;
     }
 
     @Bean
@@ -58,9 +99,10 @@ public class RabbitmqConfig {
     }
 
     @Bean
-    RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter messageConverter) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(messageConverter);
-        return rabbitTemplate;
+    RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter converter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(converter);
+        return template;
     }
 }
+

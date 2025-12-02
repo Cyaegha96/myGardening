@@ -2,6 +2,7 @@ package com.ggirick.gardening_back.services.board;
 
 import com.ggirick.gardening_back.dto.board.*;
 import com.ggirick.gardening_back.mappers.board.BoardMapper;
+import com.ggirick.gardening_back.services.tag.PlantTagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ public class BoardService {
     private final BoardBookmarkService boardBookmarkService;
 
     private final BoardTagService boardTagService;
+    private final PlantTagService plantTagService;
 
     // 커서 기반 게시글 목록
     public List<BoardResponseDTO> getListByCursor(Integer cursorId, int limit, String loginUid) {
@@ -210,7 +212,31 @@ public class BoardService {
         // 파일 삭제
         boardFileService.deleteFileByBoardId(id);
 
+        // soft delete (status -> delete)
         return boardMapper.delete(id);
+    }
+
+    // 검색 게시글 목록 조회
+    public List<BoardResponseDTO> searchBoards(String keyword, String type, String tagName) {
+
+        // 빈 문자열은 null 처리
+        if (keyword != null && keyword.trim().isEmpty()) keyword = null;
+        if (tagName != null && tagName.trim().isEmpty()) tagName = null;
+
+        return boardMapper.searchBoards(keyword, type, tagName);
+    }
+
+    // 부모 태그 기반 게시글 필터링
+    public List<BoardResponseDTO> filterBoardsByParentTag(int parentTagId) {
+
+        // 1. PLANT_TAG에서 parentTagId 기준으로 자식 태그명(TAG_NAME) 바로 조회
+        List<String> tagNames = plantTagService.getChildTagNames(parentTagId);
+        if (tagNames.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. TAG_NAME 기준으로 게시글 조회
+        return boardMapper.searchBoardsByTagNames(tagNames);
     }
 
     // HTML 태그 이스케이프용 공통 메서드

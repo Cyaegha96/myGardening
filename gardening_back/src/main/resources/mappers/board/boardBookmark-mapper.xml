@@ -23,8 +23,8 @@
     </delete>
 
     <!-- 북마크 여부 -->
-    <select id="existsBookmark" resultType="boolean">
-        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+    <select id="isBookmarked" resultType="int">
+        SELECT COUNT(*)
         FROM BOARD_BOOKMARK
         WHERE BOARD_ID = #{boardId}
           AND USER_UID = #{loginUid}

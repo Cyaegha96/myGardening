@@ -29,7 +29,7 @@ export default function useDashboardModel() {
     }, [accessToken]);
   const handleLogout = useCallback(async () => {
     try {
-      await apiLogout(refreshToken || undefined);
+      await apiLogout(refreshToken || undefined, accessToken||undefined);
     } catch (e) {
       alert("로그아웃 실패(?)");
         console.log(e);
@@ -37,7 +37,7 @@ export default function useDashboardModel() {
     clearTokens();
     storeLogout();
     window.location.href = '/';
-  }, [refreshToken, storeLogout]);
+  }, [refreshToken,accessToken, storeLogout]);
 
   return {
     accessToken,
