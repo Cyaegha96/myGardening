@@ -5,80 +5,39 @@
 <mapper namespace="com.ggirick.gardening_back.mappers.board.BoardMapper">
 
     <!-- 커서 기반 목록 -->
-    <select id="getListByCursor" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+    <select id="getListByCursor" parameterType="map"
+            resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+
         SELECT *
+        FROM (
+        SELECT inner_q.*, ROWNUM AS RN
         FROM (
         SELECT
         b.ID,
         b.TITLE,
         b.CONTENTS,
 
-        -- 대표 이미지 1장 (thumbnail)
-        (
-        SELECT URL
-        FROM (
-        SELECT bf.URL
+        /* 썸네일 1개 */
+        (SELECT URL
         FROM BOARD_FILE bf
         WHERE bf.BOARD_ID = b.ID
-        ORDER BY bf.ID
-        )
-        WHERE ROWNUM = 1
-        ) AS thumbnail,
+        AND ROWNUM = 1) AS thumbnail,
 
-        -- 댓글 수
-        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
-
-        b.VIEW_COUNT AS viewCount,
-        b.LIKE_COUNT AS likeCount,
-        b.CREATED_AT,
-        b.UPDATED_AT,
-        b.IS_NOTIFICATION,
-
-        u.UUID AS writerUid,
-        u.NICKNAME AS writerNickname,
-        u.PROFILE_IMAGE AS writerProfileImage,
-        u.BIO AS writerBio
-
-        FROM BOARD b
-        JOIN USER_INFO u ON b.WRITER_UID = u.UUID
-
-        <where>
-            <if test="cursorId != null">
-                AND b.ID &lt; #{cursorId}
-            </if>
-        </where>
-
-        ORDER BY b.ID DESC
-        )
-        WHERE ROWNUM &lt;= #{limit}
-    </select>
-
-    <!-- Top3 게시글 조회 -->
-    <select id="getTop3List" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
-        SELECT *
-        FROM (
-        SELECT
-        b.ID AS ID,
-        b.TITLE,
-        b.CONTENTS,
-
-        -- 썸네일 1장 (Oracle-safe)
+        /* 댓글 수 */
         (
-        SELECT URL
-        FROM (
-        SELECT bf.URL
-        FROM BOARD_FILE bf
-        WHERE bf.BOARD_ID = b.ID
-        ORDER BY bf.ID
-        )
-        WHERE ROWNUM = 1
-        ) AS thumbnail,
+        SELECT COUNT(*)
+        FROM BOARD_COMMENT c
+        WHERE c.BOARD_ID = b.ID
+        ) AS commentCount,
 
-        -- 댓글 수
-        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+        /* 좋아요 수 */
+        (
+        SELECT COUNT(*)
+        FROM BOARD_LIKE l
+        WHERE l.BOARD_ID = b.ID
+        ) AS likeCount,
 
         b.VIEW_COUNT,
-        b.LIKE_COUNT,
         b.CREATED_AT,
         b.UPDATED_AT,
         b.IS_NOTIFICATION,
@@ -89,45 +48,107 @@
         u.BIO AS writerBio
 
         FROM BOARD b
-        JOIN USER_INFO u ON b.WRITER_UID = u.UUID
-        ORDER BY b.LIKE_COUNT DESC, b.ID DESC
+        LEFT JOIN USER_INFO u ON u.UUID = b.WRITER_UID
+
+        <where>
+            b.STATUS = 'active'
+            <if test="cursorId != null">
+                AND b.ID &lt; #{cursorId}
+            </if>
+        </where>
+
+        ORDER BY b.ID DESC
+        ) inner_q
+        WHERE ROWNUM &lt;= #{limit}
+        )
+        WHERE RN &gt; 0
+
+    </select>
+
+    <!-- Top3 게시글 조회 -->
+    <select id="getTop3List" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT *
+        FROM (
+        SELECT
+        b.ID,
+        b.TITLE,
+        b.CONTENTS,
+
+        -- 썸네일 1개
+        (SELECT URL
+        FROM BOARD_FILE bf
+        WHERE bf.BOARD_ID = b.ID
+        AND ROWNUM = 1) AS thumbnail,
+
+        -- 댓글 수
+        (SELECT COUNT(*)
+        FROM BOARD_COMMENT c
+        WHERE c.BOARD_ID = b.ID) AS commentCount,
+
+        -- 좋아요 수
+        (SELECT COUNT(*)
+        FROM BOARD_LIKE l
+        WHERE l.BOARD_ID = b.ID) AS likeCount,
+
+        b.VIEW_COUNT,
+        b.CREATED_AT,
+        b.UPDATED_AT,
+        b.IS_NOTIFICATION,
+
+        u.UUID AS writerUid,
+        u.NICKNAME AS writerNickname,
+        u.PROFILE_URL AS writerProfileImage,
+        u.BIO AS writerBio
+
+        FROM BOARD b
+        JOIN USER_INFO u ON u.UUID = b.WRITER_UID
+        WHERE b.STATUS = 'active'
+
+        <!-- 좋아요 많은 순 → 최신순 정렬 -->
+        ORDER BY
+        (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID) DESC,
+        b.ID DESC
         )
         WHERE ROWNUM &lt;= 3
     </select>
 
     <!-- 상세 조회 -->
     <select id="getDetailById" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
-        SELECT
-            b.ID,
-            b.TITLE,
-            b.CONTENTS,
+        SELECT b.ID,
+               b.TITLE,
+               b.CONTENTS,
 
-            -- 썸네일 1장
-            (
-                SELECT URL
-                FROM (
-                         SELECT bf.URL
-                         FROM BOARD_FILE bf
-                         WHERE bf.BOARD_ID = b.ID
-                         ORDER BY bf.ID
-                     )
-                WHERE ROWNUM = 1
-            ) AS thumbnail,
+               (SELECT URL
+                FROM BOARD_FILE bf
+                WHERE bf.BOARD_ID = b.ID
+                  AND ROWNUM = 1)                                          AS thumbnail,
 
-            b.VIEW_COUNT AS viewCount,
-            b.LIKE_COUNT AS likeCount,
-            b.CREATED_AT,
-            b.UPDATED_AT,
-            b.IS_NOTIFICATION,
+               (SELECT COUNT(*)
+                FROM BOARD_COMMENT c
+                WHERE c.BOARD_ID = b.ID
+                AND c.STATUS = 'active')                                   AS commentCount,
 
-            u.UUID AS writerUid,
-            u.NICKNAME AS writerNickname,
-            u.PROFILE_IMAGE AS writerProfileImage,
-            u.BIO AS writerBio
+               (SELECT COUNT(*)
+                FROM BOARD_BOOKMARK bm
+                WHERE bm.BOARD_ID = b.ID)                                  AS bookmarkCount,
+
+               -- 좋아요수
+               (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID) AS likeCount,
+
+               b.VIEW_COUNT,
+               b.CREATED_AT,
+               b.UPDATED_AT,
+               b.IS_NOTIFICATION,
+
+               u.UUID                                                      AS writerUid,
+               u.NICKNAME                                                  AS writerNickname,
+               u.PROFILE_URL                                               AS writerProfileImage,
+               u.BIO                                                       AS writerBio
 
         FROM BOARD b
                  JOIN USER_INFO u ON b.WRITER_UID = u.UUID
         WHERE b.ID = #{id}
+          AND STATUS = 'active'
     </select>
 
     <!-- 공지사항 -->
@@ -154,17 +175,18 @@
     <update id="update" parameterType="com.ggirick.gardening_back.dto.board.BoardDTO">
         UPDATE BOARD
         SET TITLE           = #{title},
-            CONTENT         = #{content},
+            CONTENTS         = #{contents},
             IS_NOTIFICATION = #{isNotification}
         WHERE ID = #{id}
     </update>
 
     <!-- 삭제 -->
-    <delete id="delete">
-        DELETE
-        FROM BOARD
+    <update id="delete">
+        UPDATE BOARD
+        SET STATUS = 'delete',
+            UPDATED_AT = CURRENT_TIMESTAMP
         WHERE ID = #{id}
-    </delete>
+    </update>
 
     <!-- 조회수 증가 -->
     <update id="increaseViewCount">
@@ -172,4 +194,130 @@
         SET VIEW_COUNT = VIEW_COUNT + 1
         WHERE ID = #{id}
     </update>
+
+    <!-- 검색 결과 게시글 목록 -->
+    <select id="searchBoards" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+
+        SELECT
+        b.ID                                             AS id,
+        b.TITLE,
+        b.CONTENTS,
+
+        -- 조회수
+        b.VIEW_COUNT,
+
+        -- 공지 여부
+        b.IS_NOTIFICATION,
+
+        -- 작성/수정일
+        b.CREATED_AT,
+        b.UPDATED_AT,
+
+        -- 댓글 수
+        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+
+        -- 좋아요 수
+        (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID)    AS likeCount,
+
+        -- 북마크 수
+        (SELECT COUNT(*) FROM BOARD_BOOKMARK bm WHERE bm.BOARD_ID = b.ID) AS bookmarkCount,
+
+        -- 썸네일 1개
+        (
+        SELECT URL
+        FROM BOARD_FILE bf
+        WHERE bf.BOARD_ID = b.ID
+        AND ROWNUM = 1
+        ) AS thumbnail,
+
+        -- 작성자 정보
+        u.UUID        AS writerUid,
+        u.NICKNAME    AS writerNickname,
+        u.PROFILE_URL AS writerProfileImage,
+        u.BIO         AS writerBio
+
+        FROM BOARD b
+        JOIN USER_INFO u
+        ON b.WRITER_UID = u.UUID
+
+        WHERE 1 = 1
+        AND b.STATUS = 'active'
+
+        <!-- 작성자 검색 -->
+        <if test="type == 'writer' and keyword != null and keyword != ''">
+            AND u.NICKNAME LIKE '%' || #{keyword} || '%'
+        </if>
+
+        <!-- 내용 검색 (제목 + 내용) -->
+        <if test="type == 'content' and keyword != null and keyword != ''">
+            AND (
+            b.TITLE    LIKE '%' || #{keyword} || '%'
+            OR b.CONTENTS LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+
+        <!-- 작성자 + 내용 -->
+        <if test="type == 'all' and keyword != null and keyword != ''">
+            AND (
+            u.NICKNAME LIKE '%' || #{keyword} || '%'
+            OR b.TITLE LIKE '%' || #{keyword} || '%'
+            OR b.CONTENTS LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+
+        <!-- 태그 검색: BOARD_TAG_MAPPING + BOARD_TAG 에서 keyword 찾기 -->
+        <if test="type == 'tag' and keyword != null and keyword != ''">
+            AND EXISTS (
+            SELECT 1
+            FROM BOARD_TAG_MAPPING m
+            JOIN BOARD_TAG t
+            ON m.TAG_ID = t.ID
+            WHERE m.BOARD_ID = b.ID
+            AND t.NAME LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+
+        <!-- (선택) 상단의 태그 필터(부모 태그 등)로 한번 더 제한하고 싶으면 여기에서 AND 추가 -->
+
+        ORDER BY
+        b.IS_NOTIFICATION DESC,   -- 공지 먼저
+        b.ID DESC
+
+    </select>
+
+    <!-- 부모 태그 기반으로 게시글 필터링 -->
+    <select id="searchBoardsByTagNames" resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT
+        b.ID AS id,
+        b.TITLE,
+        b.CONTENTS,
+        b.VIEW_COUNT,
+        b.IS_NOTIFICATION,
+        b.CREATED_AT,
+        b.UPDATED_AT,
+        (SELECT COUNT(*) FROM BOARD_COMMENT c WHERE c.BOARD_ID = b.ID) AS commentCount,
+        (SELECT COUNT(*) FROM BOARD_LIKE l WHERE l.BOARD_ID = b.ID) AS likeCount,
+        (SELECT COUNT(*) FROM BOARD_BOOKMARK bm WHERE bm.BOARD_ID = b.ID) AS bookmarkCount,
+        (SELECT URL FROM BOARD_FILE bf WHERE bf.BOARD_ID = b.ID AND ROWNUM = 1) AS thumbnail,
+        u.UUID AS writerUid,
+        u.NICKNAME AS writerNickname,
+        u.PROFILE_URL AS writerProfileImage,
+        u.BIO AS writerBio
+        FROM BOARD b
+        JOIN USER_INFO u
+        ON b.WRITER_UID = u.UUID
+        WHERE b.STATUS = 'active'
+        AND EXISTS (
+        SELECT 1
+        FROM BOARD_TAG_MAPPING m
+        JOIN BOARD_TAG t ON t.ID = m.TAG_ID
+        WHERE m.BOARD_ID = b.ID
+        AND t.NAME IN
+        <foreach collection="tagNames" item="name" open="(" close=")" separator=",">
+            #{name}
+        </foreach>
+        )
+        ORDER BY b.ID DESC
+    </select>
+
 </mapper>

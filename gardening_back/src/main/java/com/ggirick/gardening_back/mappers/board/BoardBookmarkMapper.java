@@ -15,7 +15,8 @@ public interface BoardBookmarkMapper {
     // 북마크 취소
     int deleteBookmark(@Param("boardId") int boardId, @Param("loginUid") String loginUid);
 
-    boolean isBookmarked(@Param("boardId") int boardId, @Param("loginUid") String loginUid);
+    // 북마크 여부
+    int isBookmarked(@Param("boardId") int boardId, @Param("loginUid") String loginUid);
 
     // 유저 북마크 목록
     List<BoardResponseDTO> getBookmarkList(String loginUid);

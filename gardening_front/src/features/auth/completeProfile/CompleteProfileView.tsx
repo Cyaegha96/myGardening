@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState} from 'react';
 import {
     Card,
     CardHeader,
@@ -48,7 +48,9 @@ interface Props {
     pageTitle?: string | undefined,
     pageDescription?: string | undefined,
     phoneCheckMsg?: string;
-
+    file?:File;
+    setFile?: (v:File) => void,
+    handleFileSelect?: (v:string) => void,
     phoneAvailable?:boolean|null;
 
 }
@@ -70,8 +72,10 @@ export default function CompleteProfileView({
                                                 setZipcode,
                                                 bio,
                                                 setBio,
+                                                file, setFile,
                                                 profileUrl,
                                                 setProfileUrl,
+                                                handleFileSelect,
                                                 birthDate,
                                                 setBirthDate,
                                                 loading,
@@ -81,6 +85,7 @@ export default function CompleteProfileView({
                                                 pageTitle,
                                                 pageDescription,
                                             }: Props) {
+
 
     const validateField = (field: string, value: string) => {
         switch (field) {
@@ -233,12 +238,51 @@ export default function CompleteProfileView({
 
                         {/* 프로필 이미지 URL */}
                         <div className="grid gap-2">
-                            <Label htmlFor="profileUrl">프로필 이미지 URL</Label>
-                            <Input id="profileUrl" value={profileUrl}
-                                   onChange={e => setProfileUrl(e.target.value)}
-                                placeholder="파일 업로드 추가하면 업로드 버튼으로 변경예정"
+                            <Label htmlFor="profileUrl">프로필 이미지</Label>
+
+                            {/* 숨김 input */}
+                            <input
+                                id="profileUrl"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileSelect}
                             />
+
+                            {/* 버튼 + 이미지 나란히 */}
+                            <div className="flex items-center gap-4">
+                                {/* 업로드 버튼 */}
+                                <Button
+                                    variant="secondary"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        document.getElementById("profileUrl")?.click()
+                                    }}
+                                >
+                                    이미지 업로드
+                                </Button>
+
+                                {/* 이미지 미리보기 */}
+                                {file ? (
+                                    <img
+                                        src={URL.createObjectURL(file)}
+                                        alt="preview"
+                                        className="w-20 h-20 rounded object-cover"
+                                    />
+                                ) : profileUrl ? (
+                                    <img
+                                        src={profileUrl}
+                                        alt="preview"
+                                        className="w-20 h-20 rounded object-cover"
+                                    />
+                                ) : (
+                                    <div className="text-sm text-gray-400">
+                                        선택된 이미지 없음
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
 
                         {/* 생년월일 */}
                         <div className="grid gap-2">

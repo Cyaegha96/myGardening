@@ -19,6 +19,12 @@ export interface PlantDetail {
     culturalSignificance: string;
     description: string;
     sampleImageUrl: string | null;
+    tags: PlantTag[];
+}
+
+export interface PlantTag{
+    tagId:number;
+    tagName:string;
 }
 
 interface PlantHistoryItem {

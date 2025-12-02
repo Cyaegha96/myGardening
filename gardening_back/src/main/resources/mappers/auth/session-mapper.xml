@@ -12,8 +12,8 @@
     </resultMap>
 
     <insert id="insertSession">
-        INSERT INTO USER_SESSION (SESSION_ID, USER_UID, PROVIDER, REFRESH_TOKEN, EXPIRES_AT, IP_ADDRESS, IS_REVOKED, CREATED_AT)
-        VALUES (#{sessionId}, #{userUid}, #{provider}, #{refreshToken}, #{expiresAt}, #{ipAddress}, 'N', SYSTIMESTAMP)
+        INSERT INTO USER_SESSION (SESSION_ID, USER_UID, PROVIDER, EXPIRES_AT, IP_ADDRESS, IS_REVOKED, CREATED_AT)
+        VALUES (#{sessionId}, #{userUid}, #{provider},#{expiresAt}, #{ipAddress}, 'N', SYSTIMESTAMP)
     </insert>
 
     <select id="selectValidSessionByUidAndToken" resultMap="userSessionMap">
@@ -24,7 +24,14 @@
         AND IS_REVOKED = 'N'
         AND EXPIRES_AT &gt; SYSTIMESTAMP
     </select>
-
+<select id="selectSessionById">
+    SELECT *
+    FROM USER_SESSION
+    WHERE
+       SESSION_ID = #{sessionId}
+      AND IS_REVOKED = 'N'
+      AND EXPIRES_AT &gt; SYSTIMESTAMP
+</select>
     <update id="updateRevokedStatus">
         UPDATE USER_SESSION
         SET IS_REVOKED = 'Y', UPDATED_AT = SYSTIMESTAMP

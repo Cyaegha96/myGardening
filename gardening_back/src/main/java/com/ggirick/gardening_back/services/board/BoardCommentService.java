@@ -70,7 +70,7 @@ public class BoardCommentService {
         List<BoardCommentResponseDTO> filteredRoots = new ArrayList<>();
         for (BoardCommentResponseDTO root : roots) {
 
-            if (root.getStatus().equals("DELETE")) {
+            if (root.getStatus().equals("delete")) {
 
                 // 부모 댓글이 삭제됐고 자식이 있음 → "삭제된 댓글입니다." 표시
                 if (!root.getChildren().isEmpty()) {
@@ -80,7 +80,7 @@ public class BoardCommentService {
                 // 자식도 없는 삭제된 댓글 → 완전 숨김
                 continue;
             }
-            if (root.getStatus().equals("BLOCKED")) {
+            if (root.getStatus().equals("blocked")) {
                 // 관리자 규제된 댓글은 무조건 표시
                 root.setContents("관리자에 의해 규제된 댓글입니다.");
                 filteredRoots.add(root);
@@ -98,13 +98,13 @@ public class BoardCommentService {
             for (BoardCommentResponseDTO child : root.getChildren()) {
 
                 // 삭제된 댓글인 경우
-                if (child.getStatus().equals("DELETE")) {
+                if (child.getStatus().equals("delete")) {
                     // 대댓글 삭제 → UI에서 완전 숨김
                     continue;
                 }
 
                 // 신고돼서 규제된 댓글인 경우
-                if (child.getStatus().equals("BLOCKED")) {
+                if (child.getStatus().equals("blocked")) {
                     child.setContents("관리자에 의해 규제된 댓글입니다.");
                 }
                 visibleChildren.add(child);
@@ -116,6 +116,35 @@ public class BoardCommentService {
 
         // 트리구조로 완성된 댓글 목록 반환
         return filteredRoots;
+    }
+
+    // 베스트 댓글 조회 (좋아요 Top3)
+    public List<BoardCommentResponseDTO> getBestComments(int boardId, String loginUid) {
+        List<BoardCommentResponseDTO> list = boardCommentMapper.getBestComments(boardId, loginUid);
+
+        if (list == null || list.isEmpty()) return List.of();
+
+        for (BoardCommentResponseDTO c : list) {
+            // mine 설정
+            c.setMine(loginUid != null && loginUid.equals(c.getWriterUid()));
+
+            // 시간 포맷
+            if (c.getCreatedAt() != null)
+                c.setCreatedAtFormatted(formatTime(c.getCreatedAt()));
+
+            // 베스트 댓글은 children 필요 없음 → 빈 리스트
+            c.setChildren(new ArrayList<>());
+
+            // DELETE / BLOCKED UI 처리
+            if ("delete".equals(c.getStatus())) {
+                c.setContents("삭제된 댓글입니다.");
+            }
+            if ("blocked".equals(c.getStatus())) {
+                c.setContents("관리자에 의해 규제된 댓글입니다.");
+            }
+        }
+
+        return list;
     }
 
     // 댓글 등록

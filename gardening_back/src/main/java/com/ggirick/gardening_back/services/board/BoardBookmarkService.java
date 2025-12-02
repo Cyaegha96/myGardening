@@ -16,7 +16,7 @@ public class BoardBookmarkService {
 
     // 북마크 여부
     public boolean isBookmarked(int boardId, String userUid) {
-        return boardBookmarkMapper.isBookmarked(boardId, userUid);
+        return boardBookmarkMapper.isBookmarked(boardId, userUid) > 0;
     }
 
     // 북마크 추가
