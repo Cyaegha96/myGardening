@@ -137,15 +137,6 @@ public class AuthService {
     @Transactional
     public TokenPair refreshTokens(String refreshToken,String currentIpAddress){
 
-//        //Refresh Token 유효성 검증 직접 검증 대신 redis db에 저장된 내용 비교로 바꿈
-//        DecodedJWT djwt;
-//        try {
-//            djwt = jwtUtil.verifyToken(refreshToken);
-//        } catch (Exception ex) {
-//            throw new TokenExpiredException("Invalid or expired refresh token (JWT verify)", new Date().toInstant());
-//        }
-//        String uid = djwt.getSubject();
-//        String provider = djwt.getClaim("provider").asString();
 
         Map<String, Object> session = redisService.getSessionByRefreshToken(refreshToken);
         if (session == null) {
@@ -157,7 +148,7 @@ public class AuthService {
         String oldSessionId =  redisService.getSessionIdByRefreshToken(refreshToken);
 
 
-        // 3) DB에서 해당 세션이 이미 revoke되어 있는지 확인 (안전장치)
+        // 3) DB에서 해당 세션이 이미 revoke되어 있는지 확인
         UserSessionDTO existingSession = userSessionMapper.selectSessionById(oldSessionId);
         if (existingSession == null || "Y".equalsIgnoreCase(existingSession.getIsRevoked())) {
             // 이미 무효화 되었거나 DB에 없으면 실패
@@ -182,7 +173,6 @@ public class AuthService {
                 .sessionId(UUID.randomUUID().toString())
                 .userUid(uid)
                 .provider(provider)
-//                .refreshToken(newRefreshToken)
                 .expiresAt(refreshExpDate)
 
                 // 현재 요청의 IP 주소를 저장

@@ -273,10 +273,6 @@ export default function FlowerShop() {
         document.head.appendChild(script);
     }, []);
 
-    // ----------------------------------------------------
-    // 렌더링 (UI)
-    // ----------------------------------------------------
-
     return (
         <div style={{ display: "flex", position: "relative" }}>
             <div
