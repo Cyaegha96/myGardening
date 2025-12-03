@@ -19,6 +19,8 @@ public interface UserSessionMapper {
     // 3. 새로운 세션 정보 저장
     int insertSession(UserSessionDTO session);
 
+    int updateSession(UserSessionDTO session);
+
     // 4. 특정 사용자의 모든 세션 무효화 (추가 로그아웃 옵션)
     int revokeAllUserSessions(@Param("uid") String uid);
 

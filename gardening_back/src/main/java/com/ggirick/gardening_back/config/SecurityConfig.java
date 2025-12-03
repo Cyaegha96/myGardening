@@ -53,6 +53,9 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(requests ->
                         requests
+                                .requestMatchers("/auth/qr").permitAll()
+                                .requestMatchers("/auth/checkOtp").permitAll()
+                                .requestMatchers("/auth/requestOtp").permitAll()
                                 .requestMatchers("/auth/login").permitAll()
                                 .requestMatchers("/auth/existIdCheck").permitAll()
                                 .requestMatchers("/auth/existPhoneCheck").permitAll()

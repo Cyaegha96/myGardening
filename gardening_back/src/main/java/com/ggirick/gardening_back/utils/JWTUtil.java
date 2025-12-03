@@ -105,6 +105,13 @@ public class JWTUtil {
         return new Date(expirationTimeMillis);
     }
 
+    public Date getAccessTokenExpirationDate() {
+
+        long expirationTimeMillis = System.currentTimeMillis() + (accessExp * 1000);
+
+        return new Date(expirationTimeMillis);
+    }
+
 
     //RefreshToken 대신 RefreshTokenHash 저장
     public static String sha256(String token) {
