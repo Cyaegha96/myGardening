@@ -1,9 +1,9 @@
 import {useCallback, useState} from "react";
-import type {PlantCreateModalProps} from "@/entities/myPlants/model/PlantCreateModalProps";
+import type {PlantCreateModalProps} from "@/features/myPlants/create-my-plant/model/PlantCreateModalProps.ts";
 
 import {AlignCenter, AlignLeft, AlignRight, HelpCircle} from "lucide-react";
 import type {Align, MemoLine} from "@/entities/myPlants/model/MemoLine.ts";
-import type {SelectedTarget} from "../model/SelectedTarget";
+import type {SelectedTarget} from "@/entities/myPlants/model/SelectedTarget.ts";
 import {Label} from "@/shared/shadcn/components/ui/label.tsx";
 import {Button} from "@/shared/shadcn/components/ui/button.tsx";
 import CustomDatePicker from "@/entities/myPlants/ui/CustomDatePicker.tsx";
@@ -11,13 +11,13 @@ import CustomDatePicker from "@/entities/myPlants/ui/CustomDatePicker.tsx";
 export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalProps) {
 
     /** 기본이미지 경로 */
-    const DEFAULT_IMAGE = "/assets/default-plant.png";
+        // const DEFAULT_IMAGE = "/assets/default-myplant.png";
 
-    /** 오늘 날짜 */
+        // 오늘 날짜
     const today = new Date();
 
-    /** 상태 */
-    const [imagePreview, setImagePreview] = useState<string>(DEFAULT_IMAGE);
+    // 상태
+    const [imagePreview, setImagePreview] = useState<string>("noImage");
     const [isDragging, setIsDragging] = useState(false);
 
     const [name, setName] = useState("");
@@ -29,10 +29,10 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
 
     const [showHelp, setShowHelp] = useState(false);
 
-    /** 날짜 초기값 = 오늘 */
+    // 날짜 초기값 = 오늘
     const [startDate, setStartDate] = useState<Date>(today);
 
-    /** ------------------------------ 이미지 처리 ------------------------------ */
+    // 이미지 처리
     const handleFile = useCallback((file: File) => {
         const preview = URL.createObjectURL(file);
         setImagePreview(preview);
@@ -56,11 +56,11 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         if (file) handleFile(file);
     };
 
-    const clearImage = () => setImagePreview(DEFAULT_IMAGE);
+    const clearImage = () => setImagePreview("noImage");
 
-    /** ------------------------------ 전체 초기화 ------------------------------ */
+    // 전체 초기화
     const handleResetAll = () => {
-        setImagePreview(DEFAULT_IMAGE);
+        setImagePreview("noImage");
         setName("");
         setTitleAlign("center");
 
@@ -71,7 +71,7 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         setStartDate(today);
     };
 
-    /** ------------------------------ 메모 입력 ------------------------------ */
+    // 메모 입력
     const updateMemoText = (value: string) => {
         const lines = value.split("\n");
         const nextLines: MemoLine[] = lines.map((t, i) => ({
@@ -81,7 +81,7 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         setMemoLines(nextLines);
     };
 
-    /** ------------------------------ 정렬 적용 ------------------------------ */
+    // 정렬 적용
     const applyAlign = (align: Align) => {
         if (!selectedTarget) return;
 
@@ -100,6 +100,7 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         }
     };
 
+    // 정렬하기 위해 선택한 줄
     const currentAlign = selectedTarget?.type === "title"
         ? titleAlign
         : selectedTarget?.type === "line"
@@ -117,82 +118,78 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
                 </div>
 
                 {/* 이미지 업로드 */}
-                <div className="mb-4">
+                <div className="mb-4 relative flex flex-col items-center">
+                    {/* X 버튼 */}
+                    <button
+                        onClick={clearImage}
+                        className="absolute right-2 top-2 bg-black/40 text-white px-2 py-1 rounded text-xs"
+                    >
+                        ✕
+                    </button>
 
-                    {/* 기본 UI */}
-                    {imagePreview === DEFAULT_IMAGE && (
-                        <label
-                            htmlFor="plant-image"
-                            className={`
-                                w-full h-48 border-2 border-dashed rounded-md 
-                                flex items-center justify-center cursor-pointer
-                                text-gray-500 bg-gray-50 transition-all
-                                ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300"}
-                            `}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                        >
-                            클릭 또는 드래그&드롭으로 이미지 업로드
-                        </label>
-                    )}
+                    {/* 카드 박스 */}
+                    <div className="bg-white p-3 pb-6 rounded-md shadow-md w-80 relative">
 
-                    {/* 미리보기 */}
-                    {imagePreview !== DEFAULT_IMAGE && (
-                        <div className="relative flex justify-center">
-
-                            <button
-                                onClick={clearImage}
-                                className="absolute right-2 top-2 bg-black/40 text-white px-2 py-1 rounded text-xs"
+                        {imagePreview === "noImage" ? (
+                            <label
+                                htmlFor="plant-image"
+                                className={`
+                                            w-full h-48 border-2 border-dashed rounded-md 
+                                            flex items-center justify-center cursor-pointer
+                                            text-gray-500 bg-gray-50 transition-all
+                                            ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300"}
+                                        `}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
                             >
-                                ✕
-                            </button>
+                                클릭 또는 드래그&드롭으로 이미지 업로드
+                            </label>
+                        ) : (
+                            <img
+                                src={imagePreview}
+                                className="w-full rounded object-contain cursor-pointer"
+                                style={{maxHeight: "300px"}}
+                                onClick={() => document.getElementById("plant-image")?.click()}
+                            />
+                        )}
 
-                            <div className="bg-white p-3 pb-6 rounded-md shadow-md w-full max-w-xs">
-                                <img
-                                    src={imagePreview}
-                                    className="w-full rounded object-contain cursor-pointer"
-                                    style={{maxHeight: "300px"}}
-                                    onClick={() => document.getElementById("plant-image")?.click()}
-                                />
 
-                                {/* 제목 미리보기 */}
-                                {name && (
-                                    <div
-                                        onClick={() => setSelectedTarget({type: "title"})}
-                                        className={`
+                        {/* 제목 */}
+                        {name && (
+                            <div
+                                onClick={() => setSelectedTarget({type: "title"})}
+                                className={`
                                             mt-3 font-semibold text-sm text-gray-700 whitespace-pre-wrap cursor-pointer
                                             ${selectedTarget?.type === "title" ? "bg-gray-200 rounded" : ""}
                                         `}
-                                        style={{textAlign: titleAlign}}
-                                    >
-                                        {name}
-                                    </div>
-                                )}
-
-                                {/* 메모 미리보기 */}
-                                {memoLines.length > 0 && (
-                                    <div className="mt-2 text-xs text-gray-700">
-                                        {memoLines.map((line, idx) => (
-                                            <div
-                                                key={idx}
-                                                onClick={() => setSelectedTarget({type: "line", index: idx})}
-                                                className={`
-                                                    whitespace-pre-wrap px-1 py-0.5 cursor-pointer
-                                                    ${selectedTarget?.type === "line" && selectedTarget.index === idx
-                                                    ? "bg-gray-200 rounded"
-                                                    : ""}
-                                                `}
-                                                style={{textAlign: line.align}}
-                                            >
-                                                {line.text || " "}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                style={{textAlign: titleAlign}}
+                            >
+                                {name}
                             </div>
-                        </div>
-                    )}
+                        )}
+
+                        {/* 메모 */}
+                        {memoLines.length > 0 && (
+                            <div className="mt-2 text-xs text-gray-700">
+                                {memoLines.map((line, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => setSelectedTarget({type: "line", index: idx})}
+                                        className={`
+                                                        whitespace-pre-wrap px-1 py-0.5 cursor-pointer
+                                                        ${selectedTarget?.type === "line" && selectedTarget.index === idx
+                                            ? "bg-gray-200 rounded"
+                                            : ""}
+                                                    `}
+                                        style={{textAlign: line.align}}
+                                    >
+                                        {line.text || " "}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     <input
                         id="plant-image"
@@ -202,6 +199,7 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
                         onChange={handleImageChange}
                     />
                 </div>
+
 
                 {/* 정렬 + 도움말 */}
                 <div className="flex items-center mb-4 w-full relative">
@@ -242,7 +240,8 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
                 </div>
 
                 {showHelp && (
-                    <div className="mb-4 bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-700 shadow-sm">
+                    <div
+                        className="mb-4 bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-700 shadow-sm">
                         <p className="font-semibold mb-2">줄 정렬하는 방법</p>
                         <p className="leading-6 mb-2">
                             1. 사진 아래 미리보기에서 제목 또는 줄을 클릭하세요.<br/>

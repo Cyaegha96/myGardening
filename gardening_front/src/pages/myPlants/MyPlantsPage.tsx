@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/shared/shadcn/components/ui/button";
-import PlantCreateModal from "@/entities/myPlants/ui/PlantCreateModal";
+import PlantCreateModal from "@/features/myPlants/create-my-plant/ui/PlantCreateModal.tsx";
 
 export default function MyPlantsPage() {
     const [open, setOpen] = useState(false);

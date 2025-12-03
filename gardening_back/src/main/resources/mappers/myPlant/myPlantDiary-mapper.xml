@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.myPlant.MyPlantDiaryMapper">
+    <!-- 단일 조회 -->
+    <select id="getDiaryById" resultType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+        SELECT
+        *
+        FROM my_plant_diary
+        WHERE diary_id = #{diaryId}
+    </select>
+
+    <!-- 식물별 전체 다이어리 조회 -->
+    <select id="getDiaryByPlantId" resultType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+        SELECT
+        *
+        FROM my_plant_diary
+        WHERE user_plant_id = #{userPlantId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 다이어리 등록 -->
+    <insert id="insertDiary" parameterType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+        INSERT INTO my_plant_diary (
+            diary_id,
+            user_plant_id,
+            content,
+            weather
+        ) VALUES (
+                     my_plant_diary_seq.NEXTVAL,
+                     #{userPlantId},
+                     #{content},
+                     #{weather}
+                 )
+    </insert>
+
+    <!-- 다이어리 수정 -->
+    <update id="updateDiary" parameterType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+        UPDATE my_plant_diary
+        SET
+            content = #{content},
+            weather = #{weather},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE diary_id = #{diaryId}
+    </update>
+
+    <!-- 다이어리 삭제 -->
+    <delete id="deleteDiary">
+        DELETE FROM my_plant_diary
+        WHERE diary_id = #{diaryId}
+    </delete>
+
+</mapper>

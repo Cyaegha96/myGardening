@@ -113,9 +113,9 @@ public class BoardService {
         // 공지여부 세팅
         String notification = dto.isNotification() ? "Y" : "N";
 
-        // 🔒 스크립트/HTML 공격 방지: 제목/내용 이스케이프
-        String safeTitle = safeText(dto.getTitle());
-        String safeContents = safeText(dto.getContents());
+        // 스크립트/HTML 공격 방지: 제목/내용 이스케이프
+        String safeTitle = HtmlUtils.htmlEscape(dto.getTitle());
+        String safeContents = HtmlUtils.htmlEscape(dto.getContents());
 
         // 게시글 등록
         BoardDTO insertDto = BoardDTO.builder()
@@ -183,8 +183,8 @@ public class BoardService {
         }
 
         // 제목/내용 이스케이프
-        String safeTitle = safeText(dto.getTitle());
-        String safeContents = safeText(dto.getContents());
+        String safeTitle = HtmlUtils.htmlEscape(dto.getTitle());
+        String safeContents = HtmlUtils.htmlEscape(dto.getContents());
 
         // 7. 공지여부
         String notification = dto.isNotification() ? "Y" : "N";
@@ -237,12 +237,5 @@ public class BoardService {
 
         // 2. TAG_NAME 기준으로 게시글 조회
         return boardMapper.searchBoardsByTagNames(tagNames);
-    }
-
-    // HTML 태그 이스케이프용 공통 메서드
-    private String safeText(String text) {
-        if (text == null) return null;
-        // < > " ' & 등을 HTML 엔티티로 변환
-        return HtmlUtils.htmlEscape(text);
     }
 }

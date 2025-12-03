@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.myPlant.MyPlantImageMapper">
+    <!-- 등록한 식물의 대표 이미지 조회 -->
+    <select id="getImageByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
+        SELECT *
+        FROM my_plant_image
+        WHERE user_plant_id = #{userPlantId}
+    </select>
+
+    <!-- 등록한 식물의 대표 이미지 조회 -->
+    <select id="getImageById" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
+        SELECT *
+        FROM my_plant_image
+        WHERE image_id = #{imageId}
+    </select>
+
+    <!-- 이미지 등록 -->
+    <insert id="insert">
+        INSERT INTO my_plant_image (
+            image_id,
+            user_plant_id,
+            ori_name,
+            sys_name,
+            url,
+            hash
+        )
+        VALUES (
+                   my_plant_image_seq.NEXTVAL,
+                   #{userPlantId},
+                   #{oriName},
+                   #{sysName},
+                   #{url},
+                   #{hash}
+               )
+    </insert>
+
+    <!-- 개별 이미지 삭제 -->
+    <delete id="deleteImage">
+        DELETE FROM my_plant_image
+        WHERE image_id = #{imageId}
+    </delete>
+
+    <!-- 중복 이미지 존재 여부 조회 (유저별) -->
+    <select id="findByHashAndUserUid"
+            resultType="com.ggirick.gardening_back.dto.myplant.MyPlantImageDTO">
+        SELECT
+            i.image_id,
+            i.url
+        FROM my_plant_image i
+                 JOIN my_plant p ON i.user_plant_id = p.user_plant_id
+        WHERE i.hash = #{hash}
+          AND p.user_uid = #{loginUid}
+    </select>
+</mapper>
