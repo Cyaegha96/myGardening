@@ -30,7 +30,7 @@ public class PotListDTO {
     @Schema(description = "썸네일 url")
     String thumbnail;
     @Schema(description = "조회수")
-    int view_count;
+    int viewCount;
     @Schema(description = "작성일")
     Timestamp createdAt;
     @Schema(description = "수정일")

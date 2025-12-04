@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Getter
 @Setter
@@ -32,7 +33,7 @@ public class PotListDetailDTO {
     @Schema(description = "썸네일 url")
     String thumbnail;
     @Schema(description = "조회수")
-    int view_count;
+    int viewCount;
     @Schema(description = "작성일")
     Timestamp createdAt;
     @Schema(description = "수정일")
@@ -46,4 +47,6 @@ public class PotListDetailDTO {
     String bookmarkCount;
     @Schema(description = "활성된 채팅 수")
     String chatroomCount;
+    @Schema(description = "등록된 태그 목록")
+    List<String> tags;
 }

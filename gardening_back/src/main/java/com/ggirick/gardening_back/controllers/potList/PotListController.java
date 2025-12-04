@@ -1,19 +1,36 @@
 package com.ggirick.gardening_back.controllers.potList;
 
+import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
+import com.ggirick.gardening_back.dto.potList.PotListDetailDTO;
+import com.ggirick.gardening_back.dto.potList.PotListInsertDTO;
+import com.ggirick.gardening_back.dto.potList.PotListPatchDTO;
+import com.ggirick.gardening_back.dto.potList.PotListReportInsertDTO;
+import com.ggirick.gardening_back.services.potList.PotListBookmarkService;
+import com.ggirick.gardening_back.services.potList.PotListReportService;
 import com.ggirick.gardening_back.services.potList.PotListService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static com.ggirick.gardening_back.config.PotListConfig.BUMP_LIMIT_SECONDS;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/pot-list")
 public class PotListController {
     private final PotListService potListService;
+    private final PotListBookmarkService potListBookmarkService;
+    private final PotListReportService potListReportService;
 
     @Operation(
             summary = "분양글 목록 조회",
@@ -23,11 +40,11 @@ public class PotListController {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
     })
     @GetMapping
-    public ResponseEntity<Void> getPotList(
-            @Parameter(description = "검색 키워드(옵션)") @RequestParam(required = false) String keyword,
-            @Parameter(description = "카테고리 ID(옵션)") @RequestParam(required = false) Long categoryId
-    ) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<List<PotListDetailDTO>> getPotList(@Parameter(description = "커서 위치 저장용") @RequestParam(required = false) Integer cursorId,
+                                                             @Parameter(description = "한번에 조회할 목록 갯수") @RequestParam(defaultValue = "16") int size,
+                                                             @Parameter(description = "검색 키워드(옵션)") @RequestParam(required = false) String keyword,
+                                                             @Parameter(description = "카테고리 ID(옵션)") @RequestParam(required = false) List<Integer> categoryId) {
+        return ResponseEntity.ok(potListService.getPotList(cursorId, size, keyword, categoryId));
     }
 
     @Operation(
@@ -39,10 +56,13 @@ public class PotListController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Void> getPotDetail(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<PotListDetailDTO> getPotDetail(@Parameter(description = "분양글 ID") @PathVariable int id) {
+        PotListDetailDTO potInfo = potListService.getPotById(id);
+        if (potInfo != null) {
+            potListService.addViewCount(id);
+            return ResponseEntity.ok(potListService.getPotById(id));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
     @Operation(
@@ -54,8 +74,14 @@ public class PotListController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터")
     })
     @PostMapping
-    public ResponseEntity<Void> createPot() {
-        return ResponseEntity.status(201).build();
+    public ResponseEntity<Void> createPot(@Parameter(description = "입력 할 분양글 정보") @RequestBody PotListInsertDTO insertInfo,
+                                          @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            insertInfo.setWriterUid(userInfo.getUid());
+            potListService.insertPot(insertInfo);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @Operation(
@@ -67,10 +93,17 @@ public class PotListController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> updatePot(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> updatePot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                          @Parameter(description = "수정 할 분양글 정보") @RequestBody(required = false) PotListPatchDTO patchInfo,
+                                          @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            PotListDetailDTO potInfo = potListService.getPotById(id);
+            if (potInfo.getWriterUid().equals(userInfo.getUid())) {
+                potListService.updatePotById(id, patchInfo, false, false);
+                return ResponseEntity.ok().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @Operation(
@@ -82,10 +115,16 @@ public class PotListController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePot(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deletePot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                          @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            PotListDetailDTO potInfo = potListService.getPotById(id);
+            if (potInfo.getWriterUid().equals(userInfo.getUid())) {
+                potListService.deletePotById(id);
+                return ResponseEntity.noContent().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @Operation(
@@ -96,11 +135,98 @@ public class PotListController {
             @ApiResponse(responseCode = "200", description = "처리 성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
     })
-    @PostMapping("/{id}/complete")
-    public ResponseEntity<Void> completePot(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok().build();
+    @PatchMapping("/{id}/complete")
+    public ResponseEntity<Void> completePot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                            @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            PotListDetailDTO potInfo = potListService.getPotById(id);
+            if (potInfo.getWriterUid().equals(userInfo.getUid())) {
+                potListService.completeTrade(id);
+                return ResponseEntity.ok().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @Operation(
+            summary = "분양글 거래예약",
+            description = "해당 분양글을 거래 예약 상태로 변경합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "처리 성공"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
+    })
+    @PatchMapping("/{id}/reserve")
+    public ResponseEntity<Void> reservePot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                            @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            PotListDetailDTO potInfo = potListService.getPotById(id);
+            if (potInfo.getWriterUid().equals(userInfo.getUid())) {
+                potListService.reserveTrade(id);
+                return ResponseEntity.ok().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @Operation(
+            summary = "분양글 판매중",
+            description = "해당 분양글을 판매중 상태로 변경합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "처리 성공"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
+    })
+    @PatchMapping("/{id}/before")
+    public ResponseEntity<Void> beforePot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                           @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            PotListDetailDTO potInfo = potListService.getPotById(id);
+            if (potInfo.getWriterUid().equals(userInfo.getUid())) {
+                potListService.beforeTrade(id);
+                return ResponseEntity.ok().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @Operation(
+            summary = "분양글 끌어올리기",
+            description = "해당 분양글을 목록 상단으로 끌어올립니다(bumped 시간 변경)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "끌어올리기 성공"),
+            @ApiResponse(responseCode = "401", description = "권한 없음"),
+            @ApiResponse(responseCode = "425", description = "끌어올리기 쿨타임 이전")
+    })
+    @PatchMapping("/{id}/bump")
+    public ResponseEntity<Void> refreshPot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                           @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        PotListDetailDTO potInfo = potListService.getPotById(id);
+
+        // 작성자 검증
+        if (!potInfo.getWriterUid().equals(userInfo.getUid())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Timestamp lastBumpedTs = potInfo.getBumpedAt();
+
+        if (lastBumpedTs != null) {
+            LocalDateTime lastBumped = lastBumpedTs.toLocalDateTime();
+            LocalDateTime nextAvailableTime = lastBumped.plusSeconds(BUMP_LIMIT_SECONDS);
+            LocalDateTime now = LocalDateTime.now();
+
+            if (nextAvailableTime.isAfter(now)) {
+                return ResponseEntity.status(HttpStatus.TOO_EARLY).build();
+            }
+        }
+
+        potListService.bumpPot(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(
@@ -112,25 +238,13 @@ public class PotListController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
     })
     @PostMapping("/{id}/like")
-    public ResponseEntity<Void> toggleLike(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok().build();
-    }
-
-    @Operation(
-            summary = "분양글 끌어올리기",
-            description = "해당 분양글을 목록 상단으로 끌어올립니다(bumped 시간 변경)."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "끌어올리기 성공"),
-            @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
-    })
-    @PostMapping("/{id}/refresh")
-    public ResponseEntity<Void> refreshPot(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> toggleLike(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                           @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            potListBookmarkService.togglePotListBookmark(id, userInfo.getUid());
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @Operation(
@@ -142,9 +256,14 @@ public class PotListController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 분양글")
     })
     @PostMapping("/{id}/report")
-    public ResponseEntity<Void> reportPot(
-            @Parameter(description = "분양글 ID") @PathVariable Long id
-    ) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> reportPot(@Parameter(description = "분양글 ID") @PathVariable int id,
+                                          @Parameter(description = "신고 내용") @RequestBody PotListReportInsertDTO reportInfo,
+                                          @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            reportInfo.setReporterUid(userInfo.getUid());
+            potListReportService.reportPotById(id, reportInfo);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }

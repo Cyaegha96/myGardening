@@ -36,7 +36,8 @@ public class PotListService {
     }
 
     // 분양글 수정
-    public int updatePotById(PotListPatchDTO patchInfo, boolean addViewCount, boolean bump) {
+    public int updatePotById(int id, PotListPatchDTO patchInfo, boolean addViewCount, boolean bump) {
+        patchInfo.setId(id);
         return potListMapper.updatePotById(patchInfo, addViewCount, bump);
     }
 
@@ -48,22 +49,31 @@ public class PotListService {
     // 분양글 거래완료
     public int completeTrade(int id) {
         PotListPatchDTO patchInfo = new PotListPatchDTO();
-        patchInfo.setId(id);
-        patchInfo.setStatus(PotListStatus.AFTER_TRADE); // 또는 Enum 적용 가능
-        return potListMapper.updatePotById(patchInfo, false, false);
+        patchInfo.setStatus(PotListStatus.AFTER_TRADE);
+        return updatePotById(id, patchInfo, false, false);
+    }
+
+    // 분양글 거래예약
+    public int reserveTrade(int id) {
+        PotListPatchDTO patchInfo = new PotListPatchDTO();
+        patchInfo.setStatus(PotListStatus.PENDING_TRADE);
+        return updatePotById(id, patchInfo, false, false);
+    }
+
+    // 분양글 판매중
+    public int beforeTrade(int id) {
+        PotListPatchDTO patchInfo = new PotListPatchDTO();
+        patchInfo.setStatus(PotListStatus.BEFORE_TRADE);
+        return updatePotById(id, patchInfo, false, false);
     }
 
     // 분양글 끌어올리기
     public int bumpPot(int id) {
-        PotListPatchDTO patchInfo = new PotListPatchDTO();
-        patchInfo.setId(id);
-        return potListMapper.updatePotById(patchInfo, false, true);
+        return updatePotById(id, new PotListPatchDTO(), false, true);
     }
 
     // 분양글 조회수 증가
     public int addViewCount(int id) {
-        PotListPatchDTO patchInfo = new PotListPatchDTO();
-        patchInfo.setId(id);
-        return potListMapper.updatePotById(patchInfo, true, false);
+        return updatePotById(id, new PotListPatchDTO(), true, false);
     }
 }

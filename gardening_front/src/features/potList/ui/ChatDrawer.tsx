@@ -9,7 +9,7 @@ import { Button } from "@/shared/shadcn/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { Badge } from "@/shared/shadcn/components/ui/badge";
 import { useState } from "react";
-import { useChatStore } from "@/features/potList/model/chatStore";
+import { useChatStore } from "@/entities/potList/model/chatStore.ts";
 
 export default function ChatDrawer() {
     const [input, setInput] = useState("");
@@ -47,11 +47,11 @@ export default function ChatDrawer() {
     };
 
     return (
-        <div className="fixed right-20 bottom-15 z-10">
+        <div>
             <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
-                    <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
-                        <Button className="relative bg-green-700 hover:bg-green-800 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
+                    <div className="fixed bottom-23 right-6 md:bottom-27 md:right-8 z-50">
+                        <Button className="relative bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
                             <MessageCircle className="size-5 md:size-6" />
                             <Badge className="absolute top-0 right-0 w-5 h-5 md:w-6 md:h-6" variant="destructive">
                                 3
@@ -62,7 +62,7 @@ export default function ChatDrawer() {
 
                 <SheetContent
                     side="right"
-                    className="min-w-full md:min-w-1/3 flex flex-col"
+                    className="min-w-full md:min-w-1/3 flex flex-col z-150"
                     onCloseAutoFocus={() => setSelectedRoom(null)}
                 >
                     <SheetHeader>
