@@ -6,6 +6,8 @@ export function handleCanvasDrop(
 ) {
     e.preventDefault();
     const url = e.dataTransfer.getData("image/url");
+    const oriName = url.split("/").pop();
+    const sysName = `img-${Date.now()}`;
     if (!url) return;
 
     if (!stageRef.current) return;
@@ -22,9 +24,11 @@ export function handleCanvasDrop(
         id: `img-${Date.now()}`,
         type: "image",
         url,
-        x, // pointerPos.x 그대로 사용
-        y, // pointerPos.y 그대로 사용
-        width: 120,
-        height: 120,
+        oriName,
+        sysName,
+        x,
+        y,
+        width: 250,
+        height: 250,
     });
 }

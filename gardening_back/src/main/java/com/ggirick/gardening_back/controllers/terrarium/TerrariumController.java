@@ -3,11 +3,12 @@ package com.ggirick.gardening_back.controllers.terrarium;
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.terrarium.TerrariumDTO;
 import com.ggirick.gardening_back.services.terrarium.TerrariumService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/terrarium")
@@ -27,5 +28,16 @@ public class TerrariumController {
     @GetMapping("/{id}")
     public ResponseEntity<TerrariumDTO> getTerrarium(@PathVariable int id) {
         return ResponseEntity.ok(tServ.getTerrariumById(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<TerrariumDTO>> getAllTerrariums() {
+        return ResponseEntity.ok(tServ.getAllTerrariums());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTerrarium(@PathVariable int id){
+        tServ.deleteTerrarium(id);
+        return ResponseEntity.noContent().build();
     }
 }

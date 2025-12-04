@@ -3,7 +3,6 @@ package com.ggirick.gardening_back.controllers.terrarium;
 import com.ggirick.gardening_back.dto.terrarium.TerrariumDTO;
 import com.ggirick.gardening_back.dto.terrarium.TerrariumLayerDTO;
 import com.ggirick.gardening_back.services.terrarium.TerrariumLayerService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,14 +16,12 @@ public class TerrariumLayerController {
     private final TerrariumLayerService tlServ;
 
     @PostMapping
-    public ResponseEntity<Void> saveLayer(@RequestBody TerrariumLayerDTO terrariumLayerDTO,
-                                          @PathVariable int terrariumId) {
-        terrariumLayerDTO.setTerrariumId(terrariumId);
+    public ResponseEntity<Void> saveLayer(@RequestBody TerrariumLayerDTO terrariumLayerDTO) {
         tlServ.saveLayer(terrariumLayerDTO);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping
+    @GetMapping("/{terrariumId}")
     public ResponseEntity<List<TerrariumLayerDTO>> getLayers(@PathVariable int terrariumId) {
         return ResponseEntity.ok(tlServ.getLayers(terrariumId));
     }

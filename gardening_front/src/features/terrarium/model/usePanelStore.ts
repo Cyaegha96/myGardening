@@ -7,6 +7,8 @@ const assetApi = new TerrariumAssetImageControllerApi();
 export interface PanelItem{
     id: number | string;
     url: string;
+    sysName?:string;
+    oriName?:string;
     name?:string;
 }
 

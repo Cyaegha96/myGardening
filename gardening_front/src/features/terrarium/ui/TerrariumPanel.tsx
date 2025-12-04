@@ -31,6 +31,8 @@ export function TerrariumPanel() {
                                     draggable
                                     onDragStart={(e) => {
                                         e.dataTransfer.setData("image/url", item.url);
+                                        e.dataTransfer.setData("image/sysName", item.sysName || "");
+                                        e.dataTransfer.setData("image/oriName", item.oriName || "");
                                     }}
                                 />
                             </CardContent>
