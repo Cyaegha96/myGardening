@@ -81,6 +81,7 @@ export default function FlowerShop() {
                     }
                 }
 
+
                 // 꽃집 마커 생성
                 function addFlowerShopMarker(position: any, idx: number) {
                     const imageSrc = "assets/flower-marker.png";
@@ -272,15 +273,11 @@ export default function FlowerShop() {
         document.head.appendChild(script);
     }, []);
 
-    // ----------------------------------------------------
-    // 렌더링 (UI)
-    // ----------------------------------------------------
-
     return (
         <div style={{ display: "flex", position: "relative" }}>
             <div
                 id="menu_wrap"
-                style={{ width: "250px", height: "400px", overflowY: "scroll" }}
+                style={{ width: "250px", height: '100vh', overflowY: "scroll" }}
             >
                 <ul style={{ padding: 0, listStyle: "none" }}>
                     {places.map((place, i) => (
@@ -288,7 +285,7 @@ export default function FlowerShop() {
                     ))}
                 </ul>
             </div>
-            <div id="map" style={{ width: "100%", height: "400px" }} />
+            <div id="map" style={{ width: "100%", height: '100vh' }} />
 
             {/* 지도 위에 오버레이될 검색 UI */}
             <div

@@ -55,7 +55,7 @@ export const communityLinks: LinkItem[] = [
 export const rankingLinks: LinkItem[] = [
     {
         title: '인기식물',
-        href: 'plant-ranking',
+        href: 'popularPlants',
         description: '다양한 식물의 랭킹을 소개하는 공간입니다',
         icon: Award,
     },

@@ -29,8 +29,8 @@ export function LayersPanel() {
                         >
                             <span>{obj.id}</span>
                             <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                <Button size="icon" onClick={() => moveForward(obj.id)}>▲</Button>
-                                <Button size="icon" onClick={() => moveBackward(obj.id)}>▼</Button>
+                                <Button size="icon" onClick={() => moveForward(obj.id)}>▼</Button>
+                                <Button size="icon" onClick={() => moveBackward(obj.id)}>▲</Button>
                             </div>
                         </Card>
                     ))}

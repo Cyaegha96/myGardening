@@ -29,10 +29,12 @@ export function clearTokens() {
   localStorage.removeItem('refreshToken');
 }
 
-export async function logout(refreshToken?: string) {
-  if (!refreshToken) return;
+export async function logout(refreshToken?: string, accessToken?:string) {
+ console.log("로그아웃 호출");
+
+  if (!refreshToken || !accessToken) return;
   try {
-    await axiosInterceptor.post(`${API_BASE_URL}/logout`, { refreshToken });
+    await axiosInterceptor.post(`${API_BASE_URL}/logout`, { refreshToken, accessToken });
   } catch (err) {
     // ignore server errors here; client will clear local session anyway
     console.warn('logout api failed', err);

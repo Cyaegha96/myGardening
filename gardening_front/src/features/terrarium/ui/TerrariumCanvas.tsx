@@ -1,34 +1,37 @@
-import { Stage, Layer, Rect, Group, Image as KonvaImage, Transformer } from "react-konva";
-import {useRef, useEffect, useState} from "react";
+import { Group, Layer, Rect, Stage, Transformer } from "react-konva";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/shadcn/components/ui/button";
 import { Card, CardContent } from "@/shared/shadcn/components/ui/card";
 import { attachTransformer } from "@/features/terrarium/transformObject/ObjectTransformer.tsx";
 import { useCanvasStore } from "@/features/terrarium/model/useCanvasStore.ts";
 import { handleCanvasDrop } from "@/features/terrarium/drag&drop/handleCanvasDrop.ts";
 import { useFitStage } from "@/features/terrarium/fitToContainer/fitStageToContainer.ts";
-import {Input} from "@/shared/shadcn/components/ui/input.tsx";
-import {Checkbox} from "@/shared/shadcn/components/ui/checkbox.tsx";
-import {TerrariumControllerApi} from "@/shared/api";
+import { Input } from "@/shared/shadcn/components/ui/input.tsx";
+import { Checkbox } from "@/shared/shadcn/components/ui/checkbox.tsx";
+import { TerrariumControllerApi } from "@/shared/api";
+import { TerrariumSelector } from "@/features/terrarium/ui/TerrariumSelector.tsx";
+import { useLoadTerrarium } from "@/features/terrarium/model/useLoadTerrarium.ts";
+import { TerrariumImage } from "@/features/terrarium/ui/TerrariumImage.tsx";
 
 export default function TerrariumCanvas() {
     const containerRef = useRef<HTMLDivElement>(null);
     const stageRef = useRef<any>(null);
     const transformerRef = useRef<any>(null);
 
-    const [title, setTitle] = useState("");           // 제목 상태
-    const [description, setDescription] = useState(""); // 설명 상태
-    const [isPublic, setIsPublic] = useState(false);  // 공개 여부 상태
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [isPublic, setIsPublic] = useState(false);
+    const [selectedTerrariumId, setSelectedTerrariumId] = useState<number | null>(null);
+    const [terrariums, setTerrariums] = useState<{ id: number; title: string }[]>([]);
 
-    const { objects, selectedId, setSelectedId, addObject, saveCanvas, loadCanvas } = useCanvasStore();
+    const { objects, selectedId, setSelectedId, addObject, saveCanvas, setObjects } = useCanvasStore();
     const size = useFitStage(containerRef);
-
     const terrariumApi = new TerrariumControllerApi();
+    const { loadTerrarium } = useLoadTerrarium();
 
-
-    // Transformer 연결 로직
+    // Transformer 연결
     useEffect(() => {
         if (!selectedId) {
-            // 선택된 객체 없으면 Transformer 비움
             transformerRef.current?.nodes([]);
             transformerRef.current?.getLayer()?.batchDraw();
             return;
@@ -36,10 +39,32 @@ export default function TerrariumCanvas() {
         attachTransformer(transformerRef, stageRef, selectedId);
     }, [selectedId, objects]);
 
+    // 테라리움 리스트 로드
+    const loadTerrariums = async () => {
+        const res = await terrariumApi.getAllTerrariums();
+        const mapped = res.data.map((t: any) => ({ id: t.id, title: t.title }));
+        setTerrariums(mapped);
+    };
+
+    useEffect(() => {
+        loadTerrariums();
+    }, []);
+
+    // 테라리움 삭제
+    const handleDeleteTerrarium = async (id: number) => {
+        try {
+            await terrariumApi.deleteTerrarium(id);
+            setSelectedTerrariumId(null);
+            loadTerrariums(); // 삭제 후 리스트 갱신
+            setObjects([]); // 삭제 후 캔버스 초기화
+        } catch (err) {
+            console.error("삭제 실패:", err);
+        }
+    };
+
     return (
         <Card className="w-full h-full p-2 flex flex-col">
-            {/* 상단 버튼 영역 */}
-            <CardContent className="flex gap-2 mb-2 ">
+            <CardContent className="flex gap-2 mb-2">
                 <Input placeholder="테라리움 제목" value={title} onChange={e => setTitle(e.target.value)} />
                 <Input placeholder="설명" value={description} onChange={e => setDescription(e.target.value)} />
                 <div className="flex items-center gap-2">
@@ -48,7 +73,6 @@ export default function TerrariumCanvas() {
                 </div>
                 <Button
                     onClick={async () => {
-                        console.log("저장버튼눌림 ㅋ")
                         const terrarium = await terrariumApi.createTerrarium({
                             title,
                             description,
@@ -56,42 +80,57 @@ export default function TerrariumCanvas() {
                             width: size.width,
                             height: size.height,
                         });
-
                         const terrariumId = terrarium.data.id as number;
-
-                        // 2️⃣ 이미지 저장
                         await saveCanvas(terrariumId);
+                        loadTerrariums();
                     }}
                 >
                     저장
                 </Button>
-                <Button onClick={()=>loadCanvas} variant="secondary">불러오기</Button>
             </CardContent>
+
+            {/* 테라리움 선택 + 삭제 버튼 */}
+            <div className="flex items-center gap-2 mb-2">
+                <TerrariumSelector
+                    terrariums={terrariums}
+                    onSelect={id => setSelectedTerrariumId(id)}
+                />
+                {selectedTerrariumId && (
+                    <Button
+                        variant="destructive"
+                        onClick={() => handleDeleteTerrarium(selectedTerrariumId)}
+                    >
+                        삭제
+                    </Button>
+                )}
+                <Button
+                    variant="secondary"
+                    onClick={async () => {
+                        if (selectedTerrariumId) await loadTerrarium(selectedTerrariumId);
+                    }}
+                >
+                    불러오기
+                </Button>
+            </div>
 
             {/* 캔버스 영역 */}
             <div
                 ref={containerRef}
                 className="flex-1 border rounded-md overflow-hidden relative"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => handleCanvasDrop(e, stageRef, addObject)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleCanvasDrop(e, stageRef, addObject)}
             >
                 <Stage
                     width={size.width}
                     height={size.height}
                     ref={stageRef}
-                    onMouseDown={(e) => {
-                        // Stage 빈 공간 클릭 시 선택 해제
-                        if (e.target === stageRef.current) {
-                            setSelectedId(null);
-                        }
+                    onMouseDown={e => {
+                        if (e.target === stageRef.current) setSelectedId(null);
                     }}
                 >
-                    {/* 배경 레이어 */}
                     <Layer>
                         <Rect x={0} y={0} width={size.width} height={size.height} fill="#f8fafc" />
                     </Layer>
-
-                    {/* 객체 레이어 */}
                     <Layer>
                         {objects.map(o => (
                             <Group
@@ -99,25 +138,39 @@ export default function TerrariumCanvas() {
                                 id={o.id}
                                 x={o.x}
                                 y={o.y}
+                                rotation={o.rotation}
                                 draggable
                                 onClick={() => setSelectedId(o.id)}
+                                onDragEnd={e => {
+                                    const node = e.currentTarget;
+                                    setObjects(objects.map(obj => obj.id === o.id ? { ...obj, x: node.x(), y: node.y() } : obj));
+                                }}
+                                onTransformEnd={e => {
+                                    const node = e.currentTarget;
+                                    const scaleX = node.scaleX();
+                                    const scaleY = node.scaleY();
+
+                                    setObjects(objects.map(obj => obj.id === o.id ? {
+                                        ...obj,
+                                        x: node.x(),
+                                        y: node.y(),
+                                        width: Math.max(5, obj.width * scaleX),
+                                        height: Math.max(5, obj.height * scaleY),
+                                        rotation: node.rotation(),
+                                    } : obj));
+
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+                                }}
                             >
-                                {o.type === "image"
-                                    ? <KonvaImage
-                                        image={(() => { const img = new Image(); img.src = o.url!; return img; })()}
-                                        width={o.width}
-                                        height={o.height}
-                                    />
-                                    : <Rect
-                                        width={o.width}
-                                        height={o.height}
-                                        fill={o.fill}
-                                        cornerRadius={6}
-                                    />
-                                }
+                                {o.type === "image" ? (
+                                    <TerrariumImage url={o.url!} width={o.width} height={o.height} />
+                                ) : (
+                                    <Rect width={o.width} height={o.height} fill={o.fill} cornerRadius={6} />
+                                )}
                             </Group>
                         ))}
-                        <Transformer ref={transformerRef} />
+                        <Transformer ref={transformerRef} keepRatio={true} />
                     </Layer>
                 </Stage>
             </div>

@@ -9,6 +9,6 @@ import java.util.List;
 @Mapper
 public interface TerrariumLayerMapper {
         void insertLayer(TerrariumLayerDTO terrariumLayerDTO);
-        List<TerrariumLayerDTO> getLayers(@Param("terrariumID")int terrariumId);
+        List<TerrariumLayerDTO> getLayers(@Param("terrariumId")int terrariumId);
 
 }

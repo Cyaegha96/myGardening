@@ -6,6 +6,7 @@ import TerrariumEditPage from "@/pages/terrarium/TerrariumEditPage.tsx";
 import SearchPlantDictPage from "@/pages/searchPlant/SearchPlantDictPage.tsx";
 import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
 import PlantThree from "@/pages/test/PlantThree.tsx";
+import {PopularPlantsPage} from "@/pages/PopularPlants/PopularPlantsPage.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
@@ -40,6 +41,8 @@ export function CommonRoutes() {
                     <Route path="/plant-search/dict" element={<SearchPlantDictPage/>} />
                     <Route path="/plant-search" element={<SearchPlantMainPage/>} />
                     <Route path="/plant-test" element={<PlantThree/>}></Route>
+                    <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
+                    <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                 </Route>
             </Routes>

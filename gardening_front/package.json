@@ -43,6 +43,7 @@
     "framer-motion": "^12.23.24",
     "konva": "^10.0.9",
     "gsap": "^3.13.0",
+    "konva": "^10.0.9",
     "libphonenumber-js": "^1.12.29",
     "lodash": "^4.17.21",
     "lottie-react": "^2.4.1",
@@ -61,6 +62,7 @@
     "tailwind-merge": "^3.4.0",
     "tailwind-scrollbar": "^4.0.2",
     "three": "^0.181.2",
+    "use-image": "^1.1.4",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
