@@ -1,9 +1,7 @@
 package com.ggirick.gardening_back.utils;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.util.HtmlUtils;
 
-@RequiredArgsConstructor
 public class HtmlUtil {
     // 인스턴스 생성 막아두기
     private HtmlUtil() {}
