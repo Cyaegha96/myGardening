@@ -25,7 +25,7 @@ export const gardeningLinks: LinkItem[] = [
     },
     {
         title: '테라리움',
-        href: 'terrarium',
+        href: 'terrariumEdit',
         description: '나만의 작은 정원을 디자인하고 감각적인 테라리움을 탐험하는 공간입니다',
         icon: Amphora,
     },
@@ -55,7 +55,7 @@ export const communityLinks: LinkItem[] = [
 export const rankingLinks: LinkItem[] = [
     {
         title: '인기식물',
-        href: 'plant-ranking',
+        href: 'popularPlants',
         description: '다양한 식물의 랭킹을 소개하는 공간입니다',
         icon: Award,
     },
