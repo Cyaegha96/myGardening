@@ -48,9 +48,9 @@ export default function useLoginModel() {
       setPassword('');
 
       window.location.href = '/auth/dashboard';
-    } catch (err: any) {
-      console.error('로그인 오류:', err);
-      const errMsg = (err.response?.data as ErrorResponse)?.message ?? '로그인 실패! 서버 응답을 확인하세요.';
+    } catch (err) {
+        console.log(err);
+        const errMsg = err.response.data.message ?? '로그인 실패! 서버 응답을 확인하세요.';
       setError(errMsg);
     } finally {
       setLoading(false);

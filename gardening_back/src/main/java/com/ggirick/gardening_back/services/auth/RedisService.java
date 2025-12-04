@@ -196,5 +196,10 @@ public class RedisService {
     private String genOtpKey() {
         return RandomStringUtils.randomAlphanumeric(10); // Eng(Upper, Lower) + Number
     }
+    public boolean isSessionValid(String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) return false;
+        return redis.hasKey("session:" + sessionId);
+    }
+
 
 }

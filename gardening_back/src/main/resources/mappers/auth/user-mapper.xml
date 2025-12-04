@@ -60,6 +60,11 @@
              SYSTIMESTAMP,
              SYSTIMESTAMP)
     </insert>
+    <update id="updateUserStatus">
+        UPDATE users
+        SET status = #{status}
+        WHERE uuid = #{uid}
+    </update>
     <select id="randomUserNickName" resultType="java.lang.String">
         SELECT
             (SELECT PREFIX_TEXT

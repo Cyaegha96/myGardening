@@ -9,6 +9,7 @@ interface Props {
   accessToken?: string | null;
   refreshToken?: string | null;
   onLogout: () => void;
+    onInActivate:()=>void;
     userInfo?: {
         roles?: string[];
         nickname?: string;
@@ -16,7 +17,7 @@ interface Props {
     };
 }
 
-export default function DashboardView({ accessToken, refreshToken, onLogout,userInfo }: Props) {
+export default function DashboardView({ accessToken, refreshToken, onLogout,userInfo , onInActivate}: Props) {
   return (
     <div className="flex justify-center items-center min-h-screen  p-4">
       <Card className="w-full max-w-lg shadow-lg rounded-xl border-t-4 ">
@@ -31,6 +32,9 @@ export default function DashboardView({ accessToken, refreshToken, onLogout,user
           <Button onClick={onLogout} className="bg-red-500 text-white">
             <LogOut className="mr-2 h-4 w-4" /> 로그아웃
           </Button>
+            <Button onClick={ onInActivate} className="bg-red-500 text-white">
+                <LogOut className="mr-2 h-4 w-4" /> 회원탈퇴
+            </Button>
         </CardHeader>
 
         <CardContent className="space-y-4">

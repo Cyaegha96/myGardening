@@ -1,8 +1,7 @@
 package com.ggirick.gardening_back.services.auth;
 
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.ggirick.gardening_back.exceptions.AuthenticationException;
+import com.ggirick.gardening_back.exceptions.LoginFailedException;
 import com.ggirick.gardening_back.dto.auth.*;
 import com.ggirick.gardening_back.mappers.auth.AuthMapper;
 import com.ggirick.gardening_back.mappers.auth.UserMapper;
@@ -10,7 +9,6 @@ import com.ggirick.gardening_back.mappers.auth.UserSessionMapper;
 import com.ggirick.gardening_back.utils.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,7 +19,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -61,14 +58,26 @@ public class AuthService {
 
         if (authInfo == null) {
             // DB에서 ID를 찾지 못한 경우
-            throw new AuthenticationException("사용자 ID를 찾을 수 없습니다.");
+            throw new LoginFailedException("사용자 ID를 찾을 수 없습니다.");
         }
 
         //  비밀번호 검증 (PasswordEncoder 사용)
         if (!passwordEncoder.matches(rawPassword, authInfo.getPw())) {
             // 비밀번호 불일치
-            throw new AuthenticationException("비밀번호가 일치하지 않습니다.");
+            throw new LoginFailedException("비밀번호가 일치하지 않습니다.");
         }
+
+        UsersDTO usersDTO = userMapper.selectUserByUid(authInfo.getUserUid());
+
+
+        if ("BLOCKED".equals(usersDTO.getStatus())) {
+            throw new LoginFailedException("계정이 차단되었습니다.");
+        }
+
+        if (!"ACTIVE".equals(usersDTO.getStatus())) {
+            throw new LoginFailedException("로그인 불가: 계정이 비활성화 상태입니다.");
+        }
+
 
         //  토큰 생성을 위한 DTO 구성
         String userUid = authInfo.getUserUid(); // auth 테이블에서 가져온 UID
@@ -77,8 +86,11 @@ public class AuthService {
                 .provider(authInfo.getProvider()) // DB에 저장된 provider 사용
                 .build();
 
+
+        String sessionId = UUID.randomUUID().toString();
+
         //  Access Token 및 Refresh Token 발급
-        String accessToken = jwtUtil.createAccessToken(userInfo);
+        String accessToken = jwtUtil.createAccessToken(userInfo,sessionId);
         String refreshToken = jwtUtil.createRefreshToken(userInfo);
 
         // user_session 테이블에 Refresh Token 기록
@@ -107,7 +119,7 @@ public class AuthService {
         long ttlMillis = accessExpDate.getTime() - System.currentTimeMillis();
         if (ttlMillis <= 0) {
             // 토큰 만료면 예외
-            throw new AuthenticationException("생성된 Access Token 만료시간이 유효하지 않습니다.");
+            throw new LoginFailedException("생성된 Access Token 만료시간이 유효하지 않습니다.");
         }
 
 
@@ -162,7 +174,7 @@ public class AuthService {
         //새로운 Access Token 및 Refresh Token 발급
 
         UserTokenDTO userInfo = UserTokenDTO.builder().uid(uid).provider(provider).build();
-        String newAccessToken = jwtUtil.createAccessToken(userInfo);
+        String newAccessToken = jwtUtil.createAccessToken(userInfo,oldSessionId);
         String newRefreshToken = jwtUtil.createRefreshToken(userInfo);
 
         Date refreshExpDate = jwtUtil.getRefreshTokenExpirationDate();
@@ -228,12 +240,14 @@ public class AuthService {
 
 
     public TokenPair issueTokenForOAuth(UserTokenDTO userInfo, String ipAddress) {
-        String accessToken = jwtUtil.createAccessToken(userInfo);
+        String sessionId = UUID.randomUUID().toString();
+
+        String accessToken = jwtUtil.createAccessToken(userInfo,sessionId);
         String refreshToken = jwtUtil.createRefreshToken(userInfo);
         Date accessExpDate = jwtUtil.getAccessTokenExpirationDate();
         Date refreshExpDate = jwtUtil.getRefreshTokenExpirationDate();
 
-        String sessionId = UUID.randomUUID().toString();
+
 
         // 1) DB에 세션 기록
         UserSessionDTO newSession = UserSessionDTO.builder()
@@ -276,6 +290,38 @@ public class AuthService {
         AuthDTO existing = authMapper.selectAuthById(id);
         return existing != null;
     }
+
+    @Transactional
+    public int inactivateAccount(String uid, LogoutRequestDTO logoutRequest) {
+
+        String accessToken = logoutRequest.getAccessToken();
+        String refreshToken = logoutRequest.getRefreshToken();
+
+        // 1) 사용자 상태 INACTIVE로 변경
+        int updatedUser = userMapper.updateUserStatus(uid, "INACTIVE");
+        if (updatedUser == 0) {
+            throw new IllegalStateException("사용자 상태 업데이트 실패");
+        }
+
+        // 2) 모든 세션 revoke 처리
+        int revokedSessions = userSessionMapper.revokeAllSessionsByUid(uid);
+
+        // 3) Redis 세션 삭제 (refreshToken 기반)
+        if (refreshToken != null) {
+            redisService.deleteSession(refreshToken);
+        }
+
+        redisService.deleteAllSessionsByUid(uid);
+
+        // 4) AccessToken 블랙리스트 추가
+        if (accessToken != null) {
+            redisService.addBlacklist(accessToken);
+        }
+
+
+        return revokedSessions;
+    }
+
 
 
     @Transactional

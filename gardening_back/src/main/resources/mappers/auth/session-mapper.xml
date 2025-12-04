@@ -10,7 +10,11 @@
         <result property="refreshToken" column="REFRESH_TOKEN"/>
         <result property="expiresAt" column="EXPIRES_AT"/>
     </resultMap>
-
+    <update id="revokeAllSessionsByUid">
+        UPDATE user_session
+        SET is_revoked = 'Y'
+        WHERE user_uid = #{uid}
+    </update>
     <insert id="insertSession">
         INSERT INTO USER_SESSION (SESSION_ID, USER_UID, PROVIDER, ACCESS_TOKEN, REFRESH_TOKEN, EXPIRES_AT, LAST_ACCESS_TOKEN_ISSUED_AT,LAST_ACCESS_TOKEN_EXPIRES_AT,  IP_ADDRESS, IS_REVOKED, CREATED_AT)
         VALUES (#{sessionId}, #{userUid}, #{provider}, #{accessToken}, #{refreshToken},  #{expiresAt}, SYSTIMESTAMP, #{lastAccessTokenExpiresAt}, #{ipAddress}, 'N', SYSTIMESTAMP)
