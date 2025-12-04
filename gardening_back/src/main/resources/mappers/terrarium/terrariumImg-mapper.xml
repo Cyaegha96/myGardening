@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.terrarium.ImageMapper">
+
+    <select id="getAllAssets" resultType="com.ggirick.gardening_back.dto.terrarium.TerrariumAssetImageDTO">
+        SELECT ID, CATEGORY, NAME, URL, CREATED_AT
+        FROM TERRARIUM_ASSET_IMAGE
+        ORDER BY ID ASC
+    </select>
+
+    <!-- 이미지 오브젝트 insert -->
+    <insert id="insertTerrariumImage" parameterType="com.ggirick.gardening_back.dto.terrarium.TerrariumImageDTO">
+        <selectKey order="BEFORE" keyProperty="id" resultType="int">
+            select terrarium_image_seq.nextval from dual
+        </selectKey>
+        insert into terrarium_image values(#{id},#{terrariumId},#{oriName},#{sysName},#{url},default)
+    </insert>
+
+    <select id="getImagesByTerrariumId" resultType="com.ggirick.gardening_back.dto.terrarium.TerrariumImageDTO">
+        select * from terrarium_image where terrarium_id = #{terrariumId} order by id asc
+    </select>
+
+</mapper>
