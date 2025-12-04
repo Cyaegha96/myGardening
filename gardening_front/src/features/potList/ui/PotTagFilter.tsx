@@ -9,7 +9,7 @@ export default function PotTagFilter({ categories, selected, toggle }: { categor
             <h3 className="font-semibold mb-3">필터</h3>
             <div className="space-y-2">
                 {categories.map(cat => (
-                    <label key={cat.id} className="flex items-center gap-2 ps-1 hover:bg-accent/50 transition rounded-sm">
+                    <label key={cat.id} className="cursor-pointer flex items-center gap-2 ps-1 hover:bg-accent/50 transition rounded-sm">
                         <Checkbox checked={selected.has(cat.id)} onCheckedChange={() => toggle(cat.id)} />
                         <span>{cat.name}</span>
                     </label>
