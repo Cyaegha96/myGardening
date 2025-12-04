@@ -4,6 +4,7 @@ package com.ggirick.gardening_back.controllers.auth;
 import com.ggirick.gardening_back.dto.auth.*;
 import com.ggirick.gardening_back.exceptions.TokenRefreshException;
 import com.ggirick.gardening_back.services.auth.AuthService;
+import com.ggirick.gardening_back.services.auth.RedisService;
 import com.ggirick.gardening_back.services.auth.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
+
     private final AuthService authService;
     private final UserService userService;
+    private final RedisService redisService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest, HttpServletRequest request) {
@@ -217,6 +220,20 @@ public class AuthController {
                     .body(Map.of("error", "회원 정보를 가져오는 중 오류가 발생했습니다."));
         }
         
+    }
+
+
+
+    @GetMapping("/requestOtp")
+    public String getRequestOtp(@RequestParam("uid") String uid, @RequestParam("phone") String phone){
+        String otp=  redisService.requestOtp(uid);
+
+        return otp;
+    }
+
+    @GetMapping("/checkOtp")
+    public String checkOtp(@RequestParam("uid") String uid, @RequestParam("otp") String otp){
+        return redisService.checkOtp(uid,otp);
     }
 
 

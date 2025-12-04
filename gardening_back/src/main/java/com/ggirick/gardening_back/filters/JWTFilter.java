@@ -38,6 +38,9 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
         if(path.startsWith("/auth/existIdCheck")
+                ||path.startsWith("/auth/qr")
+                ||path.startsWith("/auth/checkOtp")
+                ||path.startsWith("/auth/requestOtp")
                 || path.startsWith("/auth/signup")
                 || path.startsWith("/auth/register")
                 || path.startsWith("/auth/refresh")
