@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.ggirick.gardening_back.utils.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,8 @@ public class RedisService {
     private final RedisTemplate<String, Object> redis;
 
     private static final String BLACKLIST_PREFIX = "blacklist:";
+
+    private static final String OTP_PREFIX = "OTP:";
 
     private final JWTUtil jwtUtil;
     /**
@@ -151,4 +154,47 @@ public class RedisService {
         String key = BLACKLIST_PREFIX + token;
         return redis.opsForValue().get(key) != null;
     }
+
+    /**
+     * otp 인증용 키 생성
+     * Redis 에 요청한 User의 ID + OTP KEY + 만료시간 기록
+     * 3분 뒤 만료됨
+     */
+    public String requestOtp(String userUid) {
+        redis.opsForValue().set(OTP_PREFIX + userUid, genOtpKey(), 3 * 60, TimeUnit.SECONDS);
+
+        log.info("Temporay Password set : {}", redis.opsForValue().get(OTP_PREFIX +userUid));
+
+        return (String) redis.opsForValue().get(OTP_PREFIX +userUid);
+    }
+
+    /**
+     * @info : 임시 비밀번호 확인 (OTP)
+     * @param userUid
+     * @param otp
+     * @return
+     */
+    public String checkOtp(String userUid, String otp) {
+
+        String target = OTP_PREFIX + userUid;
+
+        if(redis.hasKey(OTP_PREFIX + userUid)){
+            String value = redis.opsForValue().get(target).toString();
+
+            if(value.equals(otp)) {
+                log.info("OTP is Correct");
+                return "SUCCESS";
+            }else {
+                return "FAIL";
+            }
+        }else {
+            return "NO DATA";
+        }
+    }
+
+    // 임시 비밀번호 생성(OTP)
+    private String genOtpKey() {
+        return RandomStringUtils.randomAlphanumeric(10); // Eng(Upper, Lower) + Number
+    }
+
 }

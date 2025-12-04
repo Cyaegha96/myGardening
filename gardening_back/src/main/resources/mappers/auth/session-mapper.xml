@@ -12,10 +12,22 @@
     </resultMap>
 
     <insert id="insertSession">
-        INSERT INTO USER_SESSION (SESSION_ID, USER_UID, PROVIDER, EXPIRES_AT, IP_ADDRESS, IS_REVOKED, CREATED_AT)
-        VALUES (#{sessionId}, #{userUid}, #{provider},#{expiresAt}, #{ipAddress}, 'N', SYSTIMESTAMP)
+        INSERT INTO USER_SESSION (SESSION_ID, USER_UID, PROVIDER, ACCESS_TOKEN, REFRESH_TOKEN, EXPIRES_AT, LAST_ACCESS_TOKEN_ISSUED_AT,LAST_ACCESS_TOKEN_EXPIRES_AT,  IP_ADDRESS, IS_REVOKED, CREATED_AT)
+        VALUES (#{sessionId}, #{userUid}, #{provider}, #{accessToken}, #{refreshToken},  #{expiresAt}, SYSTIMESTAMP, #{lastAccessTokenExpiresAt}, #{ipAddress}, 'N', SYSTIMESTAMP)
     </insert>
+    <update id="updateSession">
+        UPDATE USER_SESSION
+        SET
+            ACCESS_TOKEN = #{accessToken},
+            LAST_ACCESS_TOKEN_ISSUED_AT = SYSTIMESTAMP,
+            LAST_ACCESS_TOKEN_EXPIRES_AT = #{lastAccessTokenExpiresAt},
+            EXPIRES_AT = #{expiresAt},
+            IP_ADDRESS = #{ipAddress},
 
+            UPDATED_AT = SYSTIMESTAMP
+        WHERE SESSION_ID = #{sessionId}
+          AND USER_UID = #{userUid}
+    </update>
     <select id="selectValidSessionByUidAndToken" resultMap="userSessionMap">
         SELECT *
         FROM USER_SESSION
