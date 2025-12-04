@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState} from 'react';
 import { useAuthStore, type AuthState } from '@/entities/auth/useAuthStore';
 
-import { getStoredTokens, clearTokens, logout as apiLogout ,getUserInfo } from '@/entities/auth/api';
+import { getStoredTokens, clearTokens, logout as apiLogout ,getUserInfo,inactivate as apiInactivate } from '@/entities/auth/api';
 
 export default function useDashboardModel() {
   const accessToken = useAuthStore((s:AuthState) => s.accessToken);
@@ -38,12 +38,29 @@ export default function useDashboardModel() {
     storeLogout();
     window.location.href = '/';
   }, [refreshToken,accessToken, storeLogout]);
+    const handleInactivate = useCallback(async () => {
+        if (!confirm("정말 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
+            return;
+        }
 
+        try {
+            await apiInactivate(refreshToken || undefined, accessToken || undefined);
+            alert("회원 탈퇴가 완료되었습니다.");
+        } catch (e) {
+            alert("회원 탈퇴 실패");
+            console.error(e);
+        }
+
+        // 사용자 인증 정보 제거 및 리다이렉트
+        clearTokens();
+        storeLogout();
+        window.location.href = '/';
+    }, [refreshToken, accessToken, storeLogout]);
   return {
     accessToken,
     refreshToken,
     handleLogout,
-
+      handleInactivate,
       userInfo,
   } as const;
 }

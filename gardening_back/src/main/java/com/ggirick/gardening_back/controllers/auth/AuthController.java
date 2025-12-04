@@ -122,6 +122,36 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/inactivate")
+    public ResponseEntity<?> inactivateAccount(
+            @AuthenticationPrincipal UserTokenDTO userTokenDTO,
+            @RequestBody LogoutRequestDTO request
+    ) {
+        try {
+            if (userTokenDTO == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "인증 정보가 없습니다."));
+            }
+
+            String uid = userTokenDTO.getUid();
+
+            int result = authService.inactivateAccount(uid, request);
+
+            if (result > 0) {
+                return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다."));
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "회원 탈퇴 처리에 실패했습니다."));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "회원 탈퇴 중 서버 오류가 발생했습니다."));
+        }
+    }
+
+
     @PostMapping("/complete-profile")
     public ResponseEntity<String> completeProfile(@AuthenticationPrincipal UserTokenDTO userTokenDTO, @RequestBody UserInfoDTO dto) {
         try {
