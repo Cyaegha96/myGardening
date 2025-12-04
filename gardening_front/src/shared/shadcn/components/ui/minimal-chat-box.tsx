@@ -64,7 +64,7 @@ export default function MinimalChatBox() {
                         >
                             <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
                                 <Button
-                                    className="relative bg-green-700 hover:bg-green-800 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
+                                    className="cursor-pointer relative bg-green-700 hover:bg-green-800 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
                                     {!isOpen ?
                                         <BotMessageSquare className="size-5 md:size-6"/>
                                         :
@@ -72,7 +72,7 @@ export default function MinimalChatBox() {
                                     }
                                 </Button>
                             </div>
-                            {isOpen && <X size={18} className="text-white"/>}
+                            {isOpen && <X size={18} className="cursor-pointer text-white"/>}
                         </div>
                     </div>
 

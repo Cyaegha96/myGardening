@@ -12,7 +12,7 @@ export default function PotBookmarkDrawer() {
                 <SheetTrigger asChild>
                     <div className="fixed bottom-40 right-6 md:bottom-46 md:right-8 z-50">
                         <Button
-                            className="relative bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
+                            className="cursor-pointer relative bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
                             <Heart className="size-5 md:size-6"/>
                         </Button>
                     </div>
