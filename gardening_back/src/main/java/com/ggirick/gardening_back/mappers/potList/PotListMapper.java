@@ -15,6 +15,7 @@ public interface PotListMapper {
             @Param("cursorId") Integer cursorId,
             @Param("size") Integer size,
             @Param("keyword") String keyword,
+            @Param("type") String searchType,
             @Param("tagIds") List<Integer> tagIds
     );
 

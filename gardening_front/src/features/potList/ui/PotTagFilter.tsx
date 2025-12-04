@@ -5,7 +5,7 @@ type Category = { id: number; name: string };
 
 export default function PotTagFilter({ categories, selected, toggle }: { categories: Category[]; selected: Set<number>; toggle: (id: number) => void }) {
     return (
-        <aside className="p-4 border-r mr-4">
+        <aside className="p-4 md:border-r mr-4">
             <h3 className="font-semibold mb-3">필터</h3>
             <div className="space-y-2">
                 {categories.map(cat => (

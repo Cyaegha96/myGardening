@@ -44,19 +44,18 @@ export default function MinimalChatBox() {
 
     return (
         <MotionConfig transition={transition}>
-            <div className="fixed bottom-8 right-23 md:right-27 z-100">
+            <div className="fixed bottom-8 right-23 md:right-27 z-100 ms-2 md:ms-0">
                 <motion.div
                     ref={chatRef}
                     animate={{
-                        height: isOpen ? "400px" : "1px",
-                        width: isOpen ? "320px" : "1px",
+                        height: isOpen ? "400px" : "0px",
+                        width: isOpen ? "100%" : "0px",
                     }}
                     initial={false}
-                    className="flex flex-col shadow-md overflow-hidden
-                     bg-white rounded-md"
+                    className={"flex flex-col shadow-md overflow-hidden bg-white rounded-md"}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-2 bg-green-700">
+                    <div className={"flex items-center justify-between px-4 py-2 bg-green-700"}>
                         {isOpen && <span className="font-medium text-white">AI한테 물어보기</span>}
                         <div
                             className="flex items-center justify-center w-8 h-8 rounded"

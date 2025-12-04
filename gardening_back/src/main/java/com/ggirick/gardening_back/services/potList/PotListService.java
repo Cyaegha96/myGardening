@@ -20,9 +20,10 @@ public class PotListService {
             Integer cursorId,
             Integer size,
             String keyword,
+            String searchType,
             List<Integer> tagIds
     ) {
-        return potListMapper.getPotList(cursorId, size, keyword, tagIds);
+        return potListMapper.getPotList(cursorId, size, keyword, searchType, tagIds);
     }
 
     // 분양글 상세 조회

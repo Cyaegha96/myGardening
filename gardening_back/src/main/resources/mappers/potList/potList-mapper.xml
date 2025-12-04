@@ -21,9 +21,20 @@
             AND pl.id &lt; #{cursorId}
         </if>
 
-        <!-- 키워드 검색 (제목 + 설명) -->
+        <!-- 키워드 검색 (제목 + 설명 + 작성자) -->
         <if test="keyword != null and keyword != ''">
-            AND (pl.title LIKE '%' || #{keyword} || '%' OR pl.description LIKE '%' || #{keyword} || '%')
+            <if test="type != null and type == 'all'">
+                AND (pl.title LIKE '%' || #{keyword} || '%' OR pl.description LIKE '%' || #{keyword} || '%' OR ui.nickname LIKE '%' || #{keyword} || '%')
+            </if>
+            <if test="type != null and type == 'writer'">
+                AND (ui.nickname LIKE '%' || #{keyword} || '%')
+            </if>
+            <if test="type != null and type == 'description'">
+                AND (pl.description LIKE '%' || #{keyword} || '%')
+            </if>
+            <if test="type != null and type == 'title'">
+                AND (pl.title LIKE '%' || #{keyword} || '%')
+            </if>
         </if>
 
         <!-- 다중 태그 필터링 -->

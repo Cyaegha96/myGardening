@@ -43,8 +43,9 @@ public class PotListController {
     public ResponseEntity<List<PotListDetailDTO>> getPotList(@Parameter(description = "커서 위치 저장용") @RequestParam(required = false) Integer cursorId,
                                                              @Parameter(description = "한번에 조회할 목록 갯수") @RequestParam(defaultValue = "16") int size,
                                                              @Parameter(description = "검색 키워드(옵션)") @RequestParam(required = false) String keyword,
+                                                             @Parameter(description = "검색 필터(제목, 작성자, 내용)") @RequestParam(required = false) String searchType,
                                                              @Parameter(description = "카테고리 ID(옵션)") @RequestParam(required = false) List<Integer> categoryId) {
-        return ResponseEntity.ok(potListService.getPotList(cursorId, size, keyword, categoryId));
+        return ResponseEntity.ok(potListService.getPotList(cursorId, size, keyword, searchType, categoryId));
     }
 
     @Operation(
