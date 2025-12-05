@@ -21,14 +21,18 @@ export default function useRegisterModel() {
     const [passwordMatchMsg, setPasswordMatchMsg] = useState('');
     const setTokens = useAuthStore((s: AuthState) => s.setTokens);
 
+    const idRegex= /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=])[A-Za-z\d!@#$%^&*()_\-+=]{4,20}$/;
+    const phoneRegex = /^\d{2,3}-\d{3,4}-\d{4}$/
+
     const handleIdBlur = async () => {
         if (!id) {
             setIdCheckMsg('');
             setIdAvailable(null);
             return;
         }
-        if (!/^[a-zA-Z0-9]{4,20}$/.test(id)) {
-            setIdCheckMsg('아이디는 영문과 숫자 4~20자로 입력해주세요.');
+        if (!idRegex.test(id)) {
+            setIdCheckMsg('아이디는 영문과 숫자 혼합 4~20자로 입력해주세요.');
             setIdAvailable(false);
             return;
         }
@@ -56,7 +60,7 @@ export default function useRegisterModel() {
             return;
         }
 
-        if (!/^\d{2,3}-\d{3,4}-\d{4}$/.test(phone)) {
+        if (!phoneRegex.test(phone)) {
             setPhoneAvailable(false);
             setPhoneCheckMsg('전화번호는 하이픈 포함 10~11자리로 입력해주세요.');
 
@@ -83,10 +87,19 @@ export default function useRegisterModel() {
     };
 
     const handlePasswordBlur = () => {
+        // 비밀번호 유효성 검사
+
+
+        if (!passwordRegex.test(password)) {
+            setPasswordMatchMsg('비밀번호는 영문, 숫자, 특수문자를 모두 포함해 4~20자로 입력해주세요.');
+            return;
+        }
+
         if (!passwordConfirm) {
             setPasswordMatchMsg('');
             return;
         }
+
         if (password !== passwordConfirm) {
             setPasswordMatchMsg('비밀번호가 일치하지 않습니다.');
         } else {
@@ -95,30 +108,29 @@ export default function useRegisterModel() {
     };
 
 
-
     const validateForm = () => {
         if (!idAvailable) {
-            setError('이미 존재하는 아이디입니다.');
+            setError('해당 아이디는 사용할 수 없습니다.');
             return false;
         }
         if (!phoneAvailable) {
-            setError('이미 존재하는 전화번호입니다.');
+            setError('해당 전화번호는 사용할 수 없습니다.');
             return false;
         }
         
-        if (!/^[a-zA-Z0-9]{4,20}$/.test(id)) {
+        if (!idRegex.test(id)) {
             setError('아이디는 영문과 숫자 4~20자로 입력해주세요.');
             return false;
         }
-        if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]{8,20}$/.test(password)) {
+        if (!passwordRegex.test(password)) {
             setError('비밀번호는 문자와 숫자 포함 8~20자로 입력해주세요.');
             return false;
         }
-        if (password !== passwordConfirm) { // ✅ 확인
+        if (password !== passwordConfirm) {
             setError('비밀번호가 일치하지 않습니다.');
             return false;
         }
-        if (!/^\d{2,3}-?\d{3,4}-?\d{4}$/.test(phone)) {
+        if (!phoneRegex.test(phone)) {
             setError('전화번호는 하이픈 포함 10~11자리로 입력해주세요.');
             return false;
         }

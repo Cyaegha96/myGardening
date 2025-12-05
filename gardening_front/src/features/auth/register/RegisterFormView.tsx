@@ -148,7 +148,7 @@ export default function RegisterFormView({
                                        value={phone} onChange={(e) => setPhone(e.target.value)}
                                        required
                                        onBlur={handlePhoneBlur}/>
-                                <PhoneVerificationButton onVerify={() => alert('인증 로직을 여기에 연결하세요')} />
+                                {/*  <PhoneVerificationButton onVerify={() => alert('인증 로직을 여기에 연결하세요')} /> */}
                             </div>
                             {phoneCheckMsg && (
                                 <p

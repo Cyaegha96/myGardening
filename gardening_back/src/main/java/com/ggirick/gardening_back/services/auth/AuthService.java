@@ -100,7 +100,7 @@ public class AuthService {
         //새로운 세션 생성
   
         UserSessionDTO newSession = UserSessionDTO.builder()
-                .sessionId(UUID.randomUUID().toString())
+                .sessionId(sessionId)
                 .userUid(userUid)
                 .provider(authInfo.getProvider())
               .refreshToken(refreshToken)

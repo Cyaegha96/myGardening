@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -54,8 +55,9 @@ public class AuthController {
             //  기타 서버 오류
 
             e.printStackTrace();
-            Map<String, String> errorResponse = Collections.singletonMap("error", "로그인 처리 중 서버 오류가 발생했습니다.");
-            return ResponseEntity
+            Map<String, String> errorResponse = new HashMap<>();
+
+            errorResponse.put("message", e.getMessage());return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(errorResponse);
         }
