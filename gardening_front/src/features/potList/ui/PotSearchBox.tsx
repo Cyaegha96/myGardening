@@ -1,17 +1,20 @@
 import {useState} from "react";
 import {Search} from "lucide-react";
 import {Button} from "@/shared/shadcn/components/ui/button";
+import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 
-interface PotSearchBoxProps {
-    onSearch: (keyword: string, type: string) => void;
-}
+export default function PotSearchBox() {
 
-export default function PotSearchBox({onSearch}: PotSearchBoxProps) {
-    const [keyword, setKeyword] = useState("");
-    const [searchType, setSearchType] = useState("all");
+    const keyword = usePotListStore(state => state.keyword);
+    const setKeyword = usePotListStore(state => state.setKeyword);
+
+    const searchType = usePotListStore(state => state.searchType);
+    const setSearchType = usePotListStore(state => state.setSearchType);
+
+    const fetchPotList = usePotListStore(state => state.fetchPotList);
 
     return (
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto my-5">
 
             {/* 검색 범위 선택 */}
             <select
@@ -33,7 +36,7 @@ export default function PotSearchBox({onSearch}: PotSearchBoxProps) {
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === "Enter") onSearch(keyword, searchType)
+                        if (e.key === "Enter") fetchPotList()
                     }}
                     placeholder="검색..."
                     className="w-full outline-none text-sm"
@@ -44,7 +47,7 @@ export default function PotSearchBox({onSearch}: PotSearchBoxProps) {
             <Button
                 variant="outline"
                 size="icon"
-                onClick={() => onSearch(keyword, searchType)}
+                onClick={() => fetchPotList()}
                 className="aspect-square rounded-md"
             >
                 검색

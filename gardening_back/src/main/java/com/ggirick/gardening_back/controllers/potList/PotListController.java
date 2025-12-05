@@ -249,6 +249,21 @@ public class PotListController {
     }
 
     @Operation(
+            summary = "분양글 찜 목록",
+            description = "사용자의 분양글 찜 목록을 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "처리 성공")
+    })
+    @GetMapping("/like")
+    public ResponseEntity<List<PotListDetailDTO>> getBookmarksByUserId(@Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) {
+        if (userInfo != null) {
+            return ResponseEntity.ok(potListBookmarkService.getBookmarksByUserId(userInfo.getUid()));
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @Operation(
             summary = "분양글 신고하기",
             description = "해당 분양글을 신고합니다."
     )

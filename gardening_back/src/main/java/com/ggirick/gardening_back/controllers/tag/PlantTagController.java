@@ -3,16 +3,15 @@ package com.ggirick.gardening_back.controllers.tag;
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.tag.PlantTagDTO;
 import com.ggirick.gardening_back.dto.tag.PlantTagParentDTO;
-import com.ggirick.gardening_back.services.plant.PlantService;
 import com.ggirick.gardening_back.services.tag.PlantTagService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,8 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,14 +36,14 @@ public class PlantTagController {
             @AuthenticationPrincipal UserTokenDTO userTokenDTO,
 
             @RequestPart(value = "file", required = true) MultipartFile file,
-            @RequestParam(value = "organ", defaultValue = "flower") String organ) throws Exception{
+            @RequestParam(value = "organ", defaultValue = "flower") String organ) throws Exception {
 
         List<PlantTagDTO> list = plantTagService.getImagePlantTags(file, organ, userTokenDTO.getUid());
 
         List<String> tags = new ArrayList<>();
 
         // 태그명만 반환
-        for(PlantTagDTO plantTagDTO : list ){
+        for (PlantTagDTO plantTagDTO : list) {
             tags.add(plantTagDTO.getTagName());
         }
 
@@ -111,11 +108,11 @@ public class PlantTagController {
     @Operation(
             summary = "식물 부모 태그 목록 조회",
             description = """
-                PLANT_TAG_PARENT 테이블에서 조회하는 API입니다.
-                tagName 은 서버 필터용 값이고,
-                description 은 화면 표시용 텍스트입니다.
-                description 뒤의 '태그' 문자열은 서버단에서 자동 제거하여 내려갑니다.
-                """
+                    PLANT_TAG_PARENT 테이블에서 조회하는 API입니다.
+                    tagName 은 서버 필터용 값이고,
+                    description 은 화면 표시용 텍스트입니다.
+                    description 뒤의 '태그' 문자열은 서버단에서 자동 제거하여 내려갑니다.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -130,6 +127,19 @@ public class PlantTagController {
     @GetMapping("/tagParent")
     public ResponseEntity<List<PlantTagParentDTO>> getTagParents() {
         List<PlantTagParentDTO> list = plantTagService.getTagParentList();
+        return ResponseEntity.ok(list);
+    }
+
+    // 식물 부모 태그에 따른 세부 태그 목록 조회
+    @Operation(
+            summary = "식물 부모 태그 아이디에 해당하는 자식 태그 목록 조회",
+            description = """
+                    PLANT_TAG 테이블에서 조회하는 API입니다.
+                    """
+    )
+    @GetMapping("/tagParent/{parentId}/child")
+    public ResponseEntity<List<PlantTagDTO>> getTagListByParentId(@Parameter(description = "자식 태그 목록을 조회할 부모 태그") @PathVariable int parentId) {
+        List<PlantTagDTO> list = plantTagService.getChildTagByParent(parentId);
         return ResponseEntity.ok(list);
     }
 }
