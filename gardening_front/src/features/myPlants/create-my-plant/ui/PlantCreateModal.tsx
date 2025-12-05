@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
-import type { PlantCreateModalProps } from "@/features/myPlants/create-my-plant/model/PlantCreateModalProps.ts";
+import {useCallback, useRef, useState} from "react";
+import type {PlantCreateModalProps} from "@/features/myPlants/create-my-plant/model/PlantCreateModalProps.ts";
 
 // 파일 업로드 / 별명 / 메모 / 풋터 UI 컴포넌트
 import PlantImageUploader from "@/features/myPlants/create-my-plant/ui/PlantImageUploader.tsx";
@@ -7,16 +7,17 @@ import PlantNicknameEditor from "@/features/myPlants/create-my-plant/ui/PlantNic
 import PlantMemoEditor from "@/features/myPlants/create-my-plant/ui/PlantMemoEditor.tsx";
 import PlantCreateModalFooter from "@/features/myPlants/create-my-plant/ui/PlantCreateModalFooter.tsx";
 
-import type { Align, MemoLine } from "@/entities/myPlants/model/MemoLine.ts";
-import type { SelectedTarget } from "@/entities/myPlants/model/SelectedTarget.ts";
+import type {Align, MemoLine} from "@/entities/myPlants/model/MemoLine.ts";
+import type {SelectedTarget} from "@/entities/myPlants/model/SelectedTarget.ts";
 
-import { Label } from "@/shared/shadcn/components/ui/label.tsx";
+import {Label} from "@/shared/shadcn/components/ui/label.tsx";
 import CustomDatePicker from "@/entities/myPlants/ui/CustomDatePicker.tsx";
 
 // API
-import { PlantInfoControllerApi } from "@/shared/api";
+import {PlantInfoControllerApi} from "@/shared/api";
 import AlignmentToolbar from "@/features/myPlants/create-my-plant/ui/AlignmentToolbar.tsx";
-import type {PlantDetailResponse} from "@/entities/searchPlant/searchPlantStore.ts";
+import type {PlantDetail} from "@/entities/searchPlant/searchPlantStore.ts";
+import {toast} from "sonner";
 
 export function PlantCreateModal({onClose, onSend}: PlantCreateModalProps) {
 
@@ -64,12 +65,12 @@ export function PlantCreateModal({onClose, onSend}: PlantCreateModalProps) {
 
         plantApi
             .identifyPlantByPlantNetByFile(file)
-            .then((res: PlantDetailResponse)  => {
-                const data = res.data.data;
+            .then(resp => {
+                console.log(resp.data);
+                const data: PlantDetail = resp.data;
                 if (!data || !data.scientificName) {
                     setCommonName("식별 실패");
-                    return;
-                }
+                    return;                }
 
                 setScientificName(data.scientificName);
                 setCommonName(data.commonName || "확실하지 않아요"); // 사용자에게 안내
@@ -122,14 +123,26 @@ export function PlantCreateModal({onClose, onSend}: PlantCreateModalProps) {
         setStartDate(today);
     };
 
+    // 메모 줄 제한
+    const MAX_LINES = 3;
+
     // 메모 입력
     const updateMemoText = (value: string) => {
-        setMemoText(value);
         const lines = value.split("\n");
+
+        // ⭐ 3줄 초과 입력 차단
+        if (lines.length > MAX_LINES) {
+            toast.warning(`메모는 최대 ${MAX_LINES}줄까지 입력 가능합니다.`);
+            return;
+        }
+
+        setMemoText(value);
+
         const nextLines: MemoLine[] = lines.map((t, i) => ({
             text: t,
             align: memoLines[i]?.align ?? "left",
         }));
+
         setMemoLines(nextLines);
     };
 
@@ -164,7 +177,13 @@ export function PlantCreateModal({onClose, onSend}: PlantCreateModalProps) {
         if (!scientificName) return alert("먼저 식물을 인식해주세요!");
 
         // 업로드할 파일 가져오기
-        const file = fileInputRef.current?.files?.[0] ?? null;
+        const file = fileInputRef.current?.files?.[0];
+
+        // 파일이 없으면 에러
+        if (!file) {
+            alert("식물 사진을 업로드해주세요!");
+            return;
+        }
 
         // onSend 세팅
         onSend?.({
@@ -174,9 +193,10 @@ export function PlantCreateModal({onClose, onSend}: PlantCreateModalProps) {
                 memo: memoText,
                 acquiredAt: startDate.toISOString().slice(0, 10)
             },
-            file
+            file // null X, 확실한 File 전달
         });
     };
+
 
     return (
         <div

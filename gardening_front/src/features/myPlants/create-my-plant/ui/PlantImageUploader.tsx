@@ -54,7 +54,7 @@ export default function PlantImageUploader({
                         className={`
                             object-contain cursor-pointer
                             ${isPortrait
-                            ? "h-full w-auto mx-auto"
+                            ? "h-full w-auto mx-auto max-h-[800px]"
                             : "w-full h-auto max-h-[300px]"
                         }
                         `}

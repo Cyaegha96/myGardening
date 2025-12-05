@@ -3,6 +3,7 @@ package com.ggirick.gardening_back.mappers.myPlant;
 import com.ggirick.gardening_back.dto.myPlant.MyPlantDTO;
 import com.ggirick.gardening_back.dto.myPlant.MyPlantResponseDTO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 

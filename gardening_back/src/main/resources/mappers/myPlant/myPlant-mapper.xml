@@ -15,8 +15,8 @@
         )
         VALUES (
         my_plant_seq.NEXTVAL,
-        #{loginUid},
-        #{plantScientificName}
+        #{userUid},
+        #{plantScientificName},
         #{nickname},
         #{memo},
         #{acquiredAt}

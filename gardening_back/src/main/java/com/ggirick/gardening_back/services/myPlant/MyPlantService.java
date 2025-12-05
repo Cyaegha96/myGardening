@@ -16,6 +16,8 @@ import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 
+import static com.ggirick.gardening_back.enums.WeatherType.SUNNY;
+
 @Service
 @RequiredArgsConstructor
 public class MyPlantService {
@@ -29,12 +31,20 @@ public class MyPlantService {
     public void insert(MyPlantDTO dto, MultipartFile file, String loginUid) throws Exception {
 
         // 스크립트/HTML 공격 방지: 제목/내용 이스케이프
-        dto.setNickname(HtmlUtils.htmlEscape(dto.getNickname()));
+        if (dto.getNickname() != null || !(dto.getNickname().isBlank())) {
+            dto.setNickname(HtmlUtils.htmlEscape(dto.getNickname()));
+        }
         dto.setMemo(HtmlUtils.htmlEscape(dto.getMemo()));
+
+        // 닉네임이 비어있으면 null 값 세팅
+        if (dto.getNickname() == null || dto.getNickname().isBlank()) {
+            dto.setNickname(null);
+        }
 
         // my_plant 테이블에 입력 후 user_plant_id 받기
         myPlantMapper.insert(dto);
         int userPlantId = dto.getUserPlantId();
+        System.out.println("userPlantId: " + userPlantId);
 
         // 이미지 파일이 있는 경우에만 업로드 처리
         if (file != null && !file.isEmpty()) {
