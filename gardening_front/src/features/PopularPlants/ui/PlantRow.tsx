@@ -14,7 +14,7 @@ export const PlantRow = ({ rank, plant }:PlantRowProps) => {
 
             <div className="flex-1">
                 <p className="font-medium">{plant.name}</p>
-                <p className="text-sm text-gray-400">❤️ {plant.likes}</p>
+                <p className="text-sm text-gray-400">등록된 수 : {plant.likes}</p>
             </div>
         </div>
     );

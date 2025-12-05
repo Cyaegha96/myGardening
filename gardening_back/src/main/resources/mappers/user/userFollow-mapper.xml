@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ggirick.gardening_back.mappers.user.UserFollowMapper">
+    <!-- 관계 확인 -->
+    <select id="findRelation" resultType="com.ggirick.gardening_back.dto.user.UserFollowDTO">
+        SELECT *
+        FROM user_follow
+        WHERE follower_uid = #{followerUid}
+          AND following_uid = #{followingUid}
+            FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <!-- 신규 팔로우 -->
+    <insert id="insertFollow">
+        INSERT INTO user_follow (
+            id,
+            follower_uid,
+            following_uid,
+            is_active,
+            created_at
+        ) VALUES (
+                     user_follow_seq.NEXTVAL,
+                     #{followerUid},
+                     #{followingUid},
+                     'Y',
+                     SYSTIMESTAMP
+                 )
+    </insert>
+
+    <!-- 기존 기록 재활성화 -->
+    <update id="activateFollow">
+        UPDATE user_follow
+        SET is_active = 'Y'
+        WHERE follower_uid = #{followerUid}
+          AND following_uid = #{followingUid}
+    </update>
+
+    <!-- 언팔 (soft delete) -->
+    <update id="deactivateFollow">
+        UPDATE user_follow
+        SET is_active = 'N'
+        WHERE follower_uid = #{followerUid}
+          AND following_uid = #{followingUid}
+    </update>
+
+    <!-- 팔로워 목록 -->
+    <select id="getFollowers" resultType="com.ggirick.gardening_back.dto.auth.UserInfoDTO">
+        SELECT
+            u.uuid,
+            u.name,
+            u.nickname,
+            u.address,
+            u.address_detail AS addressDetail,
+            u.zipcode,
+            u.bio,
+            u.profile_url AS profileUrl,
+            u.birth_date AS birthDate
+        FROM user_follow f
+                 JOIN user_info u ON f.follower_uid = u.uuid
+        WHERE f.following_uid = #{userUid}
+          AND f.is_active = 'Y'
+    </select>
+
+    <!-- 팔로잉 목록 -->
+    <select id="getFollowings" resultType="com.ggirick.gardening_back.dto.auth.UserInfoDTO">
+        SELECT
+            u.uuid,
+            u.name,
+            u.nickname,
+            u.address,
+            u.address_detail AS addressDetail,
+            u.zipcode,
+            u.bio,
+            u.profile_url AS profileUrl,
+            u.birth_date AS birthDate
+        FROM user_follow f
+                 JOIN user_info u ON f.following_uid = u.uuid
+        WHERE f.follower_uid = #{userUid}
+          AND f.is_active = 'Y'
+    </select>
+
+</mapper>
