@@ -1,8 +1,8 @@
-package com.ggirick.gardening_back.services.myPlant;
+package com.ggirick.gardening_back.services.myPlant.diary;
 
-import com.ggirick.gardening_back.dto.myPlant.MyPlantDiaryImageDTO;
-import com.ggirick.gardening_back.dto.myPlant.MyPlantDiaryImageResponseDTO;
-import com.ggirick.gardening_back.mappers.myPlant.MyPlantDiaryImageMapper;
+import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO;
+import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageResponseDTO;
+import com.ggirick.gardening_back.mappers.myPlant.diary.MyPlantDiaryImageMapper;
 import com.ggirick.gardening_back.utils.FileUtil;
 import com.ggirick.gardening_back.utils.HashUtil;
 import lombok.RequiredArgsConstructor;
@@ -64,17 +64,18 @@ public class MyPlantDiaryImageService {
                 .build();
     }
 
-    // 다이어리별 이미지 목록 조회
-    public List<MyPlantDiaryImageDTO> getImagesByPlantId(int userPlantId) {
-        return myPlantDiaryImageMapper.getImageByPlantId(userPlantId);
+    // 식물별 다이어리 이미지 목록 조회
+    public List<MyPlantDiaryImageResponseDTO> getImagesByPlantId(int userPlantId) {
+        List<MyPlantDiaryImageDTO> images = myPlantDiaryImageMapper.getImagesByPlantId(userPlantId);
+        return MyPlantDiaryImageResponseDTO.ofList(images);
     }
 
     // 개별 이미지 조회
-    public MyPlantDiaryImageDTO getImageById(int imageId) {
-        return myPlantDiaryImageMapper.getImageById(imageId);
+    public MyPlantDiaryImageResponseDTO getImageById(int imageId) {
+        return MyPlantDiaryImageResponseDTO.of(myPlantDiaryImageMapper.getImageById(imageId));
     }
 
-    // 이미지 개별 삭제
+    // imageId로 이미지 개별 삭제
     @Transactional
     public void deleteByImageId(int imageId) {
         // imageId로 삭제할 대표이미지 정보 가져오기
@@ -88,18 +89,23 @@ public class MyPlantDiaryImageService {
         fileUtil.deleteFile(dto.getSysName());
     }
 
-    // 다이어리 삭제 → 모든 이미지 삭제
+    // 삭제하기 위한 list
+     public List<MyPlantDiaryImageDTO> getImagesForDelete(int userPlantId) {
+        return myPlantDiaryImageMapper.getImagesByPlantId(userPlantId);
+    }
+
+    // 등록한 식물 삭제 → 모든 다이어리 삭제 -> 모든 이미지 삭제
     @Transactional
-    public void deleteByDiaryId(int diaryId) {
-        List<MyPlantDiaryImageDTO> images =
-                myPlantDiaryImageMapper.getImageByPlantId(diaryId);
-
-        // DB 삭제
-        myPlantDiaryImageMapper.deleteByDiaryId(diaryId);
-
-        // 먼저 파일 삭제
+    public void deleteAllImagesByPlantId(List<MyPlantDiaryImageDTO> images) {
+         // gcp 파일 삭제 & DB 삭제
         for (MyPlantDiaryImageDTO img : images) {
+            // myPlantDiaryImageMapper.deleteByDiaryId(diaryId);
             fileUtil.deleteFile(img.getSysName());
         }
+    }
+
+    // 권한 체크용 - 해당 식물의 이미지인지
+    public int validateDiaryImageBelongsToPlant(int imageId, int userPlantId) {
+        return myPlantDiaryImageMapper.validateDiaryImageBelongsToPlant(imageId, userPlantId);
     }
 }

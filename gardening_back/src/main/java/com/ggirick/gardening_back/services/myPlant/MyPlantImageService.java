@@ -18,6 +18,16 @@ public class MyPlantImageService {
     private final MyPlantImageMapper myPlantImageMapper;
     private final FileUtil fileUtil;
 
+    // 등록한 식물의 대표 이미지 조회
+    public MyPlantImageDTO getThumbnailByPlantId(int userPlantId) {
+        return myPlantImageMapper.getThumbnailByPlantId(userPlantId);
+    }
+
+    // imageId로 대표 이미지 조회
+    public MyPlantImageResponseDTO getImageById(int imageId) {
+        return myPlantImageMapper.getImageById(imageId);
+    }
+
     // 이미지 등록
     @Transactional
     public MyPlantImageResponseDTO insert(MultipartFile file, int userPlantId, String loginUid) throws Exception {
@@ -66,18 +76,25 @@ public class MyPlantImageService {
 
     // 대표 이미지 삭제
     @Transactional
-    public void deleteImage(int userPlantId) {
-        // userPlantId로 삭제할 대표이미지 정보 가져오기
-        MyPlantImageDTO dto = myPlantImageMapper.getImageByPlantId(userPlantId);
-        if (dto == null) return; // 이미 삭제되었거나 없음
+    public void deleteImage(MyPlantImageDTO thumb) {
+        if (thumb == null) return; // 이미 삭제되었거나 없음
 
         // 1. DB 삭제 - fk cascade 설정으로 생략
 //        myPlantImageMapper.delete(imageId);
 
         // 2. gcp 삭제
-        fileUtil.deleteFile(dto.getSysName());
+        fileUtil.deleteFile(thumb.getSysName());
     }
 
+    // 권한 체크용 - 식물 등록자가 맞는지
+    public String getOwnerUidByPlantImageId(int imageId) {
+        return myPlantImageMapper.getOwnerUidByPlantImageId(imageId);
+    }
+
+    // 권한 체크용 - 해당 식물의 이미지인지
+    public int validateImageBelongsToPlant(int imageId, int userPlantId) {
+        return myPlantImageMapper.validateImageBelongsToPlant(imageId, userPlantId);
+    }
 }
 
 

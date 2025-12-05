@@ -1,4 +1,4 @@
 export interface SelectedTarget {
-    type: "title" | "line";
+    type: "nickname" | "line";
     index?: number;
 }

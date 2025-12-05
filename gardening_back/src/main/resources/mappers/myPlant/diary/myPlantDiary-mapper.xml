@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ggirick.gardening_back.mappers.myPlant.MyPlantDiaryMapper">
+<mapper namespace="com.ggirick.gardening_back.mappers.myPlant.diary.MyPlantDiaryMapper">
     <!-- 단일 조회 -->
-    <select id="getDiaryById" resultType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+    <select id="getDiaryById" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
         SELECT
         *
         FROM my_plant_diary
@@ -12,7 +12,7 @@
     </select>
 
     <!-- 식물별 전체 다이어리 조회 -->
-    <select id="getDiaryByPlantId" resultType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+    <select id="getDiaryByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
         SELECT
         *
         FROM my_plant_diary
@@ -20,8 +20,20 @@
         ORDER BY created_at DESC
     </select>
 
+    <!-- 식물별 첫번째 다이어리 ID 조회 - 가장 오래된 다이어리 -->
+    <select id="getFirstDiaryId" resultType="int">
+        SELECT diary_id
+        FROM (
+                 SELECT diary_id
+                 FROM my_plant_diary
+                 WHERE user_plant_id = #{userPlantId}
+                 ORDER BY created_at ASC
+             )
+        WHERE ROWNUM = 1
+    </select>
+
     <!-- 다이어리 등록 -->
-    <insert id="insertDiary" parameterType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+    <insert id="insertDiary" parameterType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
         INSERT INTO my_plant_diary (
             diary_id,
             user_plant_id,
@@ -36,7 +48,7 @@
     </insert>
 
     <!-- 다이어리 수정 -->
-    <update id="updateDiary" parameterType="com.ggirick.gardening_back.dto.diary.MyPlantDiaryDTO">
+    <update id="updateDiary" parameterType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
         UPDATE my_plant_diary
         SET
             content = #{content},
@@ -50,5 +62,13 @@
         DELETE FROM my_plant_diary
         WHERE diary_id = #{diaryId}
     </delete>
+
+    <!-- 권한 체크용 - 해당 식물의 diaryId인지 -->
+    <select id="validateDiaryBelongsToPlant" resultType="int">
+        SELECT COUNT(*)
+        FROM my_plant_diary
+        WHERE diary_id = #{diaryId}
+          AND user_plant_id = #{userPlantId}
+    </select>
 
 </mapper>

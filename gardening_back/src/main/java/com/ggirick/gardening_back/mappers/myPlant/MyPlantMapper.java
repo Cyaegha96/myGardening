@@ -24,4 +24,6 @@ public interface MyPlantMapper {
     // 단건 기본정보 조회 (상세 용)
     MyPlantResponseDTO getByPlantId(int userPlantId);
 
+    // 권한체크용 userPlantId → ownerUid 조회
+    String getOwnerUidByPlantId(int userPlantId);
 }

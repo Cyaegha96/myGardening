@@ -1,41 +1,81 @@
-import {useCallback, useState} from "react";
-import type {PlantCreateModalProps} from "@/features/myPlants/create-my-plant/model/PlantCreateModalProps.ts";
+import { useCallback, useRef, useState } from "react";
+import type { PlantCreateModalProps } from "@/features/myPlants/create-my-plant/model/PlantCreateModalProps.ts";
 
-import {AlignCenter, AlignLeft, AlignRight, HelpCircle} from "lucide-react";
-import type {Align, MemoLine} from "@/entities/myPlants/model/MemoLine.ts";
-import type {SelectedTarget} from "@/entities/myPlants/model/SelectedTarget.ts";
-import {Label} from "@/shared/shadcn/components/ui/label.tsx";
-import {Button} from "@/shared/shadcn/components/ui/button.tsx";
+// 파일 업로드 / 별명 / 메모 / 풋터 UI 컴포넌트
+import PlantImageUploader from "@/features/myPlants/create-my-plant/ui/PlantImageUploader.tsx";
+import PlantNicknameEditor from "@/features/myPlants/create-my-plant/ui/PlantNicknameEditor.tsx";
+import PlantMemoEditor from "@/features/myPlants/create-my-plant/ui/PlantMemoEditor.tsx";
+import PlantCreateModalFooter from "@/features/myPlants/create-my-plant/ui/PlantCreateModalFooter.tsx";
+
+import type { Align, MemoLine } from "@/entities/myPlants/model/MemoLine.ts";
+import type { SelectedTarget } from "@/entities/myPlants/model/SelectedTarget.ts";
+
+import { Label } from "@/shared/shadcn/components/ui/label.tsx";
 import CustomDatePicker from "@/entities/myPlants/ui/CustomDatePicker.tsx";
 
-export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalProps) {
+// API
+import { PlantInfoControllerApi } from "@/shared/api";
+import AlignmentToolbar from "@/features/myPlants/create-my-plant/ui/AlignmentToolbar.tsx";
+import type {PlantDetailResponse} from "@/entities/searchPlant/searchPlantStore.ts";
 
-    /** 기본이미지 경로 */
-        // const DEFAULT_IMAGE = "/assets/default-myplant.png";
+export function PlantCreateModal({onClose, onSend}: PlantCreateModalProps) {
 
-        // 오늘 날짜
+    // 오늘 날짜
     const today = new Date();
 
     // 상태
     const [imagePreview, setImagePreview] = useState<string>("noImage");
     const [isDragging, setIsDragging] = useState(false);
 
-    const [name, setName] = useState("");
-    const [titleAlign, setTitleAlign] = useState<Align>("center");
+    // Common Name (식별 결과 표시용 - 수정 불가)
+    const [commonName, setCommonName] = useState("");
+
+    // 사용자가 입력하는 별명(선택사항)
+    const [nickname, setNickname] = useState("");
+
+    const [nicknameAlign, setNicknameAlign] = useState<Align>("center");
 
     const [memoText, setMemoText] = useState("");
     const [memoLines, setMemoLines] = useState<MemoLine[]>([]);
     const [selectedTarget, setSelectedTarget] = useState<SelectedTarget | null>(null);
 
-    const [showHelp, setShowHelp] = useState(false);
-
-    // 날짜 초기값 = 오늘
     const [startDate, setStartDate] = useState<Date>(today);
 
-    // 이미지 처리
+    const [isPortrait, setIsPortrait] = useState(true);
+
+    const [scientificName, setScientificName] = useState("");
+
+    // file input DOM 제어 위해 Ref 사용
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    // 이미지 처리 + PlantNet 인식 호출
     const handleFile = useCallback((file: File) => {
         const preview = URL.createObjectURL(file);
-        setImagePreview(preview);
+
+        const img = new Image();
+        img.src = preview;
+        img.onload = () => {
+            setIsPortrait(img.height >= img.width);
+            setImagePreview(preview); // 미리보기 UI 갱신
+        };
+
+        // 식물 인식 API 호출
+        const plantApi = new PlantInfoControllerApi();
+
+        plantApi
+            .identifyPlantByPlantNetByFile(file)
+            .then((res: PlantDetailResponse)  => {
+                const data = res.data.data;
+                if (!data || !data.scientificName) {
+                    setCommonName("식별 실패");
+                    return;
+                }
+
+                setScientificName(data.scientificName);
+                setCommonName(data.commonName || "확실하지 않아요"); // 사용자에게 안내
+
+            })
+            .catch(() => setCommonName("식별 실패"));
     }, []);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +84,7 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         handleFile(file);
     };
 
+    // 드래그 업로드 이벤트
     const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
         e.preventDefault();
         setIsDragging(true);
@@ -56,14 +97,24 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         if (file) handleFile(file);
     };
 
-    const clearImage = () => setImagePreview("noImage");
+    // 이미지 x 버튼 클릭시
+    const clearImage = () => {
+        setImagePreview("noImage");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        setScientificName("");
+        setCommonName("");
+    };
 
     // 전체 초기화
     const handleResetAll = () => {
         setImagePreview("noImage");
-        setName("");
-        setTitleAlign("center");
+        if (fileInputRef.current) fileInputRef.current.value = "";
 
+        setCommonName("");
+        setNickname("");
+        setScientificName("");
+
+        setNicknameAlign("center");
         setMemoText("");
         setMemoLines([]);
 
@@ -73,6 +124,7 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
 
     // 메모 입력
     const updateMemoText = (value: string) => {
+        setMemoText(value);
         const lines = value.split("\n");
         const nextLines: MemoLine[] = lines.map((t, i) => ({
             text: t,
@@ -85,8 +137,8 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
     const applyAlign = (align: Align) => {
         if (!selectedTarget) return;
 
-        if (selectedTarget.type === "title") {
-            setTitleAlign(align);
+        if (selectedTarget.type === "nickname") {
+            setNicknameAlign(align);
             return;
         }
 
@@ -100,183 +152,92 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
         }
     };
 
-    // 정렬하기 위해 선택한 줄
-    const currentAlign = selectedTarget?.type === "title"
-        ? titleAlign
+    // 정렬 대상 선택 표시
+    const currentAlign = selectedTarget?.type === "nickname"
+        ? nicknameAlign
         : selectedTarget?.type === "line"
             ? memoLines[selectedTarget.index!]?.align ?? "left"
             : "left";
 
+    // 등록하기 API → 부모에게 데이터 전달
+    const handleSubmit = () => {
+        if (!scientificName) return alert("먼저 식물을 인식해주세요!");
+
+        // 업로드할 파일 가져오기
+        const file = fileInputRef.current?.files?.[0] ?? null;
+
+        // onSend 세팅
+        onSend?.({
+            plantInfo: {
+                nickname: nickname.trim() === "" ? undefined : nickname,
+                plantScientificName: scientificName,
+                memo: memoText,
+                acquiredAt: startDate.toISOString().slice(0, 10)
+            },
+            file
+        });
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
             <div className="w-[460px] bg-white rounded-lg p-6 shadow-lg">
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold">새 식물 등록</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                        ✕
+                    </button>
                 </div>
 
                 {/* 이미지 업로드 */}
-                <div className="mb-4 relative flex flex-col items-center">
-                    {/* X 버튼 */}
-                    <button
-                        onClick={clearImage}
-                        className="absolute right-2 top-2 bg-black/40 text-white px-2 py-1 rounded text-xs"
-                    >
-                        ✕
-                    </button>
+                <PlantImageUploader
+                    imagePreview={imagePreview}
+                    isDragging={isDragging}
+                    isPortrait={isPortrait}
+                    commonName={commonName}
+                    nickname={nickname}
+                    nicknameAlign={nicknameAlign}
+                    memoLines={memoLines}
+                    selectedTarget={selectedTarget}
+                    onImageChange={handleImageChange}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClearImage={clearImage}
+                    onSelectNickname={() => setSelectedTarget({type: "nickname"})}
+                    onSelectMemoLine={(i) => setSelectedTarget({type: "line", index: i})}
+                    fileInputRef={fileInputRef}
+                />
 
-                    {/* 카드 박스 */}
-                    <div className="bg-white p-3 pb-6 rounded-md shadow-md w-80 relative">
-
-                        {imagePreview === "noImage" ? (
-                            <label
-                                htmlFor="plant-image"
-                                className={`
-                                            w-full h-48 border-2 border-dashed rounded-md 
-                                            flex items-center justify-center cursor-pointer
-                                            text-gray-500 bg-gray-50 transition-all
-                                            ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300"}
-                                        `}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                            >
-                                클릭 또는 드래그&드롭으로 이미지 업로드
-                            </label>
-                        ) : (
-                            <img
-                                src={imagePreview}
-                                className="w-full rounded object-contain cursor-pointer"
-                                style={{maxHeight: "300px"}}
-                                onClick={() => document.getElementById("plant-image")?.click()}
-                            />
-                        )}
-
-
-                        {/* 제목 */}
-                        {name && (
-                            <div
-                                onClick={() => setSelectedTarget({type: "title"})}
-                                className={`
-                                            mt-3 font-semibold text-sm text-gray-700 whitespace-pre-wrap cursor-pointer
-                                            ${selectedTarget?.type === "title" ? "bg-gray-200 rounded" : ""}
-                                        `}
-                                style={{textAlign: titleAlign}}
-                            >
-                                {name}
-                            </div>
-                        )}
-
-                        {/* 메모 */}
-                        {memoLines.length > 0 && (
-                            <div className="mt-2 text-xs text-gray-700">
-                                {memoLines.map((line, idx) => (
-                                    <div
-                                        key={idx}
-                                        onClick={() => setSelectedTarget({type: "line", index: idx})}
-                                        className={`
-                                                        whitespace-pre-wrap px-1 py-0.5 cursor-pointer
-                                                        ${selectedTarget?.type === "line" && selectedTarget.index === idx
-                                            ? "bg-gray-200 rounded"
-                                            : ""}
-                                                    `}
-                                        style={{textAlign: line.align}}
-                                    >
-                                        {line.text || " "}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <input
-                        id="plant-image"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageChange}
-                    />
-                </div>
-
-
-                {/* 정렬 + 도움말 */}
-                <div className="flex items-center mb-4 w-full relative">
-
-                    <div className="absolute left-1/2 -translate-x-1/2">
-                        <div className="inline-flex border rounded-md overflow-hidden shadow-sm">
-                            <button
-                                onClick={() => applyAlign("left")}
-                                className={`p-2 border-r ${currentAlign === "left" ? "bg-gray-200" : ""}`}
-                            >
-                                <AlignLeft size={18}/>
-                            </button>
-
-                            <button
-                                onClick={() => applyAlign("center")}
-                                className={`p-2 border-r ${currentAlign === "center" ? "bg-gray-200" : ""}`}
-                            >
-                                <AlignCenter size={18}/>
-                            </button>
-
-                            <button
-                                onClick={() => applyAlign("right")}
-                                className={`p-2 ${currentAlign === "right" ? "bg-gray-200" : ""}`}
-                            >
-                                <AlignRight size={18}/>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="ml-auto">
-                        <button
-                            onClick={() => setShowHelp(prev => !prev)}
-                            className="p-2 rounded-full hover:bg-gray-100 transition"
-                        >
-                            <HelpCircle size={20} className="text-gray-600"/>
-                        </button>
-                    </div>
-                </div>
-
-                {showHelp && (
-                    <div
-                        className="mb-4 bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-700 shadow-sm">
-                        <p className="font-semibold mb-2">줄 정렬하는 방법</p>
-                        <p className="leading-6 mb-2">
-                            1. 사진 아래 미리보기에서 제목 또는 줄을 클릭하세요.<br/>
-                            선택된 줄은 회색 배경으로 표시됩니다.
-                        </p>
-                        <p className="leading-6 mb-2">
-                            2. 위의 정렬 버튼을 누르면 해당 줄에만 적용됩니다.
-                        </p>
-                        <p className="text-xs text-gray-500">
-                            * 메모 입력창은 입력만 가능하며, 정렬은 미리보기에서만 가능합니다.
-                        </p>
-                    </div>
+                {/* CommonName 표시 */}
+                {commonName && (
+                    <p className="text-center text-sm text-green-700 font-medium mb-3">
+                        {commonName}
+                    </p>
                 )}
 
-                {/* 제목 */}
-                <div className="mb-4">
-                    <input
-                        type="text"
-                        maxLength={20}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        onClick={() => setSelectedTarget({type: "title"})}
-                        className={`
-                            w-full border rounded px-3 py-2 bg-gray-50 cursor-pointer
-                            ${selectedTarget?.type === "title" ? "bg-gray-100" : ""}
-                        `}
-                        placeholder="식물 이름"
-                        style={{textAlign: titleAlign}}
-                    />
-                </div>
+                {/* 정렬 버튼 */}
+                <AlignmentToolbar
+                    currentAlign={currentAlign}
+                    selectedTarget={selectedTarget}
+                    onApplyAlign={applyAlign}
+                />
+
+                {/* 별명 */}
+                <PlantNicknameEditor
+                    nickname={nickname}
+                    nicknameAlign={nicknameAlign}
+                    selectedTarget={selectedTarget}
+                    onChangeNickname={setNickname}
+                    onSelectNickname={() => setSelectedTarget({type: "nickname"})}
+                />
 
                 {/* 날짜 */}
                 <div className="mb-4">
                     <Label className="block mb-1 text-sm font-medium">키우기 시작한 날짜</Label>
-
                     <CustomDatePicker
                         value={startDate}
                         onChange={(date) => setStartDate(date ?? today)}
@@ -284,36 +245,12 @@ export default function PlantCreateModal({onClose, onSubmit}: PlantCreateModalPr
                 </div>
 
                 {/* 메모 */}
-                <div className="mb-4">
-                    <textarea
-                        value={memoText}
-                        placeholder="메모를 입력하세요"
-                        className="w-full border rounded px-3 py-2 h-28 resize-none bg-gray-50"
-                        onChange={(e) => {
-                            setMemoText(e.target.value);
-                            updateMemoText(e.target.value);
-                        }}
-                    />
-                </div>
+                <PlantMemoEditor memoText={memoText} onChangeMemoText={updateMemoText}/>
 
-                {/* 버튼 두 개 (오른쪽 정렬) */}
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button
-                        variant="destructive"
-                        className="px-4 py-2 text-sm"
-                        onClick={handleResetAll}
-                    >
-                        전체 초기화
-                    </Button>
-                    <Button
-                        variant="default"
-                        className="px-4 py-2 text-sm"
-                        onClick={onSubmit}
-                    >
-                        등록하기
-                    </Button>
-                </div>
-
+                <PlantCreateModalFooter
+                    onResetAll={handleResetAll}
+                    onSubmit={handleSubmit} // 부모 호출 트리거
+                />
             </div>
         </div>
     );

@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 @RestController
@@ -48,32 +50,44 @@ public class MyPlantController {
     // 새로운 식물 등록
     @Operation(
             summary = "새로운 식물 등록",
-            description = "사용자 UID, 식물 별명, 메모, 획득일(등록일)을 입력받아 저장합니다."
+            description = "사용자 UID, 식물 학명, 식물 별명, 메모, 획득일(등록일)을 입력받아 저장합니다."
     )
     @ApiResponse(responseCode = "200", description = "등록 성공")
-    @PostMapping(consumes = "application/json")
+    @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<Void> insertMyPlant(
             @AuthenticationPrincipal UserTokenDTO userInfo,
-            @RequestBody MyPlantDTO dto
-    ) {
+            @RequestPart("myPlantInfo") MyPlantDTO dto,
+            @RequestPart(value = "file") MultipartFile file
+    ) throws Exception {
+
+        // 권한 체크 1 - 식물 소유자인지 (등록은 로그인한 본인이므로 기본 만족)
         dto.setUserUid(userInfo.getUid());
-        myPlantService.insert(dto);
+
+        myPlantService.insert(dto, file, userInfo.getUid());
         return ResponseEntity.ok().build();
     }
 
     // 식물 정보 수정
     @Operation(
             summary = "식물 정보 수정",
-            description = "식물 별명, 메모, 획득일(acquiredAt), 상태(status)를 수정합니다."
+            description = "식물 별명, 메모, 획득일(acquiredAt), 상태(status), 대표이미지 수정"
     )
     @ApiResponse(responseCode = "200", description = "수정 성공")
-    @PutMapping(consumes = "application/json")
+    @PutMapping(consumes = "multipart/form-data")
     public ResponseEntity<Void> updateMyPlant(
             @AuthenticationPrincipal UserTokenDTO userInfo,
-            @RequestBody MyPlantDTO dto
-    ) {
+            @RequestPart("myPlantInfo") MyPlantDTO dto,
+            @RequestPart(value = "file") MultipartFile file
+    ) throws Exception {
+
+        // 권한 체크 1 - 식물 소유자인지
+        if (!checkOwner(dto.getUserPlantId(), userInfo.getUid())) {
+            return ResponseEntity.status(403).build(); // Forbidden
+        }
+
         dto.setUserUid(userInfo.getUid());
-        myPlantService.update(dto);
+        myPlantService.update(dto, file);
+
         return ResponseEntity.ok().build();
     }
 
@@ -84,8 +98,22 @@ public class MyPlantController {
     )
     @ApiResponse(responseCode = "200", description = "삭제 성공")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMyPlant(@PathVariable("id") int userPlantId) {
+    public ResponseEntity<Void> deleteMyPlant(
+            @PathVariable("id") int userPlantId,
+            @AuthenticationPrincipal UserTokenDTO userInfo
+    ) {
+        // 권한 체크 1 - 식물 소유자인지
+        if (!checkOwner(userPlantId, userInfo.getUid())) {
+            return ResponseEntity.status(403).build(); // Forbidden
+        }
+
         myPlantService.delete(userPlantId);
         return ResponseEntity.ok().build();
+    }
+
+    // ------------------------ 공통 권한 체크 ------------------------
+    private boolean checkOwner(int userPlantId, String loginUid) {
+        String ownerUid = myPlantService.getOwnerUidByPlantId(userPlantId);
+        return loginUid.equals(ownerUid);
     }
 }

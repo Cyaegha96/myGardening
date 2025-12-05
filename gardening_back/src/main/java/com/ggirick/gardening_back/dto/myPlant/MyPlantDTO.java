@@ -20,6 +20,9 @@ public class MyPlantDTO {
     @Schema(description = "식물 별명", example = "노랑이")
     private String nickname;
 
+    @Schema(description = "식물 학명", example = "Sansevieria stuckyi")
+    private String plantScientificName;
+
     @Schema(description = "식물 메모", example = "생일날 만난 노랑이")
     private String memo;
 

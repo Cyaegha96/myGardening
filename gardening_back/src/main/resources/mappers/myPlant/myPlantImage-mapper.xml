@@ -11,8 +11,11 @@
     </select>
 
     <!-- 등록한 식물의 대표 이미지 조회 -->
-    <select id="getImageById" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
-        SELECT *
+    <select id="getImageById" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO">
+        SELECT
+            image_id,
+            user_plant_id,
+            url
         FROM my_plant_image
         WHERE image_id = #{imageId}
     </select>
@@ -45,7 +48,7 @@
 
     <!-- 중복 이미지 존재 여부 조회 (유저별) -->
     <select id="findByHashAndUserUid"
-            resultType="com.ggirick.gardening_back.dto.myplant.MyPlantImageDTO">
+            resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO">
         SELECT
             i.image_id,
             i.url
@@ -53,5 +56,21 @@
                  JOIN my_plant p ON i.user_plant_id = p.user_plant_id
         WHERE i.hash = #{hash}
           AND p.user_uid = #{loginUid}
+    </select>
+
+    <!-- 권한 체크용 - 식물 등록자가 맞는지 -->
+    <select id="getOwnerUidByPlantImageId" resultType="string">
+        SELECT p.user_uid
+        FROM my_plant_image i
+                 JOIN my_plant p ON i.user_plant_id = p.user_plant_id
+        WHERE i.image_id = #{imageId}
+    </select>
+
+    <!-- 권한 체크용 - 해당 식물의 이미지인지 -->
+    <select id="validateImageBelongsToPlant" resultType="int">
+        SELECT COUNT(*)
+        FROM my_plant_image
+        WHERE image_id = #{imageId}
+          AND user_plant_id = #{userPlantId}
     </select>
 </mapper>

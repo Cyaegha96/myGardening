@@ -1,4 +1,4 @@
-package com.ggirick.gardening_back.dto.myPlant;
+package com.ggirick.gardening_back.dto.myPlant.diary;
 
 import com.ggirick.gardening_back.enums.WeatherType;
 import io.swagger.v3.oas.annotations.media.Schema;

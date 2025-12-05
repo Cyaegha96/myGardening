@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MyPlantRequestDTO {
+public class MyPlantImageRequestDTO {
     @Schema(description = "이미지 고유 번호", example = "1")
     private int imageId;
 

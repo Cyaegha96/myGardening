@@ -16,6 +16,12 @@ public class MyPlantResponseDTO {
     @Schema(description = "유저 식물 고유 ID", example = "10")
     private int userPlantId;
 
+    @Schema(description = "소유자 UID", example = "eun")
+    private String userUid;
+
+    @Schema(description = "식물 학명", example = "Sansevieria stuckyi")
+    private String plant_scientific_name;
+
     @Schema(description = "식물 별명", example = "노랑이")
     private String nickname;
 
