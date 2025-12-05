@@ -41,6 +41,23 @@ export async function logout(refreshToken?: string, accessToken?:string) {
   }
 }
 
+export async function inactivate(refreshToken?: string, accessToken?: string) {
+    const res = await axiosInterceptor.post(
+        "/auth/inactivate",
+        {
+            refreshToken,
+            accessToken,
+        },
+        {
+            headers: {
+                Authorization: accessToken ? `Bearer ${accessToken}` : undefined,
+            },
+        }
+    );
+
+    return res.data;
+}
+
 export async function completeProfile(payload: Record<string, any>) {
   const res = await axiosInterceptor.post(`${API_BASE_URL}/complete-profile`, payload);
   return res.data;

@@ -15,7 +15,7 @@ public interface UserMapper {
     //uuid기반 유저 조회
     UsersDTO selectUserByUid(@Param("uid") String uid);
 
-
+    int updateUserStatus(@Param("uid") String uid, @Param("status") String status);
     int insertUserInfo(UserInfoDTO userInfo);
     
     //uuid 기반 user 테이블 등록 (회원가입)

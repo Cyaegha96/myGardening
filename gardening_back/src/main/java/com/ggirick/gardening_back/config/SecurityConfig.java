@@ -6,6 +6,7 @@ import com.ggirick.gardening_back.mappers.auth.AuthMapper;
 import com.ggirick.gardening_back.mappers.auth.UserMapper;
 import com.ggirick.gardening_back.services.auth.AuthService;
 import com.ggirick.gardening_back.services.auth.OAuth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,8 +85,7 @@ public class SecurityConfig {
                         })
 
 
-                );
-
+                ) ;
         return http.build();
     }
 

@@ -2,9 +2,11 @@ import {Outlet, Route, Routes} from "react-router-dom";
 import {lazy, Suspense} from "react";
 import {ProtectedRoute} from "@/app/router/ProtectedRoute.tsx";
 import FlowerShop from "@/pages/flowerShop/FlowerShop.tsx";
+import TerrariumEditPage from "@/pages/terrarium/TerrariumEditPage.tsx";
 import SearchPlantDictPage from "@/pages/searchPlant/SearchPlantDictPage.tsx";
 import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
 import PlantThree from "@/pages/test/PlantThree.tsx";
+import {PopularPlantsPage} from "@/pages/PopularPlants/PopularPlantsPage.tsx";
 import MinimalChatBox from "@/shared/shadcn/components/ui/minimal-chat-box.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
@@ -41,6 +43,8 @@ export function CommonRoutes() {
                     <Route path="/plant-search/dict" element={<SearchPlantDictPage/>} />
                     <Route path="/plant-search" element={<SearchPlantMainPage/>} />
                     <Route path="/plant-test" element={<PlantThree/>}></Route>
+                    <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
+                    <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
                     <Route path="/pot-list" element={<PotListRoutes/>} />
                 </Route>
             </Routes>
