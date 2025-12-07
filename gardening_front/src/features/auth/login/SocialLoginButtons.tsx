@@ -2,6 +2,7 @@
 import { Button } from '@/shared/shadcn/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import NaverLogo from '@/widgets/auth/NaverLogo';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@radix-ui/react-tooltip";
 
 type Platform = 'kakao' | 'google' | 'naver';
 
@@ -12,7 +13,7 @@ interface Props {
 
 export default function SocialLoginButtons({ onSocialLogin, loading = false }: Props) {
   return (
-    <>
+      <TooltipProvider>
       <div className="relative w-full my-1">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-gray-200" />
@@ -56,15 +57,22 @@ export default function SocialLoginButtons({ onSocialLogin, loading = false }: P
         구글 로그인
       </Button>
 
-      <Button
-        type="button"
-        onClick={() => onSocialLogin('naver')}
-        disabled={loading}
-        className="w-full h-10 bg-[#03C75A] hover:bg-[#03C75A]/90 text-white rounded-md transition duration-150 flex items-center justify-center font-bold shadow-md"
-      >
-        <NaverLogo />
-        네이버 로그인
-      </Button>
-    </>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        type="button"
+                        onClick={() => onSocialLogin('naver')}
+                        disabled={loading}
+                        className="w-full h-10 bg-[#03C75A] hover:bg-[#03C75A]/90 text-white rounded-md transition duration-150 flex items-center justify-center font-bold shadow-md"
+                    >
+                        <NaverLogo />
+                        네이버 로그인
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                <p> 개발자 계정으로 전환되지 않은 상태이므로 네이버 로그인은 이용할 수 없습니다 </p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
   );
 }

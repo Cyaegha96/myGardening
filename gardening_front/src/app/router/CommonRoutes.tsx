@@ -6,7 +6,9 @@ import TerrariumEditPage from "@/pages/terrarium/TerrariumEditPage.tsx";
 import SearchPlantDictPage from "@/pages/searchPlant/SearchPlantDictPage.tsx";
 import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
 import PlantThree from "@/pages/test/PlantThree.tsx";
-import {PopularPlantsPage} from "@/pages/popularPlants/PopularPlantsPage.tsx";
+import {PopularPlantsPage} from "@/pages/PopularPlants/PopularPlantsPage.tsx";
+import TempPasswordLogin from "@/features/auth/login/TempPasswordLogin.tsx";
+import ChangePassword from "@/features/auth/login/ChangePassword.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
@@ -26,6 +28,8 @@ export function CommonRoutes() {
                 {/* 로그인 필요 없는 라우트 */}
                 <Route path="/auth/login" element={<LoginPage />} />
                 <Route path="/auth/register" element={<RegisterPage />} />
+                <Route path="/auth/login/temp" element={<TempPasswordLogin />} />
+                <Route path="/auth/password/new" element={<ChangePassword />} />
                 <Route path="/oauth/redirect" element={<OAuthRedirectHandler />} />
                 <Route path="/board/*" element={<BoardRoutes/>}/>
                 <Route path="*" element={<HomePage />} />
