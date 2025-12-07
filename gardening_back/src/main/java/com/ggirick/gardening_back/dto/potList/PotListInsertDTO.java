@@ -4,6 +4,8 @@ import com.ggirick.gardening_back.enums.potList.PotListType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,4 +28,9 @@ public class PotListInsertDTO {
     String location;
     @Schema(description = "썸네일 url")
     String thumbnail;
+
+    @Schema(description = "등록하는 이미지 중, 썸네일로 사용할 index")
+    int thumbnailIndex;
+    @Schema(description = "설정 태그 목록")
+    List<Integer> tags;
 }

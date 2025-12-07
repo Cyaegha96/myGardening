@@ -14,7 +14,7 @@ export default function PotSearchBox() {
     const fetchPotList = usePotListStore(state => state.fetchPotList);
 
     return (
-        <div className="flex items-center gap-2 w-full md:w-auto my-5">
+        <div className="flex items-center gap-2 w-full md:w-auto">
 
             {/* 검색 범위 선택 */}
             <select

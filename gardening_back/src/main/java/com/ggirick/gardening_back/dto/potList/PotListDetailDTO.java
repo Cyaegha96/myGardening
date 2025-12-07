@@ -44,9 +44,9 @@ public class PotListDetailDTO {
     @Schema(description = "작성자 이름")
     String writerName;
     @Schema(description = "북마크(찜) 수")
-    String bookmarkCount;
+    int bookmarkCount;
     @Schema(description = "활성된 채팅 수")
-    String chatroomCount;
+    int chatroomCount;
     @Schema(description = "등록된 태그 목록")
-    List<String> tags;
+    List<Integer> tags;
 }

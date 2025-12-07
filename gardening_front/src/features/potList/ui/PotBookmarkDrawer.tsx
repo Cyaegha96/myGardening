@@ -4,13 +4,20 @@ import {Heart, MessageCircle} from "lucide-react";
 import {useEffect, useState} from "react";
 import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 import {potListApi} from "@/entities/potList/api/potListApi.ts";
+import {useNavigate} from "react-router-dom";
+import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.tsx";
+import {formatPrice} from "@/entities/potList/libs/formatPrice.ts";
 
 export default function PotBookmarkDrawer() {
     const [isSheetOpen, setSheetOpen] = useState<boolean>(false);
 
     const fetchBookmarkPotLists = usePotListStore(state => state.fetchBookmarkPotLists);
-    const fetchPotList = usePotListStore(state => state.fetchPotList);
     const bookmarkPotLists = usePotListStore(state => state.bookmarkPotLists);
+    const setBookmarkCount = usePotListStore(state => state.setBookmarkCount);
+    const setBookmarkCountOnDetail = usePotDetailStore(state => state.setBookmarkCount);
+    const setOtherPotBookmarkCount = usePotDetailStore(state => state.setOtherPotBookmarkCount);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchBookmarkPotLists();
@@ -39,9 +46,9 @@ export default function PotBookmarkDrawer() {
                     </SheetHeader>
 
                     {/* 목록 */}
-                    <div className="space-y-2 overflow-auto">
+                    <div className="overflow-auto">
                         {bookmarkPotLists.length === 0 && (
-                            <p className="text-sm text-gray-500">찜 한 분양글이 없습니다.</p>
+                            <p className="text-sm text-gray-500 ms-5">찜 한 분양글이 없습니다.</p>
                         )}
 
                         {bookmarkPotLists.map((item, idx) => (
@@ -51,19 +58,27 @@ export default function PotBookmarkDrawer() {
                                 bg-green-50 dark:bg-green-900 hover:bg-green-100 dark:hover:bg-green-800 
                                 cursor-pointer transition m-1 truncate`}
                                 onClick={() => {
-                                    alert(item.id + "로 이동");
+                                    navigate(`${item.id}`);
                                     setSheetOpen(false);
                                 }}
                             >
-                                <img
-                                    src={item.thumbnail}
-                                    className="w-16 h-16 object-cover rounded"
-                                    alt={item.title}
-                                />
+                                {item.thumbnail ? (
+                                    <img
+                                        src={item.thumbnail}
+                                        alt="썸네일"
+                                        className="w-16 h-16 object-cover rounded-md"
+                                    />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
+                                        등록된<br/>
+                                        사진 없음
+                                    </div>
+                                )}
+
                                 <div className="flex flex-col min-w-0">
                                     <p className="font-semibold truncate w-full">{item.title}</p>
                                     <p className="text-xs italic text-gray-600 dark:text-gray-400">
-                                        {item.price}원
+                                        {item.type === "SELL" ? (item.price && item.price! > 0 ? `${formatPrice(item.price)}원` : "무료 나눔") : "삽니다"}
                                     </p>
                                 </div>
                                 {item.status && item.status !== "AFTER_TRADE" &&
@@ -76,11 +91,13 @@ export default function PotBookmarkDrawer() {
                                                 if (item.id != null) {
                                                     potListApi.toggleLike(item.id).then(() => {
                                                         fetchBookmarkPotLists();
-                                                        fetchPotList();
+                                                        setBookmarkCount(item.id!, item.bookmarkCount! - 1);
+                                                        setBookmarkCountOnDetail(item.bookmarkCount! - 1);
+                                                        setOtherPotBookmarkCount(item.id!, item.bookmarkCount! - 1);
                                                     });
                                                 }
                                             }}
-                                            className="absolute top-1 right-2 z-20 hover:bg-gray-200 transition bg-white backdrop-blur-md px-2 py-1 rounded-full flex items-center gap-1 text-sm shadow-sm">
+                                            className="absolute top-1 right-2 z-20 hover:bg-gray-200 transition bg-white backdrop-blur-md px-2 py-1 rounded-full flex items-center gap-1 text-sm">
                                             <Heart className="w-4 h-4 text-red-500" fill="red"/>
                                             <span className="font-medium">{item.bookmarkCount}</span>
                                         </div>

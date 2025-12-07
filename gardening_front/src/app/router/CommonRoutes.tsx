@@ -45,7 +45,7 @@ export function CommonRoutes() {
                     <Route path="/plant-test" element={<PlantThree/>}></Route>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                     <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
-                    <Route path="/pot-list" element={<PotListRoutes/>} />
+                    <Route path="/pot-list/*" element={<PotListRoutes/>} />
                 </Route>
             </Routes>
         </Suspense>

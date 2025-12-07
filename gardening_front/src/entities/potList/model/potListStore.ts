@@ -1,5 +1,5 @@
 import {create} from "zustand";
-import type {PlantTagDTO, PlantTagParentDTO, PotListDetailDTO} from "@/shared/api";
+import type {PlantTagDTO, PlantTagParentDTO, PotListDetailDTO, PotListInsertDTO, PotListPatchDTO} from "@/shared/api";
 import {potListApi} from "@/entities/potList/api/potListApi.ts";
 import {plantTagApi} from "@/entities/plantTag/api/plantTagApi.ts";
 
@@ -8,7 +8,7 @@ type PotListStore = {
     bookmarkPotLists: PotListDetailDTO[];
     tagFilterList: { parentTag: PlantTagParentDTO, tagList: PlantTagDTO[] }[];
 
-    cursorId: number | undefined;
+    cursorId: string | undefined;
     size: number | undefined;
     keyword: string | undefined;
     searchType: string | undefined;
@@ -24,7 +24,16 @@ type PotListStore = {
 
     setKeyword: (keyword: string) => void;
     setSearchType: (searchType: string) => void;
-    setCursorId: (id: number) => void;
+    setCursorId: (value: string | undefined) => void;
+    setBookmarkCount: (id: number, count: number) => void;
+
+    currentPotList: PotListDetailDTO | undefined;
+
+    setCurrentPotList: (data: PotListDetailDTO | undefined) => void;
+
+    addPotList: (payload: PotListInsertDTO) => void;
+
+    updatePotList: (payload: PotListPatchDTO) => void;
 };
 
 export const usePotListStore = create<PotListStore>((set, get) => ({
@@ -66,14 +75,17 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
 
             // 데이터 없음 → 더 불러올 게 없음
             if (newItems.length === 0) {
+                set({
+                    cursorId: undefined,
+                })
                 return [];
             }
 
             // 다음 커서 = 마지막 item의 id
-            const nextCursorId = newItems[newItems.length - 1].id;
+            const nextCursorId = new Date(newItems[newItems.length - 1].bumpedAt!).toISOString();
 
             // 첫 페이지라면 덮어쓰기
-            if (cursorId === null) {
+            if (cursorId === undefined) {
                 set({
                     potLists: newItems,
                     cursorId: nextCursorId,
@@ -143,5 +155,42 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
 
     setKeyword: (keyword: string) => set(() => ({keyword: keyword})),
     setSearchType: (searchType: string) => set(() => ({searchType: searchType})),
-    setCursorId: (id: number) => set(() => ({cursorId: id})),
+    setCursorId: (value: string | undefined) => set(() => ({cursorId: value, potLists: []})),
+    setBookmarkCount: (id: number, count: number) => set((state) => ({
+        potLists: state.potLists.map((item) =>
+            item.id === id
+                ? {...item, bookmarkCount: count}
+                : item
+        ),
+    })),
+
+    currentPotList: undefined as PotListDetailDTO | undefined,
+
+    setCurrentPotList: (data: PotListDetailDTO | undefined) => set(() => ({
+        currentPotList: data,
+    })),
+
+    addPotList: async (payload: PotListInsertDTO) => {
+        try {
+            const resp = await potListApi.createPot(payload);
+            return resp.data;
+        } catch (e) {
+            console.error("Failed to create pot list:", e);
+            throw e;
+        }
+    },
+
+    updatePotList: async (payload: PotListPatchDTO) => {
+        try {
+            const id = get().currentPotList?.id;
+            if (!id) throw new Error("No current pot list id");
+
+            const resp = await potListApi.updatePot(id, payload);
+            return resp.data;
+        } catch (e) {
+            console.error("Failed to update pot list:", e);
+            throw e;
+        }
+    },
+
 }));

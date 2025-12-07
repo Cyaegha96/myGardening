@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,4 +36,9 @@ public class PotListPatchDTO {
     Timestamp updatedAt;
     @Schema(description = "끌어올리기 한 날짜")
     Timestamp bumpedAt;
+
+    @Schema(description = "등록하는 이미지 중, 썸네일로 사용할 index")
+    int thumbnailIndex;
+    @Schema(description = "설정 태그 목록")
+    List<Integer> tags;
 }

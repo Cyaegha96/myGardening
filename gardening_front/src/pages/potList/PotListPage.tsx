@@ -5,6 +5,7 @@ import PotList from "@/features/potList/ui/PotList.tsx";
 import {Button} from "@/shared/shadcn/components/ui/button";
 import {Sheet, SheetContent} from "@/shared/shadcn/components/ui/sheet.tsx";
 import PotSearchBox from "@/features/potList/ui/PotSearchBox.tsx";
+import {useNavigate} from "react-router-dom";
 
 export default function PotListPage() {
     const potLists = usePotListStore(state => state.potLists);
@@ -20,10 +21,17 @@ export default function PotListPage() {
 
     const lastItemRef = useRef<HTMLDivElement | null>(null);
 
+    const navigate = useNavigate();
+
     useEffect(() => {
         fetchPotList();
         fetchPotTagList();
-    }, []);
+    }, [fetchPotList, fetchPotTagList]);
+
+    useEffect(() => {
+        setCursorId(undefined);
+        fetchPotList();
+    }, [fetchPotList, selectedTags, setCursorId]);
 
     /* 마지막 아이템 감지 */
     useEffect(() => {
@@ -32,7 +40,7 @@ export default function PotListPage() {
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting) {
-                    if (cursorId !== null) {
+                    if (cursorId !== undefined) {
                         fetchPotList();
                     }
                 }
@@ -43,7 +51,7 @@ export default function PotListPage() {
         observer.observe(lastItemRef.current);
 
         return () => observer.disconnect();
-    }, [cursorId, lastItemRef.current]);
+    }, [cursorId, fetchPotList]);
 
     return (
         <div className="max-w-7xl mx-auto mt-5 px-4 mb-5">
@@ -68,10 +76,17 @@ export default function PotListPage() {
 
                 {/* 카드 목록 */}
                 <section className="col-span-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 mb-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 mt-5">
                         <div></div>
                         <div>
                             <PotSearchBox/>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end mb-5 mt-3">
+                        <div></div>
+                        <div>
+                            <Button onClick={() => navigate("write")}>분양글 작성</Button>
                         </div>
                     </div>
 
@@ -80,6 +95,12 @@ export default function PotListPage() {
                             <PotList key={item.id} {...item} />
                         )}
                     </div>
+
+                    {cursorId != null &&
+                        <div className="flex justify-center items-center w-full my-5 text-center" ref={lastItemRef}>
+                            로딩중...
+                        </div>
+                    }
                 </section>
             </div>
 

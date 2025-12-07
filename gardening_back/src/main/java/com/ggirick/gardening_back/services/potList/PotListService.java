@@ -8,7 +8,11 @@ import com.ggirick.gardening_back.mappers.potList.PotListMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+
+import static com.ggirick.gardening_back.config.PotListConfig.MAX_AUTHOR_OTHER_POSTS;
 
 @Service
 @RequiredArgsConstructor
@@ -17,13 +21,18 @@ public class PotListService {
 
     // 분양글 목록 조회
     public List<PotListDetailDTO> getPotList(
-            Integer cursorId,
+            OffsetDateTime cursorId,
             Integer size,
             String keyword,
             String searchType,
             List<Integer> tagIds
     ) {
         return potListMapper.getPotList(cursorId, size, keyword, searchType, tagIds);
+    }
+
+    // 사용자 Uid를 통한 분양글 목록 조회
+    public List<PotListDetailDTO> getPotByUserId(String userUid) {
+        return potListMapper.getPotByUserId(userUid, MAX_AUTHOR_OTHER_POSTS);
     }
 
     // 분양글 상세 조회
@@ -34,6 +43,11 @@ public class PotListService {
     // 분양글 작성
     public int insertPot(PotListInsertDTO insertInfo) {
         return potListMapper.insertPot(insertInfo);
+    }
+
+    // 분양글 다음 시퀀스번호 조회
+    public int getPotListSeqNextVal() {
+        return potListMapper.getPotListSeqNextVal();
     }
 
     // 분양글 수정
