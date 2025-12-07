@@ -58,8 +58,12 @@ public class SecurityConfig {
                                 .requestMatchers("/auth/checkOtp").permitAll()
                                 .requestMatchers("/auth/requestOtp").permitAll()
                                 .requestMatchers("/auth/login").permitAll()
+                                .requestMatchers("/auth/existEmailCheck/**").permitAll()
                                 .requestMatchers("/auth/existIdCheck").permitAll()
                                 .requestMatchers("/auth/existPhoneCheck").permitAll()
+                                .requestMatchers("/auth/send-certification").permitAll()
+                                .requestMatchers("/auth/verify-code").permitAll()
+                                .requestMatchers("/auth/password/**").permitAll()
                                 .requestMatchers("/auth/signup").permitAll()
                                 .requestMatchers("/auth/refresh").permitAll()
                                 .requestMatchers("/oauth/**").permitAll() // OAuth 관련도 열기

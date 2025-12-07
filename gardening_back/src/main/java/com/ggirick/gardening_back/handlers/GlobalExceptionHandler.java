@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleException(Exception e) {
         e.printStackTrace();
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", "서버 내부 오류가 발생했습니다.");
+        errorResponse.put("message", e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 

@@ -4,6 +4,7 @@ package com.ggirick.gardening_back.controllers.auth;
 import com.ggirick.gardening_back.dto.auth.*;
 import com.ggirick.gardening_back.exceptions.TokenRefreshException;
 import com.ggirick.gardening_back.services.auth.AuthService;
+import com.ggirick.gardening_back.services.auth.MailService;
 import com.ggirick.gardening_back.services.auth.RedisService;
 import com.ggirick.gardening_back.services.auth.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -27,6 +29,8 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
     private final RedisService redisService;
+    private final MailService mailService;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest, HttpServletRequest request) {
@@ -217,6 +221,25 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/existEmailCheck/{email}")
+    public ResponseEntity<?> existEmail(@PathVariable String email) {
+        try {
+            boolean exists = authService.existEmail(email);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "email", email,
+                            "exists", exists,
+                            "message", exists ? "이미 사용 중인 이메일입니다." : "사용 가능한 이메일입니다."
+                    )
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "이메일 중복 확인 중 문제가 발생했습니다."));
+        }
+    }
+
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody AuthDTO dto) {
 
@@ -268,6 +291,120 @@ public class AuthController {
         return redisService.checkOtp(uid,otp);
     }
 
+    @PostMapping("/send-certification")
+    public ResponseEntity<?> sendCertification(@RequestBody  MailRequest mailRequest) {
+        try {
+            String code = mailService.sendCertificationMail(mailRequest.getEmail());
+            return ResponseEntity.ok(Map.of("code", code));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<?> verifyCode(@RequestBody VerifyRequestDTO request) {
+
+        boolean isVerified = mailService.verifyCertificationCode(request.getEmail(), request.getCode());
+
+        if (!isVerified) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("verified", false, "message", "인증번호가 올바르지 않습니다."));
+        }
+
+        return ResponseEntity.ok(Map.of("verified", true));
+    }
+
+    @GetMapping("/check/email")
+    public ResponseEntity<?> checkEmail(
+            @AuthenticationPrincipal UserTokenDTO userTokenDTO,
+            @RequestParam String email
+
+    ) {
+        boolean exists = authService.existsEmailExceptSelf(email, userTokenDTO.getUid());
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "email", email,
+                        "exists", exists,
+                        "message", exists ? "이미 사용 중인 이메일입니다." : "사용 가능한 이메일입니다."
+                )
+        );
+    }
+
+    @GetMapping("/check/phone")
+    public ResponseEntity<?> checkPhone(
+            @AuthenticationPrincipal UserTokenDTO userTokenDTO,
+            @RequestParam String phone
+    ) {
+        boolean exists = authService.existsPhoneExceptSelf(phone, userTokenDTO.getUid());
+        return ResponseEntity.ok(
+                Map.of(
+                        "email", phone,
+                        "exists", exists,
+                        "message", exists ? "이미 사용 중인 핸드폰 번호입니다." : "사용 가능한 이메일입니다."
+                )
+        );
+    }
+
+    @PostMapping("/password/temp")
+    public ResponseEntity<?> requestTempPassword(@RequestBody Map<String, String> req) {
+        try {
+            authService.sendTempPassword(req.get("email"), req.get("id"));
+            return ResponseEntity.ok(Map.of(
+                    "message", "비밀번호 변경용 otp가 이메일로 전송되었습니다."
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "message", e.getMessage()
+                    ));
+        }
+    }
+
+
+    // 2) 임시 비밀번호 제출
+    @PostMapping("/password/reset/verify")
+    public ResponseEntity<?> verifyOTP(@RequestBody Map<String, String> req) {
+
+        String email = req.get("email");
+        String id = req.get("id");
+        String otp = req.get("otp");
+
+        // OTP 검증 + resetToken 발급
+        String resetToken = authService.verifyTempPassword(email,id,otp);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message", "임시 비밀번호 확인에 성공했습니다.",
+                        "resetToken", resetToken
+                )
+        );
+    }
+
+    @PostMapping("/password/reset/init")
+    public ResponseEntity<?> initResetForLoggedInUser(@AuthenticationPrincipal UserTokenDTO userTokenDTO) {
+        String uid = userTokenDTO.getUid();
+
+        String resetToken = authService.issueResetToken(uid);
+        return ResponseEntity.ok(Map.of("resetToken", resetToken));
+    }
+
+
+    @PostMapping("/password/reset/apply")
+    public ResponseEntity<?> applyNewPassword(@RequestBody Map<String, String> req) {
+
+        String resetToken = req.get("resetToken");
+        String newPw = req.get("newPassword");
+
+
+        authService.updatePassword(resetToken, newPw);
+        return ResponseEntity.ok().body(
+                Map.of("message", "비밀번호가 성공적으로 변경되었습니다.")
+        );
+    }
 
 
     public String getCurrentIpAddress(HttpServletRequest request) {

@@ -10,6 +10,7 @@ export default function CompleteProfileFeature({pageTitle, pageDescription}: Com
     const model = useCompleteProfileModel();
 
     return <CompleteProfileView {...model}
+
                                 pageTitle={pageTitle}
                                 pageDescription={pageDescription}/>;
 }

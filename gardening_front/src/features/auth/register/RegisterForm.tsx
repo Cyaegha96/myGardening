@@ -7,7 +7,6 @@ export default function RegisterForm() {
 
   return (
     <RegisterFormView
-        {...model}
-    />
+        emailValid={false} {...model}    />
   );
 }
