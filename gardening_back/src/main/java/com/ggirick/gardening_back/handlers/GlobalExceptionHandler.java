@@ -22,9 +22,11 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception e) {
-        e.printStackTrace(); // 서버 로그 용
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST).build();
+    public ResponseEntity<Map<String, String>> handleException(Exception e) {
+        e.printStackTrace();
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
+
 }

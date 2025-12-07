@@ -19,15 +19,61 @@
     </resultMap>
 
     <select id="selectAuthById" resultMap="authMap">
-        SELECT *
-        FROM AUTH
-        WHERE ID = #{id}
+        SELECT a.*
+        FROM AUTH a
+                 JOIN USERS u
+                      ON u.UUID = a.USER_UID
+        WHERE a.ID = #{id}
+          AND u.STATUS = 'ACTIVE'
+
+    </select>
+    <select id="countAuthByEmail" >
+        SELECT Count(*)
+        FROM AUTH a
+                 JOIN USERS u
+                      ON u.UUID = a.USER_UID
+        WHERE a.email = #{email}
+          AND u.STATUS = 'ACTIVE'
     </select>
     <select id="selectAuthByUserUid" resultMap="authMap">
         SELECT *
-        FROM AUTH
-        WHERE userUid = #{userUid}
+        FROM AUTH a
+                 JOIN USERS u
+                      ON u.UUID = a.USER_UID
+        WHERE a.USER_UID = #{userUid}
+          AND u.STATUS = 'ACTIVE'
     </select>
+
+    <select id="countEmailExceptSelf" resultType="int">
+        SELECT COUNT(*)
+        FROM AUTH a
+                 JOIN USERS u ON u.UUID = a.USER_UID
+        WHERE a.email = #{email}
+          AND u.STATUS = 'ACTIVE'
+          AND a.USER_UID != #{uuid}
+    </select>
+    <select id="countPhoneExceptSelf" resultType="int">
+        SELECT COUNT(*)
+        FROM AUTH a
+                 JOIN USERS u ON u.UUID = a.USER_UID
+        WHERE a.phone = #{phone}
+          AND u.STATUS = 'ACTIVE'
+          AND a.USER_UID != #{uuid}
+    </select>
+    <select  id="findUidByIdAndEmail" resultType="string">
+        SELECT a.user_uid
+        FROM AUTH a
+                 JOIN USERS u
+                      ON u.UUID = a.USER_UID
+        WHERE a.email = #{email} and a.id=#{id}
+          AND u.STATUS = 'ACTIVE'
+    </select>
+    <update id="updatePassword">
+        UPDATE auth
+        SET pw = #{password},
+            updated_at = SYSTIMESTAMP
+        WHERE USER_UID = #{uid}
+    </update>
 
     <insert id="insertLoginHistory">
         INSERT INTO LOGIN_HISTORY (LOGIN_ID, USER_UID,SESSION_ID, IP_ADDRESS, LOGIN_AT)

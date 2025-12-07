@@ -30,6 +30,8 @@ public class AuthService {
 
     private final RedisService redisService;
 
+    private final MailService mailService;
+
 
     private final PasswordEncoder passwordEncoder;
 
@@ -100,7 +102,7 @@ public class AuthService {
         //새로운 세션 생성
   
         UserSessionDTO newSession = UserSessionDTO.builder()
-                .sessionId(UUID.randomUUID().toString())
+                .sessionId(sessionId)
                 .userUid(userUid)
                 .provider(authInfo.getProvider())
               .refreshToken(refreshToken)
@@ -291,6 +293,18 @@ public class AuthService {
         return existing != null;
     }
 
+    public boolean existEmail(String email) {
+        return  authMapper.countAuthByEmail(email)>0;
+    }
+
+    public boolean existsEmailExceptSelf(String email, String uuid) {
+        return authMapper.countEmailExceptSelf(email, uuid) > 0;
+    }
+
+    public boolean existsPhoneExceptSelf(String phone, String uuid) {
+        return authMapper.countPhoneExceptSelf(phone, uuid) > 0;
+    }
+
     @Transactional
     public int inactivateAccount(String uid, LogoutRequestDTO logoutRequest) {
 
@@ -406,6 +420,65 @@ public class AuthService {
                 .build());
 
     }
+    /**
+     * 비밀번호 재발급 요청
+     * 1) 사용자 UID 조회
+     * 2) RedisService.requestOtp(uid)
+     * 3) 이메일로 임시 비밀번호 발송
+     */
+    public void sendTempPassword(String email, String id) throws Exception {
+        String uid = authMapper.findUidByIdAndEmail(email,id);
+        if (uid == null) {
+            throw new RuntimeException("사용자 아이디와 이메일 정보가 서로 일치하지 않습니다.");
+        }
+
+        String tempPw = redisService.requestOtp(uid);
+
+        // tempPw 혹은 otp 인증용 비번을 이메일로 보냄
+        mailService.sendTempPasswordMail(email, tempPw );
+
+    }
+
+    /**
+     * 유저가 임시 otp 입력 시:
+     * 1) OTP 사용자 아이디랑 비밀번호를 통해 uuid 확인
+     *2 ) otp 검증
+     * @return
+     */
+    public String verifyTempPassword(String email, String id, String otp) {
+        String uid =  authMapper.findUidByIdAndEmail(email,id);
+        if (uid == null) {
+            throw new RuntimeException("존재하지 않는 사용자입니다.");
+        }
+
+        boolean valid = redisService.verifyOtp(uid, otp);
+        if (!valid) {
+            throw new RuntimeException("임시 비밀번호가 유효하지 않습니다.");
+        }
+
+       return redisService.createResetToken(uid);
 
 
+    }
+
+    public void updatePassword(String resetToken, String pw){
+
+        String uid = redisService.verifyResetToken(resetToken);
+
+
+        if (uid == null || uid.equals("INVALID_TOKEN")) {
+            throw new RuntimeException("유효하지 않거나 만료된 resetToken 입니다.");
+        }
+
+
+
+        authMapper.updatePassword(uid, passwordEncoder.encode(pw));
+
+        redisService.deleteResetToken(resetToken);
+    }
+
+
+    public String issueResetToken(String uid) {
+       return redisService.createResetToken(uid);
+    }
 }
