@@ -4,18 +4,47 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ggirick.gardening_back.mappers.myPlant.diary.MyPlantDiaryMapper">
     <!-- 단일 조회 -->
-    <select id="getDiaryById" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
-        SELECT *
-        FROM my_plant_diary
-        WHERE diary_id = #{diaryId}
+    <select id="getDiaryById" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryResponseDTO">
+        SELECT d.diary_id,
+               d.user_plant_id,
+               d.content,
+               d.weather,
+               d.created_at,
+               d.updated_at,
+               i.url AS image_url
+        FROM my_plant_diary d
+                 LEFT JOIN my_plant_diary_image i
+                           ON d.diary_id = i.diary_id
+        WHERE d.diary_id = #{diaryId}
     </select>
 
-    <!-- 식물별 전체 다이어리 조회 -->
-    <select id="getDiaryByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
-        SELECT *
+    <!-- 식물별 다이어리 전체 조회 -->
+    <select id="getDiaryListByUserPlantId"
+            parameterType="int"
+            resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryResponseDTO">
+        SELECT
+            d.diary_id,
+            d.user_plant_id,
+            d.content,
+            d.weather,
+            d.created_at,
+            d.updated_at,
+            i.url AS image_url
+        FROM my_plant_diary d
+                 LEFT JOIN my_plant_diary_image i ON d.diary_id = i.diary_id
+        WHERE d.user_plant_id = #{userPlantId}
+        ORDER BY d.created_at DESC
+    </select>
+
+    <!-- 다이어리 전체 개수 조회 -->
+    <select id="getDiaryCount"
+            parameterType="int"
+            resultType="int">
+
+        SELECT COUNT(*)
         FROM my_plant_diary
         WHERE user_plant_id = #{userPlantId}
-        ORDER BY created_at DESC
+
     </select>
 
     <!-- 식물별 첫번째 다이어리 ID 조회 - 가장 오래된 다이어리 -->
@@ -38,6 +67,11 @@
                 #{userPlantId},
                 #{content},
                 #{weather, jdbcType=VARCHAR})
+
+        <!-- INSERT 후에 diary_id DTO에 주입 -->
+        <selectKey keyProperty="diaryId" resultType="int" order="AFTER">
+            SELECT my_plant_diary_seq.currval FROM dual
+        </selectKey>
     </insert>
 
     <!-- 다이어리 수정 -->

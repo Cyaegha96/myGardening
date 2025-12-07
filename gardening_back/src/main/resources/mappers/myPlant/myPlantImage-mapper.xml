@@ -46,6 +46,19 @@
         WHERE image_id = #{imageId}
     </delete>
 
+    <!-- 대표 이미지 업데이트 -->
+    <update id="updateThumbnail"
+            parameterType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
+
+        UPDATE my_plant_image
+        SET ori_name = #{oriName},
+            sys_name = #{sysName},
+            url = #{url},
+            hash = #{hash}
+        WHERE user_plant_id = #{userPlantId}
+    </update>
+
+
     <!-- 중복 이미지 존재 여부 조회 (유저별) -->
     <select id="findByHashAndUserUid"
             resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO">

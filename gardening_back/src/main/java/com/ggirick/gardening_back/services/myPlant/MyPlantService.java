@@ -3,8 +3,6 @@ package com.ggirick.gardening_back.services.myPlant;
 import com.ggirick.gardening_back.dto.myPlant.*;
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO;
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO;
-import com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO;
-import com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO;
 import com.ggirick.gardening_back.mappers.myPlant.MyPlantMapper;
 import com.ggirick.gardening_back.services.myPlant.diary.MyPlantDiaryImageService;
 import com.ggirick.gardening_back.services.myPlant.diary.MyPlantDiaryService;
@@ -16,133 +14,115 @@ import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 
-import static com.ggirick.gardening_back.enums.WeatherType.SUNNY;
-
 @Service
 @RequiredArgsConstructor
 public class MyPlantService {
+
     private final MyPlantMapper myPlantMapper;
     private final MyPlantImageService myPlantImageService;
     private final MyPlantDiaryService myPlantDiaryService;
     private final MyPlantDiaryImageService myPlantDiaryImageService;
+    private final MyPlantImageHistoryService historyService;
 
-    // 새로운 식물 등록
+    // 식물 등록
     @Transactional
     public void insert(MyPlantDTO dto, MultipartFile file, String loginUid) throws Exception {
 
-        // 스크립트/HTML 공격 방지: 제목/내용 이스케이프
-        if (dto.getNickname() != null || !(dto.getNickname().isBlank())) {
+        // 1. 스크립트/HTML 공격 방지: 제목/내용 이스케이프
+        if (dto.getNickname() != null && !dto.getNickname().isBlank()) {
             dto.setNickname(HtmlUtils.htmlEscape(dto.getNickname()));
-        }
-        dto.setMemo(HtmlUtils.htmlEscape(dto.getMemo()));
-
-        // 닉네임이 비어있으면 null 값 세팅
-        if (dto.getNickname() == null || dto.getNickname().isBlank()) {
+        } else {
             dto.setNickname(null);
         }
-
-        // my_plant 테이블에 입력 후 user_plant_id 받기
-        myPlantMapper.insert(dto);
-        int userPlantId = dto.getUserPlantId();
-        System.out.println("userPlantId: " + userPlantId);
-
-        // 이미지 파일이 있는 경우에만 업로드 처리
-        if (file != null && !file.isEmpty()) {
-            // 이미지 DB에 등록
-            myPlantImageService.insert(file, userPlantId, loginUid);
+        if (dto.getMemo() != null) {
+            dto.setMemo(HtmlUtils.htmlEscape(dto.getMemo()));
         }
 
-        // 메모가 있다면 다이어리에 첫 일지로 등록
+        // 2. 식물 DB 등록 및 userPlantId 획득
+        myPlantMapper.insert(dto);
+        int userPlantId = dto.getUserPlantId();
+
+        // 3. 이미지 등록 시 → 대표이미지 & 히스토리 등록
+        if (file != null && !file.isEmpty()) {
+            myPlantImageService.insert(file, userPlantId, loginUid);
+
+            MyPlantImageDTO thumb = myPlantImageService.getThumbnailByPlantId(userPlantId);
+            historyService.backupImage(thumb);
+        }
+
+        // 4. 메모 존재 시 첫 일지 자동 등록
         if (dto.getMemo() != null && !dto.getMemo().isBlank()) {
             MyPlantDiaryDTO diaryDTO = MyPlantDiaryDTO.builder()
                     .userPlantId(userPlantId)
                     .content(dto.getMemo())
                     .build();
-
-            myPlantDiaryService.insertDiary(diaryDTO);
+            myPlantDiaryService.insertDiary(diaryDTO, null, loginUid);
         }
     }
 
     // 식물 정보 수정
     @Transactional
-    public void update(MyPlantDTO dto, MultipartFile file) throws  Exception {
+    public void update(MyPlantDTO dto, MultipartFile file, String loginUid) throws Exception {
 
         int userPlantId = dto.getUserPlantId();
 
-        // === 이미지 변경 처리 ===
-        if (file != null && !file.isEmpty()) { // 새 이미지 업로드 O
-            // 기존 대표 이미지 조회
-            MyPlantImageDTO oldThumb = myPlantImageService.getThumbnailByPlantId(userPlantId);
+        // 1. 기존 대표 이미지 조회
+        MyPlantImageDTO oldThumb =
+                myPlantImageService.getThumbnailByPlantId(userPlantId);
 
-            // 1. 이미지 업로드 및 DB 저장 - (중복이면 기존 이미지 정보 반환됨)
-            MyPlantImageResponseDTO newThumb = myPlantImageService.insert(file, userPlantId, dto.getUserUid());
+        // 2. 신규 이미지 업로드 시 처리
+        if (file != null && !file.isEmpty()) {
+            // 1) 이미지 업로드
+            myPlantImageService.insert(file, userPlantId, loginUid);
 
-            // 2. oldThumb와 newThumb가 서로 다른 이미지일 때만 삭제
-            if (oldThumb != null && newThumb != null &&
-                    oldThumb.getImageId() != newThumb.getImageId()) {
+            // 2) 업로드 후 대표 이미지 재조회
+            MyPlantImageDTO newThumb = myPlantImageService.getThumbnailByPlantId(userPlantId);
 
-                myPlantImageService.deleteImage(oldThumb);
+            // 3) 기존 대표이미지와 hash 비교 후 히스토리 백업
+            if (oldThumb != null &&
+                    newThumb != null &&
+                    !newThumb.getHash().equals(oldThumb.getHash())) {
+
+                // 기존 대표이미지가 새 이미지와 다를 때만 백업
+                historyService.backupImage(oldThumb);
             }
         }
 
-        // 등록시 입력한 메모 가져오기
-        MyPlantResponseDTO beforeInfo = getByPlantId(userPlantId);
-
-        String beforeMemo = beforeInfo.getMemo(); // 등록시 입력한 메모 내용
-        String newMemo = dto.getMemo(); // 수정한 메모 내용
-
-        // 메모 변경 시 다이어리에도 반영 (새 메모가 null/공백 X)
-        if (newMemo != null
-                && !newMemo.isBlank()
-                && !newMemo.equals(beforeMemo)) {
-
-            // 첫번째 다이어리 ID 가져오기 - 없으면 null 반환이라 Integer로 받기
-            Integer firstDiaryId = myPlantDiaryService.getFirstDiaryId(userPlantId);
-
-            if (firstDiaryId != null) { // 첫번째 다이어리가 존재한다면
-                MyPlantDiaryDTO diaryDTO = MyPlantDiaryDTO.builder()
-                        .diaryId(firstDiaryId)
-                        .content(newMemo)
-                        .build();
-
-                myPlantDiaryService.updateDiary(diaryDTO);
-            }
-        }
-
-        // 식물 정보 수정
+        // 3. DB 수정
         myPlantMapper.update(dto);
     }
 
-    // 등록한 식물 정보 삭제
+    // 식물 삭제
     @Transactional
     public void delete(int userPlantId) {
-        // 1. 이미지 목록 가져오기
-        List<MyPlantDiaryImageDTO> images =
+
+        // 1. GCP 삭제 대상 조회
+        List<MyPlantDiaryImageDTO> imagesForDelete =
                 myPlantDiaryImageService.getImagesForDelete(userPlantId);
-        MyPlantImageDTO thumb =
+        MyPlantImageDTO thumbnail =
                 myPlantImageService.getThumbnailByPlantId(userPlantId);
 
-        // 2. DB 식물 삭제 - fk cascade 설정으로 my_plant_image 테이블 내용도 자동 삭제됨.
+        // 2. DB 삭제 (Cascade 적용)
         myPlantMapper.delete(userPlantId);
 
-        // 3. 대표이미지 gcp 삭제
-        myPlantImageService.deleteImage(thumb);
+        // 3. 대표 이미지 GCP 삭제
+        myPlantImageService.deleteImage(thumbnail);
 
-        // 4. 다이어리 이미지 gcp 삭제
-        myPlantDiaryImageService.deleteAllImagesByPlantId(images);
+        // 4. 다이어리 이미지 GCP 삭제
+        myPlantDiaryImageService.deleteAllImagesByPlantId(imagesForDelete);
     }
 
-    // 목록 조회 - 이미지 1장
+    // 식물 목록 조회
     public List<MyPlantResponseDTO> getListByUserUid(String userUid) {
         return myPlantMapper.getListByUserUid(userUid);
     }
 
-    // 단건 기본정보 조회 (상세 용)
+    // 식물 단건 조회
     public MyPlantResponseDTO getByPlantId(int userPlantId) {
         return myPlantMapper.getByPlantId(userPlantId);
     }
 
-    // 권한체크용 userPlantId → ownerUid 조회
+    // 권한 체크용
     public String getOwnerUidByPlantId(int userPlantId) {
         return myPlantMapper.getOwnerUidByPlantId(userPlantId);
     }

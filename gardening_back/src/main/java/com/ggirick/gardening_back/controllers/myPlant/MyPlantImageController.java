@@ -19,15 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/my-plant/{userPlantId}")
+@RequestMapping("/my-plant")
 public class MyPlantImageController {
+
     private final MyPlantImageService myPlantImageService;
     private final MyPlantService myPlantService;
 
-    // userPlantId로 등록한 식물의 대표 이미지 조회
+    // userPlantId로 대표 이미지 조회
     @Operation(
-            summary = "userPlantId로 식물의 대표 이미지 조회",
-            description = "userPlantId를 전달하면 해당 식물의 대표 이미지을 조회한다."
+            summary = "대표 이미지 조회",
+            description = "식물(userPlantId)의 대표 이미지를 조회합니다."
     )
     @ApiResponse(
             responseCode = "200",
@@ -37,45 +38,37 @@ public class MyPlantImageController {
                     schema = @Schema(implementation = MyPlantImageDTO.class)
             )
     )
-    @GetMapping()
-    public ResponseEntity<MyPlantImageDTO> getImageByPlantId(
-            @PathVariable int userPlantId,
+    @GetMapping("/{userPlantId}/image")
+    public ResponseEntity<MyPlantImageDTO> getThumbnailImage(
+            @PathVariable("userPlantId") int userPlantId,
             @AuthenticationPrincipal UserTokenDTO userInfo
     ) {
-        // 권한 체크 1 - 식물 소유자인지
+
+        // 권한 체크
         if(!myPlantService.getOwnerUidByPlantId(userPlantId).equals(userInfo.getUid())) {
-            return ResponseEntity.status(403).build(); // Forbidden
-        }
-
-        return ResponseEntity.ok(myPlantImageService.getThumbnailByPlantId(userPlantId));
-    }
-
-    // imageId로 대표 이미지 조회
-    @Operation(summary = "imageId로 대표 이미지 조회", description = "imageId로 단일 이미지 정보를 조회한다.")
-    @ApiResponse(
-            responseCode = "200",
-            description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = MyPlantImageDTO.class))
-    )
-    @GetMapping("/image/{imageId}")
-    public ResponseEntity<MyPlantImageResponseDTO> getImageById(
-            @PathVariable int userPlantId,
-            @PathVariable int imageId,
-            @AuthenticationPrincipal UserTokenDTO userInfo
-    ) {
-        // 권한 체크 1 - 이미지가 해당 식물 것인지 먼저 확인
-        if (myPlantImageService.validateImageBelongsToPlant(imageId, userPlantId) == 0) {
             return ResponseEntity.status(403).build();
         }
 
-        // 권한 체크 2 - 소유자 확인
+        return ResponseEntity.ok(
+                myPlantImageService.getThumbnailByPlantId(userPlantId)
+        );
+    }
+
+    // imageId로 이미지 조회 (히스토리 포함)
+    @Operation(summary = "imageId로 이미지 조회")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @GetMapping("/image/{imageId}")
+    public ResponseEntity<MyPlantImageResponseDTO> getImageById(
+            @PathVariable int imageId,
+            @AuthenticationPrincipal UserTokenDTO userInfo
+    ) {
+
         if (!myPlantImageService.getOwnerUidByPlantImageId(imageId).equals(userInfo.getUid())) {
             return ResponseEntity.status(403).build();
         }
 
         MyPlantImageResponseDTO dto = myPlantImageService.getImageById(imageId);
 
-        // 조회 결과 없다면
         if (dto == null) return ResponseEntity.notFound().build();
 
         return ResponseEntity.ok(dto);

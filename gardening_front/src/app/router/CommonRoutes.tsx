@@ -7,7 +7,6 @@ import SearchPlantDictPage from "@/pages/searchPlant/SearchPlantDictPage.tsx";
 import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
 import PlantThree from "@/pages/test/PlantThree.tsx";
 import {PopularPlantsPage} from "@/pages/PopularPlants/PopularPlantsPage.tsx";
-import MyPlantsPage from "@/pages/myPlants/MyPlantsPage.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
@@ -19,6 +18,7 @@ const EditCompleteProfilePage = lazy(() => import("@/pages/auth/EditCompleteProf
 const SearchPlantPage = lazy(() => import("@/pages/searchPlant/SearchPlantPage"));
 const ScheduleRoutes = lazy(() => import("./ScheduleRoutes"));
 const BoardRoutes = lazy(() => import("./BoardRoutes"));
+const MyPlantRoutes = lazy(() => import("./MyPlantRoutes"));
 
 export function CommonRoutes() {
     return (
@@ -42,7 +42,7 @@ export function CommonRoutes() {
                     <Route path="/plant-search/dict" element={<SearchPlantDictPage/>} />
                     <Route path="/plant-search" element={<SearchPlantMainPage/>} />
                     <Route path="/plant-test" element={<PlantThree/>}></Route>
-                    <Route path="/my-plants" element={<MyPlantsPage/>}></Route>
+                    <Route path="/my-plants/*" element={<MyPlantRoutes/>}></Route>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                     <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
                 </Route>

@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(name = "MyPlantRequestDTO", description = "식물 기본 조회 DTO")
+@Schema(name = "MyPlantResponseDTO", description = "식물 기본 조회 DTO")
 public class MyPlantResponseDTO {
 
     @Schema(description = "유저 식물 고유 ID", example = "10")
@@ -21,6 +21,9 @@ public class MyPlantResponseDTO {
 
     @Schema(description = "식물 학명", example = "Sansevieria stuckyi")
     private String plant_scientific_name;
+
+    @Schema(description = "식물 일반 명 (common name)", example = "Snake Plant")
+    private String commonName;
 
     @Schema(description = "식물 별명", example = "노랑이")
     private String nickname;

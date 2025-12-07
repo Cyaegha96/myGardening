@@ -1,6 +1,7 @@
 package com.ggirick.gardening_back.services.myPlant;
 
 import com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO;
+import com.ggirick.gardening_back.dto.myPlant.MyPlantImageHistoryDTO;
 import com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO;
 import com.ggirick.gardening_back.mappers.myPlant.MyPlantImageMapper;
 import com.ggirick.gardening_back.utils.FileUtil;
@@ -86,6 +87,14 @@ public class MyPlantImageService {
         fileUtil.deleteFile(thumb.getSysName());
     }
 
+    // 히스토리 이미지 전용 - GCP 삭제 (DB는 다른 계층에서)
+    @Transactional
+    public void deleteHistoryImageBySysName(String sysName) {
+        if (sysName == null || sysName.isBlank()) return;
+        fileUtil.deleteFile(sysName);
+    }
+
+
     // 권한 체크용 - 식물 등록자가 맞는지
     public String getOwnerUidByPlantImageId(int imageId) {
         return myPlantImageMapper.getOwnerUidByPlantImageId(imageId);
@@ -95,6 +104,22 @@ public class MyPlantImageService {
     public int validateImageBelongsToPlant(int imageId, int userPlantId) {
         return myPlantImageMapper.validateImageBelongsToPlant(imageId, userPlantId);
     }
+
+    // 대표 이미지 변경
+    @Transactional
+    public void updateThumbnail(int userPlantId, MyPlantImageHistoryDTO img) {
+
+        MyPlantImageDTO dto = MyPlantImageDTO.builder()
+                .userPlantId(userPlantId)
+                .oriName(img.getOriName())
+                .sysName(img.getSysName())
+                .url(img.getUrl())
+                .hash(img.getHash())
+                .build();
+
+        myPlantImageMapper.updateThumbnail(dto);
+    }
+
 }
 
 

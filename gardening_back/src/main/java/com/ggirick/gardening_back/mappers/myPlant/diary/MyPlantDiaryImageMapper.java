@@ -15,6 +15,9 @@ public interface MyPlantDiaryImageMapper {
     // imageId로 이미지 조회
     MyPlantDiaryImageDTO getImageById(int imageId);
 
+    // diaryId로 이미지 조회
+    MyPlantDiaryImageDTO getImageByDiaryId(int diaryId);
+
     // 이미지 등록
     void insert(MyPlantDiaryImageDTO dto);
 

@@ -11,11 +11,18 @@
         WHERE d.user_plant_id = #{userPlantId}
     </select>
 
-    <!-- diaryId로 이미지 한개 조회 -->
+    <!-- imageId 이미지 한개 조회 -->
     <select id="getImageById" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO">
         SELECT *
         FROM my_plant_diary_image
         WHERE image_id = #{imageId}
+    </select>
+
+    <!-- diaryId 이미지 한개 조회 -->
+    <select id="getImageByDiaryId" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO">
+        SELECT *
+        FROM my_plant_diary_image
+        WHERE diary_id = #{diaryId}
     </select>
 
     <!-- 이미지 등록 -->

@@ -19,6 +19,9 @@ public interface MyPlantImageMapper {
     // 대표 이미지 삭제
     void delete(int imageId);
 
+    // 대표 이미지 변경
+    int updateThumbnail(MyPlantImageDTO dto);
+
     // 중복 이미지 존재 여부 조회 (유저별)
     MyPlantImageResponseDTO findByHashAndUserUid(@Param("hash") String hash,
                                                  @Param("loginUid") String loginUid);

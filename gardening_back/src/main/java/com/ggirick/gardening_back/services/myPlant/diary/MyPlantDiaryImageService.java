@@ -70,9 +70,14 @@ public class MyPlantDiaryImageService {
         return MyPlantDiaryImageResponseDTO.ofList(images);
     }
 
-    // 개별 이미지 조회
+    // 개별 이미지 조회 - imageId 기준
     public MyPlantDiaryImageResponseDTO getImageById(int imageId) {
         return MyPlantDiaryImageResponseDTO.of(myPlantDiaryImageMapper.getImageById(imageId));
+    }
+
+    // 다이어리별 이미지 단건 조회 (1:1 관계 보장) - diaryId 기준
+    public MyPlantDiaryImageDTO getImageByDiaryId(int diaryId) {
+        return myPlantDiaryImageMapper.getImageByDiaryId(diaryId);
     }
 
     // imageId로 이미지 개별 삭제

@@ -50,8 +50,12 @@
         SELECT p.user_plant_id,
                p.plant_scientific_name,
                p.nickname,
+               p.memo,
                p.acquired_at,
                p.status,
+
+               -- 공통명 JOIN
+               pi.common_name,
 
                -- 대표 이미지
                (SELECT url
@@ -59,6 +63,9 @@
                 WHERE i.user_plant_id = p.user_plant_id) AS url
 
         FROM my_plant p
+                 LEFT JOIN plant_info pi
+                           ON p.plant_scientific_name = pi.scientific_name
+
         WHERE p.user_uid = #{userUid}
         ORDER BY p.user_plant_id DESC
     </select>
@@ -66,16 +73,18 @@
 
     <!-- 단건 기본정보 조회 (상세 용) -->
     <select id="getByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantResponseDTO">
-        SELECT user_plant_id,
-               user_uid,
-               plant_scientific_name,
-               nickname,
-               acquired_at,
-               status,
-               created_at,
-               updated_at
-        FROM my_plant
-        WHERE user_plant_id = #{userPlantId}
+        SELECT
+            p.user_plant_id,
+            p.user_uid,
+            p.plant_scientific_name,
+            p.nickname,
+            p.memo,
+            p.acquired_at,
+            p.status,
+            (SELECT url FROM my_plant_image i WHERE i.user_plant_id = p.user_plant_id) AS url,
+            (SELECT common_name FROM plant_info info WHERE info.scientific_name = p.plant_scientific_name) AS commonName
+        FROM my_plant p
+        WHERE p.user_plant_id = #{userPlantId}
     </select>
 
     <!-- userPlantId → ownerUid 조회 -->

@@ -216,26 +216,64 @@ public class BoardService {
         return boardMapper.delete(id);
     }
 
-    // 검색 게시글 목록 조회
-    public List<BoardResponseDTO> searchBoards(String keyword, String type, String tagName) {
+    // 검색 게시글 목록 조회 (태그, 좋아요, 북마크 정보 포함)
+    public List<BoardResponseDTO> searchBoards(String keyword, String type, String tagName, String loginUid) {
 
-        // 빈 문자열은 null 처리
+        // 불필요한 공백 요청 필터링
         if (keyword != null && keyword.trim().isEmpty()) keyword = null;
         if (tagName != null && tagName.trim().isEmpty()) tagName = null;
 
-        return boardMapper.searchBoards(keyword, type, tagName);
-    }
+        // DB 조회 (기본 게시글 정보만 포함)
+        List<BoardResponseDTO> list = boardMapper.searchBoards(keyword, type, tagName);
 
-    // 부모 태그 기반 게시글 필터링
-    public List<BoardResponseDTO> filterBoardsByParentTag(int parentTagId) {
+        // 태그 / 좋아요 / 북마크 정보 추가
+        for (BoardResponseDTO dto : list) {
 
-        // 1. PLANT_TAG에서 parentTagId 기준으로 자식 태그명(TAG_NAME) 바로 조회
-        List<String> tagNames = plantTagService.getChildTagNames(parentTagId);
-        if (tagNames.isEmpty()) {
-            return List.of();
+            // 게시글에 연결된 태그명 조회
+            dto.setTags(
+                    boardTagService.getTagsByBoardId(dto.getId())
+                            .stream()
+                            .map(BoardTagDTO::getName)
+                            .toList()
+            );
+
+            // 비로그인 사용자는 좋아요/북마크 정보 false
+            dto.setLiked(!loginUid.isEmpty() && boardLikeService.isLiked(dto.getId(), loginUid));
+            dto.setBookmarked(!loginUid.isEmpty() && boardBookmarkService.isBookmarked(dto.getId(), loginUid));
         }
 
-        // 2. TAG_NAME 기준으로 게시글 조회
-        return boardMapper.searchBoardsByTagNames(tagNames);
+        return list;
+    }
+
+
+    // 부모 태그 기반 게시글 필터링 (연관 태그 포함)
+    public List<BoardResponseDTO> filterBoardsByParentTag(int parentTagId, String loginUid) {
+
+        // 해당 부모 태그의 모든 자식 태그명 목록
+        List<String> tagNames = plantTagService.getChildTagNames(parentTagId);
+        if (tagNames.isEmpty()) {
+            return List.of(); // 조회 결과 없음 → 즉시 빈 리스트 반환
+        }
+
+        // 자식 태그를 포함하는 게시글 조회
+        List<BoardResponseDTO> list = boardMapper.searchBoardsByTagNames(tagNames);
+
+        // 태그 / 좋아요 / 북마크 정보 추가
+        for (BoardResponseDTO dto : list) {
+
+            // 게시글 태그명 매핑
+            dto.setTags(
+                    boardTagService.getTagsByBoardId(dto.getId())
+                            .stream()
+                            .map(BoardTagDTO::getName)
+                            .toList()
+            );
+
+            // 좋아요/북마크 여부 설정
+            dto.setLiked(!loginUid.isEmpty() && boardLikeService.isLiked(dto.getId(), loginUid));
+            dto.setBookmarked(!loginUid.isEmpty() && boardBookmarkService.isBookmarked(dto.getId(), loginUid));
+        }
+
+        return list;
     }
 }

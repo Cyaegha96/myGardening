@@ -47,6 +47,29 @@ public class MyPlantController {
         return ResponseEntity.ok(myPlantService.getListByUserUid(userUid));
     }
 
+    // 식물 상세 조회
+    @Operation(
+            summary = "식물 상세 조회",
+            description = "userPlantId 기준으로 대표 이미지 및 기본 정보를 조회합니다."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = MyPlantResponseDTO.class))
+    )
+    @GetMapping("/{userPlantId}")
+    public ResponseEntity<MyPlantResponseDTO> getMyPlant(
+            @PathVariable("userPlantId") int userPlantId,
+            @AuthenticationPrincipal UserTokenDTO userInfo
+    ) {
+        // 권한 체크
+        if (!checkOwner(userPlantId, userInfo.getUid())) {
+            return ResponseEntity.status(403).build(); // Forbidden
+        }
+
+        return ResponseEntity.ok(myPlantService.getByPlantId(userPlantId));
+    }
+
     // 새로운 식물 등록
     @Operation(
             summary = "새로운 식물 등록",
@@ -86,7 +109,7 @@ public class MyPlantController {
         }
 
         dto.setUserUid(userInfo.getUid());
-        myPlantService.update(dto, file);
+        myPlantService.update(dto, file, userInfo.getUid());
 
         return ResponseEntity.ok().build();
     }
@@ -97,9 +120,9 @@ public class MyPlantController {
             description = "식물 ID(userPlantId)를 전달받아 삭제합니다."
     )
     @ApiResponse(responseCode = "200", description = "삭제 성공")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{userPlantId}")
     public ResponseEntity<Void> deleteMyPlant(
-            @PathVariable("id") int userPlantId,
+            @PathVariable("userPlantId") int userPlantId,
             @AuthenticationPrincipal UserTokenDTO userInfo
     ) {
         // 권한 체크 1 - 식물 소유자인지
