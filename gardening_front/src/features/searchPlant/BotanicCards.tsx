@@ -1,5 +1,5 @@
 import type { PlantDetail } from "@/entities/searchPlant/searchPlantStore";
-import React, { useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { Skeleton } from "@/shared/shadcn/components/ui/skeleton";
 import { Badge } from "@/shared/shadcn/components/ui/badge";
 import { badgeColors } from "@/shared/utils/badgeColors";
@@ -18,21 +18,35 @@ const ImageWithSkeleton: React.FC<{
     loaded: boolean;
     onLoad: () => void;
     className?: string;
-}> = ({ src, alt, loaded, onLoad, className }) => (
-    <div className={className}>
-        {!loaded && <Skeleton className="w-full h-full rounded-lg" />}
-        <img
-            src={src}
-            alt={alt}
-            className={`w-full h-full object-cover rounded-lg ${loaded ? "block" : "hidden"}`}
-            onLoad={onLoad}
-        />
-    </div>
-);
+}> = ({ src, alt, loaded, onLoad, className }) => {
+
+    const imgRef = useRef<HTMLImageElement>(null);
+
+    useEffect(() => {
+        if (imgRef.current?.complete) {
+            onLoad();
+        }
+    }, []);
+
+    return (
+        <div className={className}>
+            {!loaded && <Skeleton className="w-full h-full rounded-lg"/>}
+            <img
+                src={src}
+                alt={alt}
+                className={`w-full h-full object-cover rounded-lg ${loaded ? "block" : "hidden"}`}
+                onLoad={onLoad}
+            />
+        </div>
+    );
+}
 
 const BotanicalCard: React.FC<BotanicalCardProps> = ({ plant }) => {
     const [loaded, setLoaded] = useState(false);
     const navigate = useNavigate();
+    useEffect(() => {
+        setLoaded(false);  // key가 바뀔 때 완전히 리셋
+    }, [plant.scientificName]);
 
     const handleClick = async () => {
 
@@ -52,7 +66,7 @@ const BotanicalCard: React.FC<BotanicalCardProps> = ({ plant }) => {
                 alt={plant.commonName}
                 loaded={loaded}
                 onLoad={() => setLoaded(true)}
-                className="w-full h-[280px] p-2 bg-white"
+                className="w-full h-[200px] p-2 bg-white min-h-[240px]"
             />
 
             {/* 카드 내용 */}

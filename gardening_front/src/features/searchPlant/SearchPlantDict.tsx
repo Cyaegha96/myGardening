@@ -1,6 +1,5 @@
-import  { useEffect, useState } from "react";
-
-import {PlantInfoControllerApi, type PlantInfoDTO} from "@/shared/api";
+import  { useEffect, useState, useMemo } from "react";
+import { PlantInfoControllerApi, type PlantInfoDTO } from "@/shared/api";
 import type { AxiosResponse } from "axios";
 import BotanicalCard from "@/features/searchPlant/BotanicCards.tsx";
 import { useDebounce } from "@/shared/hooks/useDebounce";
@@ -13,18 +12,18 @@ function generateBotanicalGradient(seed: string) {
     const hue = Math.abs(hash % 360);
     return `linear-gradient(135deg, hsl(${hue}, 25%, 88%) 0%, hsl(${(hue + 25) % 360}, 20%, 94%) 100%)`;
 }
+
 const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
     const [items, setItems] = useState<any[]>([]);
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
-
-    //검색 필터 즉각적으로 반영시 지나치게 깜빡이는 효과 덜하게 만드는 debounce
     const debouncedSearch = useDebounce(searchQuery, 300);
 
     const [sortKey, setSortKey] = useState("none");
     const [filterFamily, setFilterFamily] = useState("");
     const [filterGenus, setFilterGenus] = useState("");
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
     useEffect(() => {
         const api = new PlantInfoControllerApi();
         api.getAllPlantInfo()
@@ -53,54 +52,65 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
                 }));
                 setItems(mapped);
             })
-            .catch((err) => console.error("Failed to fetch:", err));
+            .catch(console.error);
     }, []);
+
     useEffect(() => {
         setPage(1);
     }, [debouncedSearch, filterFamily, filterGenus, selectedTags, sortKey]);
 
+    /** ----------------------------------------
+     *   1) FILTER 작업 useMemo
+     * ---------------------------------------- */
+    const filteredItems = useMemo(() => {
+        return items
+            .filter((item) => (filterFamily ? item.family === filterFamily : true))
+            .filter((item) => (filterGenus ? item.genus === filterGenus : true))
+            .filter(item =>
+                selectedTags.length > 0
+                    ? item.tags?.some(tag => selectedTags.includes(tag.tagName))
+                    : true
+            )
+            .filter(item =>
+                debouncedSearch
+                    ? (
+                        item.commonName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                        item.scientificName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                        item.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
+                    )
+                    : true
+            );
+    }, [items, debouncedSearch, filterFamily, filterGenus, selectedTags]);
 
-    const filtered = items
-        .filter((item) => (filterFamily ? item.family === filterFamily : true))
-        .filter((item) => (filterGenus ? item.genus === filterGenus : true))
-        .filter(item =>
-            selectedTags.length > 0
-                ? item.tags?.some(tag => selectedTags.includes(tag.tagName))
-                : true
-        ).filter(item =>
-            debouncedSearch
-                ? (
-                    item.commonName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                    item.scientificName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                    item.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
-                )
-                : true
-        )
+    /** ----------------------------------------
+     *   2) SORT 작업 useMemo
+     * ---------------------------------------- */
+    const sortedItems = useMemo(() => {
+        if (sortKey === "none") return filteredItems;
 
-
-    const toggleTag = (tag: string) => {
-        setSelectedTags(prev =>
-            prev.includes(tag)
-                ? prev.filter(t => t !== tag)   // 있으면 제거
-                : [...prev, tag]                // 없으면 추가
-        );
-    };
-
-    const sorted = [...filtered].sort((a, b) => {
+        const copy = [...filteredItems];
         if (sortKey === "scientific") {
-            return a.scientificName.localeCompare(b.scientificName);
+            return copy.sort((a, b) => a.scientificName.localeCompare(b.scientificName));
         }
         if (sortKey === "common") {
-            return a.commonName.localeCompare(b.commonName);
+            return copy.sort((a, b) => a.commonName.localeCompare(b.commonName));
         }
-        return 0;
-    });
+        return copy;
+    }, [filteredItems, sortKey]);
 
-    const lastIndex = page * itemsPerPage;
-    const firstIndex = lastIndex - itemsPerPage;
-    const currentItems = sorted.slice(firstIndex, lastIndex);
-    const totalPages = Math.ceil(sorted.length / itemsPerPage);
+    /** ----------------------------------------
+     *   3) PAGINATION useMemo
+     * ---------------------------------------- */
+    const currentItems = useMemo(() => {
+        const lastIndex = page * itemsPerPage;
+        const firstIndex = lastIndex - itemsPerPage;
+        return sortedItems.slice(firstIndex, lastIndex);
+    }, [sortedItems, page, itemsPerPage]);
 
+    const totalPages = useMemo(
+        () => Math.ceil(sortedItems.length / itemsPerPage),
+        [sortedItems, itemsPerPage]
+    );
 
     const unique = (key: string) =>
         Array.from(new Set(items.map((i) => i[key]).filter(Boolean)));
@@ -108,13 +118,19 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
     const uniqueFamilies = unique("family");
     const uniqueGenus = unique("genus");
 
-    const uniqueTags = Array.from(
-        new Set(items.flatMap((i) => i.tags?.map((t) => t.tagName) ?? []))
+    const uniqueTags = useMemo(
+        () => Array.from(new Set(items.flatMap(i => i.tags?.map(t => t.tagName) ?? []))),
+        [items]
     );
+
+    const toggleTag = (tag: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
 
     return (
         <div className="w-full flex flex-col items-center">
-
 
             <div className="w-full p-4 rounded-lg bg-gray-50 mb-6 flex flex-wrap gap-4 items-center justify-between">
 
@@ -227,6 +243,5 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
         </div>
     );
 };
-
 
 export default PlantGrid;

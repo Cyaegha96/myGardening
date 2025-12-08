@@ -4,8 +4,23 @@ import { PlantInfoControllerApi, type PlantInfoDTO } from "@/shared/api";
 import { Badge } from "@/shared/shadcn/components/ui/badge";
 import { Skeleton } from "@/shared/shadcn/components/ui/skeleton";
 import { motion } from "framer-motion";
+import Lottie from "lottie-react";
+
+// sprout 애니메이션
+import map from "../../../public/assets/lottie/Map-Icon.json";
+import sprout from "../../../public/assets/lottie/PlantLoading.json";
+import growing from "../../../public/assets/lottie/Flower-growing.json";
+import watering from "../../../public/assets/lottie/Watering-Flower.json";
+import sun from "../../../public/assets/lottie/Sun.json";
+import seeds from "../../../public/assets/lottie/seeds.json";
+import pot from "../../../public/assets/lottie/HangingPlant.json";
+import propagation from "../../../public/assets/lottie/GrowingSeed.json";
+import commonUse from "../../../public/assets/lottie/LivingRoom.json";
+import pestTips from "../../../public/assets/lottie/Covid19.json";
+import temperature from "../../../public/assets/lottie/Thermometer.json";
 
 export default function PlantDetailPage() {
+
     const { scientificName } = useParams();
     const [plant, setPlant] = useState<PlantInfoDTO | null>(null);
     const [loading, setLoading] = useState(true);
@@ -31,10 +46,39 @@ export default function PlantDetailPage() {
         return <div className="p-6 text-center">데이터를 불러올 수 없습니다.</div>;
     }
 
-    return (
-        <div className="w-full">
+    //  Lottie를 각 카드에 적용할 리스트
+    const animationList = [
+        map,
+        growing,
+        watering,
+        sun,
+        seeds,
+        propagation,
+        sprout,
+        pestTips,
+        pot,
+        temperature,
+        commonUse,
+    ];
 
-            {/* 🌟 HERO SECTION */}
+    //  카드 목록 통합
+    const cardItems = [
+        { title: "원산지", value: plant.origin },
+        { title: "자라는 환경", value: plant.environment },
+        { title: "물 주는 법", value: plant.watering },
+        { title: "빛", value: plant.light },
+        { title: "토양", value: plant.soil },
+        { title: "번식 방법", value: plant.propagation },
+        { title: "비료", value: plant.fertilizer },
+        { title: "병충해 관리", value: plant.pestsTips },
+        { title: "분갈이", value: plant.potRepot },
+        { title: "온도 · 습도", value: plant.temperatureHumidity },
+        { title: "활용도", value: plant.commonUses },
+    ];
+
+    return (
+        <div className="mx-auto h-full max-w-6xl px-4 py-6">
+
             <div className="relative w-full h-[460px] overflow-hidden rounded-b-2xl">
                 <img
                     src={plant.sampleImageUrl}
@@ -72,29 +116,28 @@ export default function PlantDetailPage() {
                 </motion.div>
             </div>
 
-            {/* 🌱 SECTION: DESCRIPTION */}
+
             <Section title="식물 설명" content={plant.description} />
 
-            {/* 🌱 CULTURAL */}
+
             <Section title="문화적 의미" content={plant.culturalSignificance} />
 
-            {/* 🌱 SECTION CARDS (환경, 빛, 물주기 등) */}
-            <div className="w-full mt-14 px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <CardSection title="원산지" value={plant.origin} />
-                <CardSection title="자라는 환경" value={plant.environment} />
-                <CardSection title="물 주는 법" value={plant.watering} />
-                <CardSection title="빛" value={plant.light} />
-                <CardSection title="토양" value={plant.soil} />
-                <CardSection title="번식 방법" value={plant.propagation} />
-                <CardSection title="비료" value={plant.fertilizer} />
-                <CardSection title="병충해 관리" value={plant.pestsTips} />
-                <CardSection title="분갈이" value={plant.potRepot} />
-                <CardSection title="온도 · 습도" value={plant.temperatureHumidity} />
-                <CardSection title="활용도" value={plant.commonUses} />
+
+            <div className="flex flex-col gap-14 px-6 mt-14 mb-14">
+                {cardItems.map((item, i) => (
+                    <AlternatingCardSection
+                        key={item.title}
+                        title={item.title}
+                        value={item.value}
+                        animation={animationList[i]}
+                        reverse={i % 2 === 1}
+                    />
+                ))}
             </div>
         </div>
     );
 }
+
 
 
 function Section({ title, content }: { title: string; content?: string }) {
@@ -116,22 +159,42 @@ function Section({ title, content }: { title: string; content?: string }) {
     );
 }
 
-
-function CardSection({ title, value }: { title: string; value?: string }) {
+function AlternatingCardSection({
+                                    title,
+                                    value,
+                                    animation,
+                                    reverse = false
+                                }: {
+    title: string;
+    value?: string;
+    animation: any;
+    reverse?: boolean;
+}) {
     if (!value) return null;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="p-6 bg-white rounded-xl shadow-sm border border-gray-100"
+            className={`
+                flex items-center gap-8 w-full mt-14 mb-14
+                ${reverse ? "flex-row-reverse" : ""}
+            `}
         >
-            <h3 className="text-xl font-semibold text-green-700 mb-2">{title}</h3>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {value}
-            </p>
+            {/* Lottie */}
+            <div className="w-1/3 flex justify-center">
+                <Lottie animationData={animation} loop className="w-[180px] h-[180px]" />
+            </div>
+
+            {/* Card */}
+            <div className="flex-1 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-xl font-semibold text-green-700 mb-2">{title}</h3>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                    {value}
+                </p>
+            </div>
         </motion.div>
     );
 }
