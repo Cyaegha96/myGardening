@@ -16,6 +16,8 @@ export default function PotListPage() {
     const tagFilterList = usePotListStore(state => state.tagFilterList);
     const selectedTags = usePotListStore(state => state.selectedTags);
     const toggleSelectedTags = usePotListStore(state => state.toggleSelectedTags);
+    const setLocation = usePotListStore(state => state.setLocation);
+    const location = usePotListStore(state => state.location);
 
     const [openTagFilter, setOpenTagFilter] = useState(false);
 
@@ -31,7 +33,7 @@ export default function PotListPage() {
     useEffect(() => {
         setCursorId(undefined);
         fetchPotList();
-    }, [fetchPotList, selectedTags, setCursorId]);
+    }, [fetchPotList, selectedTags, setCursorId, location]);
 
     /* 마지막 아이템 감지 */
     useEffect(() => {
@@ -71,6 +73,8 @@ export default function PotListPage() {
                         categories={tagFilterList}
                         selected={selectedTags}
                         toggle={toggleSelectedTags}
+                        setLocation={setLocation}
+                        location={location}
                     />
                 </div>
 
@@ -86,7 +90,7 @@ export default function PotListPage() {
                     <div className="flex justify-end mb-5 mt-3">
                         <div></div>
                         <div>
-                            <Button onClick={() => navigate("write")}>분양글 작성</Button>
+                            <Button variant="default" onClick={() => navigate("write")}>분양글 작성</Button>
                         </div>
                     </div>
 
@@ -107,13 +111,15 @@ export default function PotListPage() {
             <Sheet open={openTagFilter} onOpenChange={setOpenTagFilter}>
                 <SheetContent
                     side="right"
-                    className="min-w-full md:min-w-1/5 flex flex-col z-150 overflow-auto"
+                    className="min-w-full md:min-w-1/5 flex flex-col z-150 overflow-auto pt-5"
                 >
                     {/* 목록 */}
                     <PotTagFilter
                         categories={tagFilterList}
                         selected={selectedTags}
                         toggle={toggleSelectedTags}
+                        setLocation={setLocation}
+                        location={location}
                     />
                 </SheetContent>
             </Sheet>

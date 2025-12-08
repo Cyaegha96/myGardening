@@ -25,9 +25,10 @@ public class PotListService {
             Integer size,
             String keyword,
             String searchType,
-            List<Integer> tagIds
+            List<Integer> tagIds,
+            String location
     ) {
-        return potListMapper.getPotList(cursorId, size, keyword, searchType, tagIds);
+        return potListMapper.getPotList(cursorId, size, keyword, searchType, tagIds, location);
     }
 
     // 사용자 Uid를 통한 분양글 목록 조회

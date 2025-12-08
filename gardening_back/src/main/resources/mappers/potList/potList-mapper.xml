@@ -69,6 +69,10 @@
             </if>
         </if>
 
+        <if test="location != null">
+            AND (pl.location LIKE '%' || #{location} || '%')
+        </if>
+
         <!-- 다중 태그 필터링 -->
         <if test="tagIds != null and tagIds.size() > 0">
             AND pt.tag_id IN
@@ -87,6 +91,8 @@
         SELECT *
         FROM (
         SELECT pl.*,
+        (SELECT COUNT(*) FROM chatroom WHERE pot_listing_id = pl.id) AS chatroom_count,
+        (SELECT COUNT(*) FROM pot_listing_bookmark WHERE pot_listing_id = pl.id) AS bookmark_count,
         ROW_NUMBER() OVER (ORDER BY pl.created_at DESC) AS rn
         FROM pot_listing pl
         WHERE pl.writer_uid = #{id}

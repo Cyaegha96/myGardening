@@ -8,6 +8,9 @@ import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 import {potListApi} from "@/entities/potList/api/potListApi.ts";
 import {formatPrice} from "@/entities/potList/libs/formatPrice.ts";
 import {Dialog, DialogContent, DialogTrigger} from "@/shared/shadcn/components/ui/dialog.tsx";
+import {getRelativeTime} from "@/shared/libs/getRelativeTime.ts";
+import {type AddressParts, splitKoreanAddress} from "@/shared/libs/splitKoreanAddress.ts";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/shared/shadcn/components/ui/tooltip.tsx";
 
 export default function PotDetailInfo() {
     const potDetail = usePotDetailStore(state => state.potDetail);
@@ -20,6 +23,8 @@ export default function PotDetailInfo() {
 
     const [open, setOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+
+    const [addressParts, setAddressParts] = useState<AddressParts>();
 
     useEffect(() => {
         const handleResize = () => {
@@ -56,14 +61,41 @@ export default function PotDetailInfo() {
         }
     }, [fetchPotTagList, tagList]);
 
+    useEffect(() => {
+        if (potDetail && potDetail.location) {
+            setAddressParts(splitKoreanAddress(potDetail.location));
+        }
+    }, [potDetail, potDetail?.location]);
+
     if (!potDetail) return <div>로딩 중...</div>;
 
     return (
         <div className="relative space-y-6 p-4 md:p-6 bg-white rounded-lg shadow-sm h-full overflow-hidden">
-            <div className="flex justify-between items-center mb-2">
-                <p className="text-2xl font-semibold text-gray-900">제목</p>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">{potDetail.location || "거래지역 미지정"}</span>
+            <div className="flex justify-between items-center mb-2 grid grid-cols-3">
+                <div className="col-span-2 flex items-center gap-2">
+                    <p className="text-2xl font-semibold text-gray-900 truncate">
+                        제목
+                    </p>
+                    <span className="text-sm text-muted-foreground flex-shrink-0">
+                        {getRelativeTime(potDetail.bumpedAt!)}
+                    </span>
+                </div>
+                <div className="ms-3 flex items-center gap-2">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                        <span className="text-sm text-gray-500 inline-block max-w-full truncate">
+                            {potDetail && potDetail.location
+                                ? potDetail.location
+                                : "거래지역 미지정"
+                            }
+                        </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{potDetail.location}</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+
                     {potDetail.location && (
                         isMobile ?
                             (
@@ -71,7 +103,7 @@ export default function PotDetailInfo() {
                                     type="button"
                                     className="p-1 rounded-full hover:bg-gray-200 transition"
                                     onClick={() => {
-                                        window.open(`https://map.naver.com/p/search/${encodeURIComponent(potDetail.location)}`, "_blank");
+                                        window.open(`https://map.naver.com/p/search/${encodeURIComponent(potDetail.location ?? "")}`, "_blank");
                                     }}
                                 >
                                     <MapPin className="w-5 h-5 text-primary"/>
@@ -93,7 +125,7 @@ export default function PotDetailInfo() {
                                         className="md:max-w-[100vw] md:max-h-[100vh] w-[80vw] h-[80vh] p-0">
                                         <iframe
                                             title="naver-map"
-                                            src={`https://map.naver.com/p/search/${encodeURIComponent(potDetail.location)}`}
+                                            src={`https://map.naver.com/p/search/${encodeURIComponent(potDetail.location ?? "")}`}
                                             width="100%"
                                             height="100%"
                                             className="rounded-lg"

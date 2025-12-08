@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
-import { Input } from "@/shared/shadcn/components/ui/input";
-import { Button } from "@/shared/shadcn/components/ui/button";
-import { Label } from "@/shared/shadcn/components/ui/label";
-import { Card, CardContent } from "@/shared/shadcn/components/ui/card";
-import type { PotListResponseDTO } from "@/shared/api";
-import { Checkbox } from "@/shared/shadcn/components/ui/checkbox.tsx";
+import React, {useEffect} from "react";
+import {Input} from "@/shared/shadcn/components/ui/input";
+import {Button} from "@/shared/shadcn/components/ui/button";
+import {Label} from "@/shared/shadcn/components/ui/label";
+import {Card, CardContent} from "@/shared/shadcn/components/ui/card";
+import type {PotListResponseDTO} from "@/shared/api";
+import {Checkbox} from "@/shared/shadcn/components/ui/checkbox.tsx";
 import ImageCarouselUploader from "@/features/potList/ui/ImageCarouselUploader.tsx";
-import { Editor } from "@/shared/shadcn/components/editor/blocks/editor-x/editor.tsx";
-import { CornerDownLeft } from "lucide-react";
-import { usePotListWriteStore } from "@/entities/potList/model/potListWriteStore.ts";
-import { useParams } from "react-router-dom";
+import {Editor} from "@/shared/shadcn/components/editor/blocks/editor-x/editor.tsx";
+import {CornerDownLeft} from "lucide-react";
+import {usePotListWriteStore} from "@/entities/potList/model/potListWriteStore.ts";
+import {useParams} from "react-router-dom";
 import {RadioGroup, RadioGroupItem} from "@/shared/shadcn/components/ui/radio-group.tsx";
 import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 import {
@@ -26,8 +26,8 @@ type Props = {
     onSubmitSuccess?: () => void;
 };
 
-export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
-    const { id } = useParams<{ id: string }>();
+export default function PotListWriteForm({mode, onSubmitSuccess}: Props) {
+    const {id} = useParams<{ id: string }>();
     const tagList = usePotListStore(state => state.tagFilterList);
     const fetchPotTagList = usePotListStore(state => state.fetchPotTagList);
     const {
@@ -52,7 +52,7 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
     }, [mode, reset]);
 
     useEffect(() => {
-        if(!tagList || tagList.length === 0) {
+        if (!tagList || tagList.length === 0) {
             fetchPotTagList();
         }
     }, [fetchPotTagList, tagList]);
@@ -69,7 +69,13 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
 
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const raw = e.target.value.replace(/[^\d]/g, ""); // 숫자만
-        setPrice(Number(raw || 0));
+        let num = Number(raw || 0);
+
+        if (num > 100000000) {
+            num = 100000000;
+        }
+
+        setPrice(Number(num || 0));
     };
 
     return (
@@ -82,13 +88,14 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
 
                     {/* 유형 라디오 버튼 */}
                     <div>
-                        <RadioGroup value={type} onValueChange={(v) => setType(v as "SELL" | "BUY")} className="flex gap-4">
+                        <RadioGroup value={type} onValueChange={(v) => setType(v as "SELL" | "BUY")}
+                                    className="flex gap-4">
                             <div className="flex items-center gap-2">
-                                <RadioGroupItem value="SELL" id="type-sell" />
+                                <RadioGroupItem value="SELL" id="type-sell"/>
                                 <label htmlFor="type-sell" className="cursor-pointer select-none">판매</label>
                             </div>
                             <div className="flex items-center gap-2">
-                                <RadioGroupItem value="BUY" id="type-buy" />
+                                <RadioGroupItem value="BUY" id="type-buy"/>
                                 <label htmlFor="type-buy" className="cursor-pointer select-none">구매</label>
                             </div>
                         </RadioGroup>
@@ -97,7 +104,7 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
                     {/* 제목 */}
                     <div className="mb-5">
                         <Label className="mb-1 text-md">제목</Label>
-                        <Input value={title} onChange={e => setTitle(e.target.value)} />
+                        <Input value={title} onChange={e => setTitle(e.target.value)}/>
                     </div>
 
                     {/* 가격 */}
@@ -130,10 +137,13 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
                     {/* 카테고리 */}
                     <div>
                         <Label className="mb-1 text-md">카테고리</Label>
-                        <Accordion type="multiple" className="w-full bg-background rounded-lg border shadow px-2 py-1 mb-3">
+                        <Accordion type="multiple"
+                                   className="w-full bg-background rounded-lg border shadow px-2 py-1 mb-3">
                             {tagList.map(cat => (
-                                <AccordionItem key={cat.parentTag.tagId} value={String(cat.parentTag.tagId)} className="border-0 mb-1">
-                                    <AccordionTrigger className="text-left gap-2 cursor-pointer hover:bg-accent/50 rounded-sm hover:no-underline px-1 py-1">
+                                <AccordionItem key={cat.parentTag.tagId} value={String(cat.parentTag.tagId)}
+                                               className="border-0 mb-1">
+                                    <AccordionTrigger
+                                        className="text-left gap-2 cursor-pointer hover:bg-accent/50 rounded-sm hover:no-underline px-1 py-1">
                                         {cat.parentTag.description}
                                     </AccordionTrigger>
 
@@ -192,7 +202,12 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
                             existingImages={existingImages}
                             newFiles={newFiles}
                             thumbnailIndex={thumbnailIndex}
-                            onChange={({ updatedExistingImages, updatedNewFiles, updatedThumbnailIndex, updatedDeletedIds }) => {
+                            onChange={({
+                                           updatedExistingImages,
+                                           updatedNewFiles,
+                                           updatedThumbnailIndex,
+                                           updatedDeletedIds
+                                       }) => {
                                 setExistingImages(updatedExistingImages);
                                 setNewFiles(updatedNewFiles);
                                 setThumbnailIndex(updatedThumbnailIndex ?? 0);
@@ -204,11 +219,12 @@ export default function PotListWriteForm({ mode, onSubmitSuccess }: Props) {
                     {/* 내용 */}
                     <div>
                         <Label className="mb-1 text-md">분양 설명</Label>
-                        <Editor onSerializedChange={(value) => setDescription(value)} />
+                        <Editor onSerializedChange={(value) => setDescription(value)}/>
                     </div>
 
                     <div className="flex justify-end mt-5">
-                        <Button onClick={() => submit(mode, id ? Number(id) : undefined, onSubmitSuccess)} disabled={loading}>
+                        <Button onClick={() => submit(mode, id ? Number(id) : undefined, onSubmitSuccess)}
+                                disabled={loading}>
                             {loading ? "처리중..." : mode === "create" ? "작성하기" : "수정하기"}<CornerDownLeft/>
                         </Button>
                     </div>

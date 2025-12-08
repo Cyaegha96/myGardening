@@ -18,7 +18,8 @@ public interface PotListMapper {
             @Param("size") Integer size,
             @Param("keyword") String keyword,
             @Param("type") String searchType,
-            @Param("tagIds") List<Integer> tagIds
+            @Param("tagIds") List<Integer> tagIds,
+            @Param("location") String location
     );
 
     // 사용자 Uid를 통한 분양글 목록 조회

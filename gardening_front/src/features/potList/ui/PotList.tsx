@@ -7,6 +7,8 @@ import {useNavigate} from "react-router-dom";
 import {getRelativeTime} from "@/shared/libs/getRelativeTime.ts";
 import {formatPrice} from "@/entities/potList/libs/formatPrice.ts";
 import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.tsx";
+import {useEffect, useState} from "react";
+import {type AddressParts, splitKoreanAddress} from "@/shared/libs/splitKoreanAddress.ts";
 
 export default function PotList({
                                     id,
@@ -28,6 +30,9 @@ export default function PotList({
     const setBookmarkCount = usePotListStore(state => state.setBookmarkCount);
     const setOtherPotBookmarkCount = usePotDetailStore(state => state.setOtherPotBookmarkCount);
 
+
+    const [addressParts, setAddressParts] = useState<AddressParts>();
+
     // 가장 최신 날짜 선택 및 상대시간으로 조정
     const relativeTime =
         (bumpedAt && new Date(bumpedAt) > new Date(createdAt!)
@@ -36,6 +41,12 @@ export default function PotList({
         getRelativeTime(bumpedAt!);
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (location) {
+            setAddressParts(splitKoreanAddress(location));
+        }
+    }, []);
 
     return (
         <div
@@ -55,7 +66,8 @@ export default function PotList({
                         className="w-full h-40 object-cover rounded-t-md"
                     />
                 ) : (
-                    <div className="w-full h-40 rounded-t-md bg-secondary flex items-center justify-center text-secondary-foreground text-md">
+                    <div
+                        className="w-full h-40 rounded-t-md bg-secondary flex items-center justify-center text-secondary-foreground text-md">
                         등록된 사진 없음
                     </div>
                 )}
@@ -127,7 +139,14 @@ export default function PotList({
                     {type === "SELL" ? (price && price! > 0 ? `${formatPrice(price)}원` : "무료 나눔") : "삽니다"}
                 </h2>
                 <p className="text-xs text-gray-600 line-clamp-2 leading-loose truncate">
-                    {location ? location + " - " : ""}{relativeTime}
+                    {addressParts ? [
+                            addressParts.province,
+                            addressParts.district,
+                            addressParts.neighborhood
+                        ]
+                            .filter(Boolean) // undefined/null 제거
+                            .join(" ")
+                        : "거래지역 미지정"}·{relativeTime}
                 </p>
             </div>
         </div>

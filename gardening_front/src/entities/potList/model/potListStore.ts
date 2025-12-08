@@ -8,6 +8,8 @@ type PotListStore = {
     bookmarkPotLists: PotListDetailDTO[];
     tagFilterList: { parentTag: PlantTagParentDTO, tagList: PlantTagDTO[] }[];
 
+    location: string | undefined;
+
     cursorId: string | undefined;
     size: number | undefined;
     keyword: string | undefined;
@@ -22,6 +24,7 @@ type PotListStore = {
     fetchBookmarkPotLists: () => void;
     fetchPotTagList: () => void;
 
+    setLocation: (provinceName: string, neighborhoodName: string) => void;
     setKeyword: (keyword: string) => void;
     setSearchType: (searchType: string) => void;
     setCursorId: (value: string | undefined) => void;
@@ -41,6 +44,8 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
     bookmarkPotLists: [],
     tagFilterList: [],
 
+    location: undefined,
+
     cursorId: undefined,
     size: undefined,
     keyword: undefined,
@@ -58,6 +63,7 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
             searchType,
             selectedTags,
             potLists,
+            location,
         } = get();
 
         try {
@@ -68,7 +74,8 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
                 size,
                 keyword,
                 searchType,
-                selectedTags
+                selectedTags,
+                location
             );
 
             const newItems = resp.data;
@@ -153,6 +160,13 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
         fetchPotList();
     },
 
+    setLocation: (provinceName: string, neighborhoodName: string) => {
+        if(provinceName && neighborhoodName) {
+            set(() => ({location: provinceName + "%" + neighborhoodName}))
+        } else {
+            set(() => ({location: undefined}))
+        }
+    },
     setKeyword: (keyword: string) => set(() => ({keyword: keyword})),
     setSearchType: (searchType: string) => set(() => ({searchType: searchType})),
     setCursorId: (value: string | undefined) => set(() => ({cursorId: value, potLists: []})),
@@ -192,5 +206,4 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
             throw e;
         }
     },
-
 }));

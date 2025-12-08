@@ -7,7 +7,7 @@ import PotList from "@/features/potList/ui/PotList.tsx";
 
 export default function PotDetailPage() {
     const {id} = useParams<{ id: string }>();
-    const {getDetail, otherPotList} = usePotDetailStore();
+    const {getDetail, otherPotList, potDetail} = usePotDetailStore();
 
     useEffect(() => {
         if (id) getDetail(Number(id));
@@ -30,7 +30,7 @@ export default function PotDetailPage() {
             <hr className="max-w-6xl mx-auto"/>
 
             <div className="max-w-6xl mx-auto px-4 mb-5 p-4 md:p-6">
-                <h2 className="text-lg font-semibold mb-3">작성자의 다른 분양글</h2>
+                <h2 className="text-lg font-semibold mb-3">{potDetail?.writerName ?? "작성자"}의 다른 분양글</h2>
 
                 <div className="flex gap-4 overflow-x-auto">
                     {otherPotList && otherPotList.length > 0 && otherPotList

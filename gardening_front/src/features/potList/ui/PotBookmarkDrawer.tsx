@@ -58,7 +58,7 @@ export default function PotBookmarkDrawer() {
                                 bg-green-50 dark:bg-green-900 hover:bg-green-100 dark:hover:bg-green-800 
                                 cursor-pointer transition m-1 truncate`}
                                 onClick={() => {
-                                    navigate(`${item.id}`);
+                                    navigate(`/pot-list/${item.id}`);
                                     setSheetOpen(false);
                                 }}
                             >
