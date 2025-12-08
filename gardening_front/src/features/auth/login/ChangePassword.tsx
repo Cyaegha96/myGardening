@@ -96,7 +96,7 @@ const PasswordResetApply: React.FC = () => {
 
             alert("비밀번호가 변경되었습니다.");
 
-            window.location.href = "";
+            window.location.href = "/";
             localStorage.removeItem("resetToken");
         } catch (err: any) {
             setErrorMsg(err.response?.data?.message || "비밀번호 변경에 실패했습니다.");

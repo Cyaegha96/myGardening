@@ -313,14 +313,14 @@ export default function CompleteProfileView({
                     </CardContent>
 
                     <CardFooter className="gap-2 mt-5 ">
-                        <Link to="/auth/password/new"> <div className="grid gap-2">
+                        <Link to="/auth/password/new"> <div className="grid grid-1 gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
                             >비밀번호 변경
                             </Button>
                         </div></Link>
-                        <Button type="submit" disabled={loading} className="w-full ">
+                        <Button type="submit" disabled={loading} className="grid grid-1 ">
                             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline"/> : "정보 저장"}
                         </Button>
 

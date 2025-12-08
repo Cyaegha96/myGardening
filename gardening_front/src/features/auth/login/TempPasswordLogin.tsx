@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 import axiosInterceptor from "@/shared/api/axiosInterceptor";
 import {existEmailCheck, existIdCheck} from "@/entities/auth/api.ts";
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^(?!.*\.\.)(?=.{1,254}$)(?=.{1,64}@)[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/;
 const idRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}$/;
 
 const PasswordResetVerify: React.FC = () => {
@@ -230,7 +230,7 @@ const PasswordResetVerify: React.FC = () => {
                         <div>
                             <Label>OTP 코드</Label>
                             <Input
-                                type="password"
+                                type="text"
                                 value={otp}
                                 placeholder="3분 내 발급된 코드를 입력하세요"
                                 onChange={(e) => setOtp(e.target.value)}
