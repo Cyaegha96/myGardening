@@ -1,13 +1,9 @@
 package com.ggirick.gardening_back.controllers.myPlant;
 
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
-import com.ggirick.gardening_back.dto.myPlant.MyPlantDTO;
-import com.ggirick.gardening_back.dto.myPlant.MyPlantResponseDTO;
-import com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO;
 import com.ggirick.gardening_back.dto.myPlant.MyPlantImageHistoryResponseDTO;
 import com.ggirick.gardening_back.services.myPlant.MyPlantService;
 import com.ggirick.gardening_back.services.myPlant.MyPlantImageService;
-import com.ggirick.gardening_back.services.myPlant.MyPlantImageHistoryService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -28,7 +24,6 @@ import java.util.List;
 public class MyPlantImageHistoryController {
 
     private final MyPlantService myPlantService;
-    private final MyPlantImageHistoryService historyService;
     private final MyPlantImageService imageService;
 
     // 권한 공통 체크
@@ -59,7 +54,7 @@ public class MyPlantImageHistoryController {
             return ResponseEntity.status(403).build();
         }
 
-        return ResponseEntity.ok(historyService.getHistory(userPlantId));
+        return ResponseEntity.ok(imageService.getHistoryForResponse(userPlantId));
     }
 
     // 히스토리 선택하여 대표 이미지 변경
@@ -79,7 +74,7 @@ public class MyPlantImageHistoryController {
             return ResponseEntity.status(403).build();
         }
 
-        historyService.promoteToThumbnail(userPlantId, imageHistoryId, userInfo.getUid());
+        imageService.updateFromHistory(userPlantId, imageHistoryId);
         return ResponseEntity.ok().build();
     }
 }

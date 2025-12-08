@@ -109,7 +109,7 @@ public class MyPlantController {
         }
 
         dto.setUserUid(userInfo.getUid());
-        myPlantService.update(dto, file, userInfo.getUid());
+        myPlantService.update(dto, file);
 
         return ResponseEntity.ok().build();
     }

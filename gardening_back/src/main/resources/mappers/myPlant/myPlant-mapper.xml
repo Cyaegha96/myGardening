@@ -29,17 +29,19 @@
     <!-- 식물 정보 수정 -->
     <update id="update">
         UPDATE my_plant
-        SET nickname = #{nickname},
+        SET
+        plant_scientific_name = #{plant_scientific_name},
+        nickname = #{nickname},
         memo = #{memo},
         acquired_at = #{acquiredAt},
         updated_at = sysdate
+
         <if test="status != null">
             , status = #{status, jdbcType=VARCHAR}
         </if>
         WHERE user_plant_id = #{userPlantId}
         AND user_uid = #{userUid}
     </update>
-
 
     <!-- 등록한 식물 정보 삭제 -->
     <delete id="delete">

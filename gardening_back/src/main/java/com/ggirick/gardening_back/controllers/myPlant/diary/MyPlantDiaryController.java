@@ -121,7 +121,7 @@ public class MyPlantDiaryController {
         dto.setDiaryId(diaryId);
         dto.setUserPlantId(userPlantId);
 
-        diaryService.updateDiary(dto, file, loginUid);
+        diaryService.updateDiary(dto, file);
 
         return ResponseEntity.ok().build();
     }

@@ -45,45 +45,53 @@ public class MyPlantDiaryService {
 
         // 선택 이미지 있을 경우 업로드
         if (file != null && !file.isEmpty()) {
-            diaryImageService.insert(file, diaryId, dto.getUserPlantId(), loginUid);
+            diaryImageService.insert(file, diaryId, dto.getUserPlantId());
         }
     }
 
     // 다이어리 수정
     @Transactional
-    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file, String loginUid) throws Exception {
+    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file) throws Exception {
 
-        // 텍스트 수정
+        // 1. 텍스트 수정
         diaryMapper.updateDiary(dto);
 
-        // 기존 이미지 조회
+        // 2. 다이어리 이미지 수정 - 여기서 알아서 케이스 별로 처리.
+        diaryImageService.update(file, dto.getUserPlantId(), dto.getDiaryId());
         MyPlantDiaryImageDTO oldImage = diaryImageService.getImageByDiaryId(dto.getDiaryId());
 
-        // 기존 이미지 없음 → 신규 업로드만
-        if (oldImage == null) {
-            if (file != null && !file.isEmpty()) {
-                diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId(), loginUid);
-            }
-            return;
-        }
+        // 3. 새로운 파일이 있는지 확인 -> 있으면 true
+        boolean hasNewFile = (file != null && !file.isEmpty());
 
-        // 기존 이미지 있음
-        if (file == null || file.isEmpty()) {
-            // 클라이언트에서 이미지를 제거한 상태
+        // Case A: 이미지 있었는데 새 파일 없음 → 삭제
+        if (oldImage != null && !hasNewFile) {
             diaryImageService.deleteByImageId(oldImage.getImageId());
             return;
         }
 
-        // 새 파일 hash 검사 (동일 파일인지 체크)
-        String newHash = HashUtil.sha256(file);
-        if (newHash.equals(oldImage.getHash())) {
-            // 동일 이미지 → 변경 없이 종료
+        // Case B: 이미지 없었는데 새 파일 업로드 → 신규 등록
+        if (oldImage == null && hasNewFile) {
+            diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId());
             return;
         }
 
-        // 이미지 교체 처리
-        diaryImageService.deleteByImageId(oldImage.getImageId());
-        diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId(), loginUid);
+        // Case C: 이미지 있었고, 새 파일도 있음 → 변경 여부 판단
+        if (oldImage != null) {
+            // 새 파일 hash 생성
+            String newHash = HashUtil.sha256(file);
+
+            // 동일 파일이면 아무 작업 안 함
+            if (newHash.equals(oldImage.getHash())) {
+                return;
+            }
+
+            // 다른 파일이면 기존 삭제 + 새 업로드
+            diaryImageService.deleteByImageId(oldImage.getImageId());
+            diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId());
+            return;
+        }
+
+        // Case D: 이미지도 없고 새 파일도 없음 → 변경 없음
     }
 
     // 다이어리 삭제 (이미지 CASCADE 설정된 경우 자동 삭제)

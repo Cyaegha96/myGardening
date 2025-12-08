@@ -9,13 +9,13 @@ import java.util.List;
 public interface MyPlantImageHistoryMapper {
 
     // 1. 히스토리 단건 조회 (PK 기반)
-    MyPlantImageHistoryDTO getById(int imageHistoryId);
+    MyPlantImageHistoryDTO getHistoryById(int imageHistoryId);
 
     // 2. 동일 이미지 재삽입 방지
-    int deleteByHash(String hash);
+    void deleteByHash(String hash);
 
     // 3. 신규 히스토리 저장
-    int insert(MyPlantImageHistoryDTO dto);
+    void insert(MyPlantImageHistoryDTO dto);
 
     // 4. 최신순 히스토리 목록 조회
     List<MyPlantImageHistoryDTO> getHistoryList(int userPlantId);
@@ -24,7 +24,7 @@ public interface MyPlantImageHistoryMapper {
     MyPlantImageHistoryDTO getOldest(int userPlantId);
 
     // 6. PK로 히스토리 삭제
-    int deleteByHistoryId(int imageHistoryId);
+    void deleteByHistoryId(int imageHistoryId);
 
     // 7. 히스토리 개수 조회
     int getCountByPlantId(int userPlantId);

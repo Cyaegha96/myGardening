@@ -1,6 +1,9 @@
 package com.ggirick.gardening_back.services.myPlant;
 
-import com.ggirick.gardening_back.dto.myPlant.*;
+import com.ggirick.gardening_back.dto.myPlant.MyPlantDTO;
+import com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO;
+import com.ggirick.gardening_back.dto.myPlant.MyPlantImageHistoryDTO;
+import com.ggirick.gardening_back.dto.myPlant.MyPlantResponseDTO;
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO;
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO;
 import com.ggirick.gardening_back.mappers.myPlant.MyPlantMapper;
@@ -22,7 +25,6 @@ public class MyPlantService {
     private final MyPlantImageService myPlantImageService;
     private final MyPlantDiaryService myPlantDiaryService;
     private final MyPlantDiaryImageService myPlantDiaryImageService;
-    private final MyPlantImageHistoryService historyService;
 
     // 식물 등록
     @Transactional
@@ -42,10 +44,9 @@ public class MyPlantService {
         myPlantMapper.insert(dto);
         int userPlantId = dto.getUserPlantId();
 
-        // 3. 대표 이미지 등록
+        // 3. 대표 이미지 + 히스토리 등록
         if (file != null && !file.isEmpty()) {
-            myPlantImageService.insert(file, userPlantId, loginUid);
-            // 처음 등록된 대표 이미지는 history에 넣지 않음
+           myPlantImageService.insert(file, userPlantId);
         }
 
         // 4. 메모 존재 시 첫 일지 자동 등록
@@ -60,71 +61,35 @@ public class MyPlantService {
 
     // 식물 정보 수정
     @Transactional
-    public void update(MyPlantDTO dto, MultipartFile file, String loginUid) throws Exception {
-
-        int userPlantId = dto.getUserPlantId();
-
-        if (file != null && !file.isEmpty()) {
-
-            // 1. 현재 대표 이미지 조회
-            MyPlantImageDTO currentThumb = myPlantImageService.getThumbnailByPlantId(userPlantId);
-
-            // 2. 신규 업로드 또는 기존 이미지 확인
-            MyPlantImageResponseDTO saved = myPlantImageService.insert(file, userPlantId, loginUid);
-            MyPlantImageDTO newThumb = myPlantImageService.getThumbnailByPlantId(userPlantId);
-
-            // 3. 기존 대표 있고, 다른 이미지면 히스토리 백업
-            if (currentThumb != null &&
-                    newThumb != null &&
-                    !currentThumb.getHash().equals(newThumb.getHash())) {
-
-                historyService.backupImage(currentThumb);
-            }
-
-            // 4. 대표 이미지 갱신
-            if (newThumb != null) {
-                MyPlantImageHistoryDTO historyDto = MyPlantImageHistoryDTO.builder()
-                        .userPlantId(userPlantId)
-                        .oriName(newThumb.getOriName())
-                        .sysName(newThumb.getSysName())
-                        .url(newThumb.getUrl())
-                        .hash(newThumb.getHash())
-                        .build();
-
-                myPlantImageService.updateThumbnail(userPlantId, historyDto);
-            }
-        }
-
-        // 5. 식물 정보 수정
+    public void update(MyPlantDTO dto, MultipartFile file) throws Exception {
+        // 1. 대표이미지 수정 + 히스토리 백업
+        myPlantImageService.update(file, dto.getUserPlantId());
+        // 2. 식물 정보 수정
         myPlantMapper.update(dto);
     }
 
     // 식물 삭제
     @Transactional
     public void delete(int userPlantId) {
-
-        // 1. 삭제할 이미지 조회
-        List<MyPlantDiaryImageDTO> imagesForDelete =
-                myPlantDiaryImageService.getImagesForDelete(userPlantId);
-        MyPlantImageDTO thumbnail =
-                myPlantImageService.getThumbnailByPlantId(userPlantId);
-
-        // 2. DB 삭제
+        // 1. DB 삭제
         myPlantMapper.delete(userPlantId);
 
-        // 3. GCP 삭제 처리
-        myPlantImageService.deleteImage(thumbnail);
-        myPlantDiaryImageService.deleteAllImagesByPlantId(imagesForDelete);
+        // 2. GCP 삭제 처리 - 각 이미지 서비스로 넘기기
+        myPlantImageService.deleteImage(userPlantId);
+        myPlantDiaryImageService.deleteAllImages(userPlantId);
     }
 
+    // 등록한 내 식물 모두 조회
     public List<MyPlantResponseDTO> getListByUserUid(String userUid) {
         return myPlantMapper.getListByUserUid(userUid);
     }
 
+    // 단건 기본정보 조회 (상세 용)
     public MyPlantResponseDTO getByPlantId(int userPlantId) {
         return myPlantMapper.getByPlantId(userPlantId);
     }
 
+    // 권한 체크 - userPlantId → ownerUid 조회
     public String getOwnerUidByPlantId(int userPlantId) {
         return myPlantMapper.getOwnerUidByPlantId(userPlantId);
     }
