@@ -1,6 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { login, saveTokens, getStoredTokens } from '@/entities/auth/api';
-import type { ErrorResponse } from '@/entities/auth/types';
 import { useAuthStore,type AuthState } from '@/entities/auth/useAuthStore';
 
 type Platform = 'kakao' | 'google' | 'naver';
@@ -48,8 +47,7 @@ export default function useLoginModel() {
       setPassword('');
 
       window.location.href = '/auth/dashboard';
-    } catch (err) {
-        console.log(err);
+    } catch (err: any) {
         const errMsg = err.response.data.message ?? '로그인 실패! 서버 응답을 확인하세요.';
       setError(errMsg);
     } finally {

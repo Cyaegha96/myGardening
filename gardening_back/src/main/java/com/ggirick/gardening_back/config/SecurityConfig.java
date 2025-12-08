@@ -59,8 +59,12 @@ public class SecurityConfig {
                                 .requestMatchers("/auth/checkOtp").permitAll()
                                 .requestMatchers("/auth/requestOtp").permitAll()
                                 .requestMatchers("/auth/login").permitAll()
+                                .requestMatchers("/auth/existEmailCheck/**").permitAll()
                                 .requestMatchers("/auth/existIdCheck").permitAll()
                                 .requestMatchers("/auth/existPhoneCheck").permitAll()
+                                .requestMatchers("/auth/send-certification").permitAll()
+                                .requestMatchers("/auth/verify-code").permitAll()
+                                .requestMatchers("/auth/password/**").permitAll()
                                 .requestMatchers("/auth/signup").permitAll()
                                 .requestMatchers("/auth/refresh").permitAll()
                                 .requestMatchers("/oauth/**").permitAll() // OAuth 관련도 열기
@@ -68,12 +72,12 @@ public class SecurityConfig {
 
                                 // 인증이 필요한 경로
                                 .requestMatchers("/auth/**").authenticated()
-                                .requestMatchers("/oauth/**").authenticated()
                                 .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/shop/**").hasRole("SHOP_OWNER")
                         .requestMatchers("/gardener/**").hasRole("GARDENER")
                         .anyRequest().permitAll() // 요청을 허용할 url
                 )
+
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 // OAuth 2.0 로그인 설정
                 .oauth2Login(oauth2 -> oauth2

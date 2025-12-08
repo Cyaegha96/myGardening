@@ -8,7 +8,7 @@ export async function login(credentials: { id: string; password: string; }): Pro
   return res.data;
 }
 
-export async function register(payload: { id: string; pw: string; phone?: string; }) {
+export async function register(payload: { id: string; pw: string; phone?: string; email?:string;}) {
   const res = await axiosInterceptor.post(`${API_BASE_URL}/signup`, payload);
   return res.data;
 }
@@ -84,3 +84,28 @@ export async function existPhoneCheck(phone: string) {
     console.log(res.data);
     return res.data;
 }
+
+
+export const existEmailCheck = (email: string) =>
+    axiosInterceptor.get(`/auth/existEmailCheck/${email}`).then((r) => r.data);
+
+export const sendEmailCode = (email: string) =>
+    axiosInterceptor.post(`/auth/send-certification`, { email }).then((r) => r.data);
+
+export const verifyEmailCode = (email: string, code: string) =>
+    axiosInterceptor.post(`/auth/verify-code`, { email, code }).then((r) => r.data);
+
+
+export const checkEmailExceptSelf = async (email: string) => {
+    const res = await axiosInterceptor.get("/auth/check/email", {
+        params: { email },
+    });
+    return res.data; // true or false
+};
+
+export const checkPhoneExceptSelf = async (phone: string) => {
+    const res = await axiosInterceptor.get("/auth/check/phone", {
+        params: { phone },
+    });
+    return res.data;
+};
