@@ -1,8 +1,11 @@
 import {Button} from "@/shared/shadcn/components/ui/button.tsx";
-import type {PlantCreateModalFooterProps} from "@/features/myPlant/create-my-plant/model/PlantCreateModalFooterProps.ts";
+import type {
+    PlantCreateModalFooterProps
+} from "@/features/myPlant/create-my-plant/model/PlantCreateModalFooterProps.ts";
 
 // 모달 하단 버튼 두 개 (오른쪽 정렬)
 export default function PlantCreateModalFooter({
+                                                   mode,
                                                    onResetAll,
                                                    onSubmit,
                                                }: PlantCreateModalFooterProps) {
@@ -21,7 +24,7 @@ export default function PlantCreateModalFooter({
                 className="px-4 py-2 text-sm"
                 onClick={onSubmit}
             >
-                등록하기
+                {mode === "create" ? "등록" : "수정 완료"}
             </Button>
         </div>
     );

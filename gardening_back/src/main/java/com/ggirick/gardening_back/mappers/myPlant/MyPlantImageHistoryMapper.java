@@ -25,4 +25,7 @@ public interface MyPlantImageHistoryMapper {
 
     // 6. PK로 히스토리 삭제
     int deleteByHistoryId(int imageHistoryId);
+
+    // 7. 히스토리 개수 조회
+    int getCountByPlantId(int userPlantId);
 }

@@ -1,6 +1,7 @@
 package com.ggirick.gardening_back.mappers.myPlant;
 
 import com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO;
+import com.ggirick.gardening_back.dto.myPlant.MyPlantImageHistoryDTO;
 import com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -8,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface MyPlantImageMapper {
     // 등록한 식물의 대표 이미지 조회
-    MyPlantImageDTO getThumbnailByPlantId(int userPlantId);
+    MyPlantImageDTO getImageByPlantId(int userPlantId);
 
     // imageId로 대표 이미지 조회
     MyPlantImageResponseDTO getImageById(int imageId);
@@ -23,8 +24,8 @@ public interface MyPlantImageMapper {
     int updateThumbnail(MyPlantImageDTO dto);
 
     // 중복 이미지 존재 여부 조회 (유저별)
-    MyPlantImageResponseDTO findByHashAndUserUid(@Param("hash") String hash,
-                                                 @Param("loginUid") String loginUid);
+    MyPlantImageDTO findEntityByHashAndUserUid(@Param("hash") String hash,
+                                                @Param("userUid") String userUid);
 
     // 권한 체크용 - 식물 등록자가 맞는지
     String getOwnerUidByPlantImageId(int imageId);

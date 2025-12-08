@@ -46,13 +46,21 @@
     </select>
 
     <!-- 5. 가장 오래된 히스토리 조회 (삭제 전 정보 확보) -->
-    <select id="getOldest" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageHistoryDTO">
+    <select id="getOldest"
+            parameterType="int"
+            resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageHistoryDTO">
+
         SELECT *
-        FROM my_plant_image_history
-        WHERE user_plant_id = #{userPlantId}
-        ORDER BY created_at ASC
-            FETCH FIRST 1 ROW ONLY
+        FROM (
+                 SELECT *
+                 FROM my_plant_image_history
+                 WHERE user_plant_id = #{userPlantId}
+                 ORDER BY created_at ASC
+             )
+        WHERE ROWNUM = 1
+
     </select>
+
 
     <!-- 6. 히스토리 삭제 (PK 기반) -->
     <delete id="deleteByHistoryId">
@@ -60,4 +68,10 @@
         WHERE image_history_id = #{imageHistoryId}
     </delete>
 
+    <!-- 7. 히스토리 개수 조회 -->
+    <select id="getCountByPlantId" parameterType="int" resultType="int">
+        SELECT COUNT(*)
+        FROM my_plant_image_history
+        WHERE user_plant_id = #{userPlantId}
+    </select>
 </mapper>

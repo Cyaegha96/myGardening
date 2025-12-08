@@ -16,48 +16,42 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class MyPlantImageService {
+
     private final MyPlantImageMapper myPlantImageMapper;
     private final FileUtil fileUtil;
 
-    // 등록한 식물의 대표 이미지 조회
+    // 식물의 대표 이미지 조회
     public MyPlantImageDTO getThumbnailByPlantId(int userPlantId) {
-        return myPlantImageMapper.getThumbnailByPlantId(userPlantId);
+        return myPlantImageMapper.getImageByPlantId(userPlantId);
     }
 
-    // imageId로 대표 이미지 조회
-    public MyPlantImageResponseDTO getImageById(int imageId) {
-        return myPlantImageMapper.getImageById(imageId);
-    }
-
-    // 이미지 등록
+    // 대표 이미지 등록
     @Transactional
     public MyPlantImageResponseDTO insert(MultipartFile file, int userPlantId, String loginUid) throws Exception {
-        // 파일이 비어있으면 리턴
+
+        // 1. 파일 확인
         if (file == null || file.isEmpty()) {
             return null;
         }
 
-        // 원본 파일명
-        String oriName = file.getOriginalFilename();
-
-        // 1. hash 생성
+        // 2. 해시 생성
         String hash = HashUtil.sha256(file);
 
-        // 2. 유저 전체 식물 기준 이미지 중복 체크
-        MyPlantImageResponseDTO exist = myPlantImageMapper.findByHashAndUserUid(hash, loginUid);
+        // 3. 기존 이미지 중복 여부 확인
+        MyPlantImageDTO exist = myPlantImageMapper.findEntityByHashAndUserUid(hash, loginUid);
         if (exist != null) {
-            // 이미 같은 사진이 존재하면 → 업로드 스킵하고 재사용
-            return exist;
+            // 기존 이미지 재활용
+            return MyPlantImageResponseDTO.builder()
+                    .imageId(exist.getImageId())
+                    .url(exist.getUrl())
+                    .build();
         }
 
-        // 파일 경로
-        String folderPath = ("my-plant/" + userPlantId + "/");
+        // 4. 새로운 파일 업로드
+        String folderPath = "my-plant/" + userPlantId + "/";
+        Map<String, String> fileInfo = fileUtil.uploadFileAndGetInfo(file.getOriginalFilename(), folderPath, file);
 
-        // 3. GCP 업로드 후 sysName, publicUrl 반환
-        Map<String, String> fileInfo = fileUtil.uploadFileAndGetInfo(oriName, folderPath, file);
-
-
-        // 4. DB에 업로드
+        // 5. DB Insert
         MyPlantImageDTO dto = MyPlantImageDTO.builder()
                 .userPlantId(userPlantId)
                 .oriName(fileInfo.get("oriName"))
@@ -68,47 +62,17 @@ public class MyPlantImageService {
 
         myPlantImageMapper.insert(dto);
 
-        // 5. 신규 이미지 ResponseDTO 반환
         return MyPlantImageResponseDTO.builder()
-                .imageId(dto.getImageId())  // selectKey에서 채워진 PK
+                .imageId(dto.getImageId())
                 .url(dto.getUrl())
                 .build();
-    }
-
-    // 대표 이미지 삭제
-    @Transactional
-    public void deleteImage(MyPlantImageDTO thumb) {
-        if (thumb == null) return; // 이미 삭제되었거나 없음
-
-        // 1. DB 삭제 - fk cascade 설정으로 생략
-//        myPlantImageMapper.delete(imageId);
-
-        // 2. gcp 삭제
-        fileUtil.deleteFile(thumb.getSysName());
-    }
-
-    // 히스토리 이미지 전용 - GCP 삭제 (DB는 다른 계층에서)
-    @Transactional
-    public void deleteHistoryImageBySysName(String sysName) {
-        if (sysName == null || sysName.isBlank()) return;
-        fileUtil.deleteFile(sysName);
-    }
-
-
-    // 권한 체크용 - 식물 등록자가 맞는지
-    public String getOwnerUidByPlantImageId(int imageId) {
-        return myPlantImageMapper.getOwnerUidByPlantImageId(imageId);
-    }
-
-    // 권한 체크용 - 해당 식물의 이미지인지
-    public int validateImageBelongsToPlant(int imageId, int userPlantId) {
-        return myPlantImageMapper.validateImageBelongsToPlant(imageId, userPlantId);
     }
 
     // 대표 이미지 변경
     @Transactional
     public void updateThumbnail(int userPlantId, MyPlantImageHistoryDTO img) {
 
+        // 1. DB 업데이트 목적의 DTO 생성
         MyPlantImageDTO dto = MyPlantImageDTO.builder()
                 .userPlantId(userPlantId)
                 .oriName(img.getOriName())
@@ -117,9 +81,36 @@ public class MyPlantImageService {
                 .hash(img.getHash())
                 .build();
 
+        // 2. 대표 이미지 변경
         myPlantImageMapper.updateThumbnail(dto);
     }
 
+    // 대표 이미지 GCP 삭제
+    @Transactional
+    public void deleteImage(MyPlantImageDTO thumb) {
+        if (thumb == null) return;
+        fileUtil.deleteFile(thumb.getSysName());
+    }
+
+    // 히스토리 이미지 GCP 삭제
+    @Transactional
+    public void deleteHistoryImageBySysName(String sysName) {
+        if (sysName == null || sysName.isBlank()) return;
+        fileUtil.deleteFile(sysName);
+    }
+
+    // 이미지Id로 대표 이미지 조회
+    public MyPlantImageResponseDTO getImageById(int imageId) {
+        return myPlantImageMapper.getImageById(imageId);
+    }
+
+    // 권한 체크용 - 식물 등록자 UID 조회
+    public String getOwnerUidByPlantImageId(int imageId) {
+        return myPlantImageMapper.getOwnerUidByPlantImageId(imageId);
+    }
+
+    // 권한 체크용 - 해당 식물 이미지인지 검증
+    public int validateImageBelongsToPlant(int imageId, int userPlantId) {
+        return myPlantImageMapper.validateImageBelongsToPlant(imageId, userPlantId);
+    }
 }
-
-

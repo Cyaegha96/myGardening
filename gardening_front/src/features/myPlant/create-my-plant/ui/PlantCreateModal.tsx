@@ -1,7 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlantCreateModalProps } from "@/features/myPlant/create-my-plant/model/PlantCreateModalProps.ts";
 
-// 파일 업로드 + UI 컴포넌트
 import PlantImageUploader from "@/features/myPlant/create-my-plant/ui/PlantImageUploader.tsx";
 import PlantNicknameEditor from "@/features/myPlant/create-my-plant/ui/PlantNicknameEditor.tsx";
 import PlantMemoEditor from "@/features/myPlant/create-my-plant/ui/PlantMemoEditor.tsx";
@@ -11,50 +10,76 @@ import type { MemoLine } from "@/entities/myPlant/model/MemoLine.ts";
 import { Label } from "@/shared/shadcn/components/ui/label.tsx";
 import CustomDatePicker from "@/entities/myPlant/ui/CustomDatePicker.tsx";
 
-// 식물 인식 API
 import { PlantInfoControllerApi } from "@/shared/api";
 import type { PlantDetail } from "@/entities/searchPlant/searchPlantStore.ts";
 import { toast } from "sonner";
 
-export function PlantCreateModal({ onClose, onSend }: PlantCreateModalProps) {
+export function PlantCreateModal({
+                                     mode,
+                                     defaultValues,
+                                     onClose,
+                                     onSend,
+                                     onUpdate,
+                                 }: PlantCreateModalProps) {
 
-    /** 오늘 날짜 */
     const today = new Date();
+    const [isLoading, setIsLoading] = useState(false);
+    const [detectFailed, setDetectFailed] = useState(false);
 
-    /** UI 상태 */
     const [imagePreview, setImagePreview] = useState<string>("noImage");
-    const [isDragging, setIsDragging] = useState(false);
-
-    /** 인식된 학명 → 저장 필수 */
     const [scientificName, setScientificName] = useState("");
-
-    /** 인식된 일반명 (수정 불가) */
     const [commonName, setCommonName] = useState("");
 
-    /** 사용자가 입력하는 별명(선택) */
     const [nickname, setNickname] = useState("");
-
-    /** 메모 - 최대 3줄 */
     const [memoText, setMemoText] = useState("");
     const [memoLines, setMemoLines] = useState<MemoLine[]>([]);
-
-    /** 키운 날짜 */
     const [startDate, setStartDate] = useState<Date>(today);
-
-    /** 사진 가로세로 비율 */
     const [isPortrait, setIsPortrait] = useState(true);
 
-    /** 업로드 파일 DOM 접근용 */
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    /**
-     * ⭐ 이미지 파일 처리 + PlantNet API 호출
-     */
-    const handleFile = useCallback((file: File) => {
-        // 브라우저 미리보기 URL 생성
-        const preview = URL.createObjectURL(file);
+    /** 수정모드 데이터 세팅 */
+    useEffect(() => {
+        if (mode !== "edit" || !defaultValues) return;
 
-        // 세로/가로 비율 판단 → 미리보기 UI 스타일 반영
+        setImagePreview(defaultValues.imageUrl);
+        setCommonName(defaultValues.commonName ?? "");
+        setScientificName(defaultValues.scientificName ?? "");
+        setNickname(defaultValues.nickname ?? "");
+        setMemoText(defaultValues.memo ?? "");
+        setStartDate(defaultValues.acquiredAt ? new Date(defaultValues.acquiredAt) : today);
+    }, [mode, defaultValues]);
+
+    /** AI 식별 */
+    const analyzePlant = async (file: File) => {
+        setIsLoading(true);
+        setDetectFailed(false);
+
+        const api = new PlantInfoControllerApi();
+
+        try {
+            const resp = await api.identifyPlantByPlantNetByFile(file);
+            const data = resp.data as Partial<PlantDetail>;
+
+            if (!data?.scientificName) {
+                setDetectFailed(true);
+                toast.error("식별에 성공하지 못했습니다. 다른 사진을 올려주세요!");
+                return;
+            }
+
+            setScientificName(data.scientificName);
+            setCommonName(data.commonName || "확실하지 않아요");
+        } catch {
+            setDetectFailed(true);
+            toast.error("식물 분석 실패! 다시 시도해주세요");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    /** 이미지 변경 처리 */
+    const handleFile = useCallback((file: File) => {
+        const preview = URL.createObjectURL(file);
         const img = new Image();
         img.src = preview;
         img.onload = () => {
@@ -62,142 +87,128 @@ export function PlantCreateModal({ onClose, onSend }: PlantCreateModalProps) {
             setImagePreview(preview);
         };
 
-        // 식물 인식 API 호출
-        const plantApi = new PlantInfoControllerApi();
-        plantApi.identifyPlantByPlantNetByFile(file)
-            .then((resp) => {
-                const data = resp.data as Partial<PlantDetail>;
-
-                if (!data?.scientificName) {
-                    setCommonName("식별 실패");
-                    return;
-                }
-
-                setScientificName(data.scientificName);
-                setCommonName(data.commonName || "확실하지 않아요");
-            })
-            .catch(() => setCommonName("식별 실패"));
-
+        analyzePlant(file);
     }, []);
 
-    /**
-     * 파일 input change 이벤트 처리
-     */
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) handleFile(file);
     };
 
-    /**
-     * 모달 전체 초기화
-     */
-    const handleResetAll = () => {
-        setImagePreview("noImage");
-        if (fileInputRef.current) fileInputRef.current.value = "";
-
-        setScientificName("");
-        setCommonName("");
-        setNickname("");
-        setMemoText("");
-        setMemoLines([]);
-        setStartDate(today);
-    };
-
-    /**
-     * 메모 입력 (최대 3줄 제한)
-     */
+    /** 메모 */
     const MAX_LINES = 3;
     const updateMemoText = (value: string) => {
         const lines = value.split("\n");
         if (lines.length > MAX_LINES) {
-            toast.warning(`메모는 최대 ${MAX_LINES}줄까지 입력 가능합니다.`);
+            toast.warning(`메모는 최대 ${MAX_LINES}줄까지 입력 가능`);
             return;
         }
         setMemoText(value);
-
-        // 항상 중앙 정렬로 설정
-        setMemoLines(
-            lines.map(text => ({
-                text,
-                align: "center"
-            }))
-        );
+        setMemoLines(lines.map(text => ({ text, align: "center" })));
     };
 
-    /**
-     * 제출 → 부모 컴포넌트로 데이터 전달
-     */
+    /** 이미지 제거 */
+    const clearImage = () => {
+        setImagePreview("noImage");
+        setScientificName("");
+        setCommonName("");
+        setDetectFailed(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    /** 제출 */
     const handleSubmit = () => {
-        if (!scientificName) {
-            alert("먼저 식물을 인식해주세요!");
-            return;
-        }
-
         const file = fileInputRef.current?.files?.[0];
-        if (!file) {
-            alert("식물 사진을 업로드해주세요!");
+
+        // 🔹 등록 모드 → 반드시 식별 성공해야 저장 가능
+        if (mode === "create") {
+            if (!file) {
+                toast.error("이미지를 업로드해주세요!");
+                return;
+            }
+            if (detectFailed || !scientificName) {
+                toast.error("식물 분석 실패! 다른 사진으로 시도해주세요.");
+                return;
+            }
+
+            onSend?.({
+                plantInfo: {
+                    plantScientificName: scientificName,
+                    nickname: nickname.trim() || undefined,
+                    memo: memoText.trim() || undefined,
+                    acquiredAt: startDate.toISOString().slice(0, 10),
+                },
+                file,
+            });
             return;
         }
 
-        onSend?.({
+        // 🔹 수정 모드 → 파일 없어도 기존 정보로 수정 허용
+        onUpdate?.({
             plantInfo: {
-                nickname: nickname.trim() || undefined,
+                userPlantId: defaultValues!.userPlantId,
                 plantScientificName: scientificName,
-                memo: memoText,
-                acquiredAt: startDate.toISOString().slice(0, 10)
+                nickname: nickname.trim() || undefined,
+                memo: memoText.trim() || undefined,
+                acquiredAt: startDate.toISOString().slice(0, 10),
             },
-            file
+            file: file ?? undefined,
         });
     };
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="w-[460px] bg-white rounded-lg p-6 shadow-lg">
 
-                {/* Header */}
+            {/* 분석 로딩 */}
+            {isLoading && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center font-bold text-white text-lg backdrop-blur-sm">
+                    식물 분석 중...
+                </div>
+            )}
+
+            <div className="w-[460px] bg-white rounded-lg p-6 shadow-lg relative">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold">새 식물 등록</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                    <h2 className="text-lg font-bold">
+                        {mode === "edit" ? "식물 정보 수정" : "새 식물 등록"}
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
                         ✕
                     </button>
                 </div>
 
-                {/* 이미지 업로드 + 미리보기 */}
                 <PlantImageUploader
-                    mode={"plant"}
+                    mode="plant"
                     imagePreview={imagePreview}
-                    isDragging={isDragging}
                     isPortrait={isPortrait}
                     commonName={commonName}
                     nickname={nickname}
                     memoLines={memoLines}
                     onImageChange={handleImageChange}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDragging(false);
-                        const file = e.dataTransfer.files?.[0];
-                        if (file) handleFile(file);
-                    }}
-                    onClearImage={handleResetAll}
+                    onClearImage={clearImage}
                     fileInputRef={fileInputRef}
                 />
 
-                {/* 인식 결과 Common Name 표시 */}
-                {commonName && (
+                {/* 🔥 식별 실패 메시지 */}
+                {detectFailed && (
+                    <p className="text-center text-sm text-red-600 font-semibold my-2">
+                        식별 실패! 더 선명한 사진을 업로드해주세요!
+                    </p>
+                )}
+
+                {commonName && !detectFailed && (
                     <p className="text-center text-sm text-green-700 font-medium mb-3">
                         {commonName}
                     </p>
                 )}
 
-                {/* 사용자 입력 별명 */}
                 <PlantNicknameEditor
                     nickname={nickname}
                     onChangeNickname={setNickname}
                 />
 
-                {/* 키운 날짜 선택 */}
                 <div className="mb-4">
                     <Label className="block mb-1 text-sm font-medium">키운 날짜</Label>
                     <CustomDatePicker
@@ -206,15 +217,16 @@ export function PlantCreateModal({ onClose, onSend }: PlantCreateModalProps) {
                     />
                 </div>
 
-                {/* 메모 입력 */}
-                <PlantMemoEditor memoText={memoText} onChangeMemoText={updateMemoText} />
-
-                {/* 하단 버튼(초기화/등록) */}
-                <PlantCreateModalFooter
-                    onResetAll={handleResetAll}
-                    onSubmit={handleSubmit}
+                <PlantMemoEditor
+                    memoText={memoText}
+                    onChangeMemoText={updateMemoText}
                 />
 
+                <PlantCreateModalFooter
+                    mode={mode}
+                    onSubmit={handleSubmit}
+                    onResetAll={mode === "create" ? clearImage : undefined}
+                />
             </div>
         </div>
     );

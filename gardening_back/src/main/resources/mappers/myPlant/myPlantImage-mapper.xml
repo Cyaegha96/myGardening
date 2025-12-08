@@ -3,14 +3,21 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ggirick.gardening_back.mappers.myPlant.MyPlantImageMapper">
+
     <!-- 등록한 식물의 대표 이미지 조회 -->
     <select id="getImageByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
-        SELECT *
+        SELECT image_id,
+               user_plant_id,
+               ori_name,
+               sys_name,
+               url,
+               hash,
+               created_at
         FROM my_plant_image
         WHERE user_plant_id = #{userPlantId}
     </select>
 
-    <!-- 등록한 식물의 대표 이미지 조회 -->
+    <!-- 등록한 식물의 단건 이미지 조회 -->
     <select id="getImageById" resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO">
         SELECT
             image_id,
@@ -46,7 +53,7 @@
         WHERE image_id = #{imageId}
     </delete>
 
-    <!-- 대표 이미지 업데이트 -->
+    <!-- 대표 이미지 업데이트: 기존 대표 1건만 갱신 -->
     <update id="updateThumbnail"
             parameterType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
 
@@ -54,21 +61,48 @@
         SET ori_name = #{oriName},
             sys_name = #{sysName},
             url = #{url},
-            hash = #{hash}
-        WHERE user_plant_id = #{userPlantId}
+            hash = #{hash},
+            created_at = sysdate
+        WHERE image_id = (
+            SELECT image_id
+            FROM my_plant_image
+            WHERE user_plant_id = #{userPlantId}
+        )
     </update>
 
+    <!-- 중복 이미지 조회 (대표 + 히스토리 + 다이어리 전체 범위) -->
+    <select id="findEntityByHashAndUserUid"
+            parameterType="map"
+            resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageDTO">
+        SELECT *
+        FROM (
+                 SELECT user_plant_id, ori_name, sys_name, url, hash
+                 FROM my_plant_image
+                 WHERE hash = #{hash}
+                   AND user_plant_id IN (
+                     SELECT user_plant_id FROM my_plant WHERE user_uid = #{userUid}
+                 )
 
-    <!-- 중복 이미지 존재 여부 조회 (유저별) -->
-    <select id="findByHashAndUserUid"
-            resultType="com.ggirick.gardening_back.dto.myPlant.MyPlantImageResponseDTO">
-        SELECT
-            i.image_id,
-            i.url
-        FROM my_plant_image i
-                 JOIN my_plant p ON i.user_plant_id = p.user_plant_id
-        WHERE i.hash = #{hash}
-          AND p.user_uid = #{loginUid}
+                 UNION ALL
+
+                 SELECT user_plant_id, ori_name, sys_name, url, hash
+                 FROM my_plant_image_history
+                 WHERE hash = #{hash}
+                   AND user_plant_id IN (
+                     SELECT user_plant_id FROM my_plant WHERE user_uid = #{userUid}
+                 )
+
+                 UNION ALL
+
+                 SELECT dd.user_plant_id, d.ori_name, d.sys_name, d.url, d.hash
+                 FROM my_plant_diary_image d
+                          JOIN my_plant_diary dd ON d.diary_id = dd.diary_id
+                 WHERE d.hash = #{hash}
+                   AND dd.user_plant_id IN (
+                     SELECT user_plant_id FROM my_plant WHERE user_uid = #{userUid}
+                 )
+             )
+        WHERE ROWNUM = 1
     </select>
 
     <!-- 권한 체크용 - 식물 등록자가 맞는지 -->
@@ -86,4 +120,5 @@
         WHERE image_id = #{imageId}
           AND user_plant_id = #{userPlantId}
     </select>
+
 </mapper>

@@ -29,14 +29,17 @@
     <!-- 식물 정보 수정 -->
     <update id="update">
         UPDATE my_plant
-        SET nickname    = #{nickname},
-            memo        = #{memo},
-            acquired_at = #{acquiredAt},
-            status      = #{status},
-            updated_at  = sysdate
+        SET nickname = #{nickname},
+        memo = #{memo},
+        acquired_at = #{acquiredAt},
+        updated_at = sysdate
+        <if test="status != null">
+            , status = #{status, jdbcType=VARCHAR}
+        </if>
         WHERE user_plant_id = #{userPlantId}
-          AND user_uid = #{userUid}
+        AND user_uid = #{userUid}
     </update>
+
 
     <!-- 등록한 식물 정보 삭제 -->
     <delete id="delete">
@@ -58,9 +61,10 @@
                pi.common_name,
 
                -- 대표 이미지
-               (SELECT url
+               (SELECT i.url
                 FROM my_plant_image i
-                WHERE i.user_plant_id = p.user_plant_id) AS url
+                WHERE i.user_plant_id = p.user_plant_id
+               ) AS url
 
         FROM my_plant p
                  LEFT JOIN plant_info pi

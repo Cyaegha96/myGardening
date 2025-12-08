@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
-
-export interface PolaroidCardProps {
-    imageUrl: string;
-    lines: string[];
-    type?: "plant" | "diary";
-    variant?: "tape" | "none";
-    onClick?: () => void;
-    width?: string;
-}
+import type { PolaroidCardProps } from "@/entities/myPlant/model/PolaroidCardProps.ts";
+import { MoreVertical } from "lucide-react";
 
 export default function PolaroidCard({
                                          imageUrl,
@@ -15,23 +8,24 @@ export default function PolaroidCard({
                                          type = "plant",
                                          variant = "none",
                                          onClick,
+                                         onEdit,
+                                         onDelete,
                                          width = "300px",
                                      }: PolaroidCardProps) {
+
+    const [menuOpen, setMenuOpen] = useState(false);
     const [selectedColor, setSelectedColor] = useState<string>("");
     const [randomAngle, setRandomAngle] = useState<number>(0);
 
     useEffect(() => {
-        // 테이프 색상 랜덤
         setSelectedColor([
-            "rgba(255, 182, 193, 0.7)", // 연분홍
-            "rgba(144, 238, 144, 0.7)", // 연초록
-            "rgba(173, 216, 230, 0.7)", // 연파랑
-            "rgba(255,255,255,0.4)",   // 투명
+            "rgba(255, 182, 193, 0.7)",
+            "rgba(144, 238, 144, 0.7)",
+            "rgba(173, 216, 230, 0.7)",
+            "rgba(255,255,255,0.4)",
         ][Math.floor(Math.random() * 4)]);
-
-        // 테이프 기울기 랜덤
         setRandomAngle(Math.random() * 6 - 3);
-    }, []); // mount될 때 딱 1번만 실행
+    }, []);
 
     return (
         <div
@@ -46,12 +40,10 @@ export default function PolaroidCard({
             "
             style={{
                 width,
-                padding: "18px 18px 18px", // 변경: 아래 패딩 줄여서 균형 맞춤
+                padding: "18px",
                 boxSizing: "border-box",
             }}
         >
-
-            {/* 테이프 */}
             {variant === "tape" && (
                 <div
                     className="absolute"
@@ -68,9 +60,9 @@ export default function PolaroidCard({
                 />
             )}
 
-            {/* 이미지 */}
+            {/* 이미지 영역 */}
             <div
-                className="w-full overflow-hidden bg-white"
+                className="w-full overflow-hidden bg-white relative"
                 style={{
                     height: "260px",
                     border: "1px solid #f6f6f6",
@@ -79,26 +71,70 @@ export default function PolaroidCard({
                 <img src={imageUrl} className="w-full h-full object-cover" alt="" />
             </div>
 
-            {/* 텍스트 위치 정리 */}
+            {/* 텍스트 + 액션메뉴 */}
             <div className="w-full text-center pt-3">
                 {lines.map((line, i) => {
                     const isCommonName = i === 0 && type === "plant";
                     const isNickname = i === 1 && type === "plant";
+
                     return (
-                        <p
+                        <div
                             key={i}
-                            className={`
-                                whitespace-pre-wrap tracking-wide
-                                ${isCommonName
-                                ? "text-green-700 text-sm font-semibold"
-                                : isNickname
-                                    ? "text-gray-700 font-bold text-base"
-                                    : "text-[13px] text-[#4a4a4a] leading-[1.4]" // 변경: line-height 줄임
-                            }
-                            `}
+                            className="relative flex items-center justify-center"
                         >
-                            {line}
-                        </p>
+                            <p
+                                className={`
+                                    whitespace-pre-wrap tracking-wide
+                                    ${isCommonName
+                                    ? "text-green-700 text-sm font-semibold"
+                                    : isNickname
+                                        ? "text-gray-700 font-bold text-base"
+                                        : "text-[13px] text-[#4a4a4a] leading-[1.4]"}
+                                `}
+                                style={{ flex: "1" }}
+                            >
+                                {line}
+                            </p>
+
+                            {/* 여기! commonName 줄 오른쪽 끝에 메뉴 ▷ 정확히 수정 */}
+                            {type === "plant" && isCommonName && (onEdit || onDelete) && (
+                                <button
+                                    className="absolute right-0 px-1 py-1 hover:bg-gray-200 rounded"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMenuOpen(prev => !prev);
+                                    }}
+                                >
+                                    <MoreVertical size={14} className="text-gray-600" />
+                                </button>
+                            )}
+
+                            {menuOpen && isCommonName && (
+                                <div
+                                    className="absolute right-0 top-5 w-24 bg-white border rounded shadow text-xs z-50"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <button
+                                        className="block w-full px-3 py-2 text-left hover:bg-gray-100"
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            onEdit?.();
+                                        }}
+                                    >
+                                        수정
+                                    </button>
+                                    <button
+                                        className="block w-full px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            onDelete?.();
+                                        }}
+                                    >
+                                        삭제
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>

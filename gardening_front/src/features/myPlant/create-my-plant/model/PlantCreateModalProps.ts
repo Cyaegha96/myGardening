@@ -1,10 +1,16 @@
 import type {MyPlantDTO} from "@/shared/api";
 
 export interface PlantCreateModalProps {
+    mode: "create" | "edit";
+    defaultValues?: {
+        userPlantId: number;
+        imageUrl: string;
+        commonName: string;
+        nickname?: string;
+        memo?: string;
+        acquiredAt?: string;
+    };
     onClose: () => void;
-    // 부모에게 전달할 데이터 타입 지정
-    onSend?: (data: {
-        plantInfo: MyPlantDTO;
-        file: File;
-    }) => void;
+    onSend?: (data: { plantInfo: MyPlantDTO; file: File }) => void;
+    onUpdate?: (data: { plantInfo: MyPlantDTO; file: File }) => void;
 }
