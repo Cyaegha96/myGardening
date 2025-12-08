@@ -12,7 +12,7 @@ import java.util.List;
 public interface ImageMapper {
 
     // 공용이미지 가져오는거
-    List<TerrariumAssetImageDTO> getAllAssets();
+    List<TerrariumAssetImageDTO> getAllAssets(@Param("category")String category);
 
     int insertTerrariumImage(TerrariumImageDTO imageDTO);
     List<TerrariumImageDTO> getImagesByTerrariumId(@Param("terrariumID")int terrariumId);

@@ -10,39 +10,20 @@ import {Sidebar,
     SidebarMenuItem,
     SidebarTrigger} from "@/shared/shadcn/components/ui/sidebar.tsx";
 import {usePanelStore} from "@/features/terrarium/model/usePanelStore.ts";
+import {categoryMap,type CategoryKey} from "@/features/terrarium/lib/categoryMap.ts";
 
 export function TerrariumSidebar() {
 
-    const {loadAssets,setPanelType,setItems,open} =usePanelStore();
+    const {loadAssets,setPanelType,open} =usePanelStore();
 
+    const openCategory = async (key:CategoryKey) => {
+        const category = categoryMap[key];   // ← 매핑 적용
 
-    const openMyDesigns = () => {
-        setPanelType("myDesigns");
-
-        setItems([
-            { id: 1, url: "/assets/test/a.webp" },
-            { id: 2, url: "/assets/test/j.jpeg" },
-        ]);
-
+        await loadAssets(category);
+        setPanelType(key);
         open();
     };
 
-    const openIcons = () => {
-        setPanelType("icons");
-
-        setItems([
-            { id: 1, url: "/assets/test/g.webp" },
-            { id: 2, url: "/assets/test/a.webp" },
-        ]);
-
-        open();
-    };
-
-    const openImages = async () => {
-        await loadAssets(); // DB에서 공용 이미지 가져오기
-        setPanelType("images");
-        open();
-    };
 
     return (
 
@@ -59,13 +40,19 @@ export function TerrariumSidebar() {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={openMyDesigns}>내 디자인</SidebarMenuButton>
+                                    <SidebarMenuButton onClick={() => openCategory("rock")}>돌 종류</SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={openIcons}>아이콘</SidebarMenuButton>
+                                    <SidebarMenuButton onClick={() => openCategory("soil")}>흙 종류</SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={openImages}>공용 이미지</SidebarMenuButton>
+                                    <SidebarMenuButton onClick={() => openCategory("tree")}>나무 종류</SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton onClick={() => openCategory("case")}>테라리움 케이스</SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton onClick={() => openCategory("raptile")}>파충류</SidebarMenuButton>
                                 </SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>

@@ -17,11 +17,11 @@ public class TerrariumController {
     private final TerrariumService tServ;
 
     @PostMapping
-    public ResponseEntity<TerrariumDTO> createTerrarium(@RequestBody TerrariumDTO terrariumDTO,@AuthenticationPrincipal UserTokenDTO userTokenDTO) {
-        System.out.println("테라리움 타이틀!!!!== "+terrariumDTO.getTitle());
+    public ResponseEntity<TerrariumDTO> createTerrarium(@RequestBody TerrariumDTO terrariumDTO, @AuthenticationPrincipal UserTokenDTO userTokenDTO) {
+        System.out.println("테라리움 타이틀!!!!== " + terrariumDTO.getTitle());
         terrariumDTO.setUserId(userTokenDTO.getUid());
         int id = tServ.createTerrarium(terrariumDTO);
-       terrariumDTO.setId(id);
+        terrariumDTO.setId(id);
         return ResponseEntity.ok().body(terrariumDTO);
     }
 
@@ -30,13 +30,25 @@ public class TerrariumController {
         return ResponseEntity.ok(tServ.getTerrariumById(id));
     }
 
-    @GetMapping
-    public ResponseEntity<List<TerrariumDTO>> getAllTerrariums() {
-        return ResponseEntity.ok(tServ.getAllTerrariums());
+    @GetMapping("/terrariums")
+    public ResponseEntity<List<TerrariumDTO>> getAllTerrariums(
+            @RequestParam(required = false) Integer id
+    ) {
+        List<TerrariumDTO> terrariums = tServ.getAllTerrariums(id);
+
+        if (id != null) {
+            List<TerrariumDTO> filtered = terrariums.stream()
+                    .filter(t -> t.getId() == id)
+                    .toList();
+
+            return ResponseEntity.ok(filtered);
+        }
+
+        return ResponseEntity.ok(terrariums);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTerrarium(@PathVariable int id){
+    public ResponseEntity<Void> deleteTerrarium(@PathVariable int id) {
         tServ.deleteTerrarium(id);
         return ResponseEntity.noContent().build();
     }
