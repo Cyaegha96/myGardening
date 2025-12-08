@@ -60,7 +60,7 @@ async function tryRefreshBeforeExpire() {
     console.log("자동 재발급 요청")
 
     try {
-      const res = await axios.post(
+      const res = await axiosInterceptor.post(
         `${API_BASE_URL}/auth/refresh?token=${refreshToken}`
       );
 

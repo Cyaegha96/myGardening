@@ -117,11 +117,11 @@ public class AuthService {
 
         log.debug("새 세션 {}", newSession.getSessionId());
 
-        //세션 시간은 accessToken 만료 시간과 동일
-        long ttlMillis = accessExpDate.getTime() - System.currentTimeMillis();
+        //세션 시간은 재발급을 위해 refreshToken 만료 시간과 동일
+        long ttlMillis =  refreshExpDate.getTime() - System.currentTimeMillis();
         if (ttlMillis <= 0) {
             // 토큰 만료면 예외
-            throw new LoginFailedException("생성된 Access Token 만료시간이 유효하지 않습니다.");
+            throw new LoginFailedException("생성된 Refresh Token 만료시간이 유효하지 않습니다.");
         }
 
 
@@ -204,7 +204,7 @@ public class AuthService {
 
         //Redis: 새 refreshToken 키 저장, TTL 설정
 
-        long newTtlMillis = accessExpDate.getTime() - System.currentTimeMillis();
+        long newTtlMillis = refreshExpDate.getTime() - System.currentTimeMillis();
         redisService.deleteSession(refreshToken);
         redisService.saveSession(uid, updateSession.getSessionId(), newRefreshToken, newRedisValue, newTtlMillis);
         return new TokenPair(newAccessToken, newRefreshToken);
@@ -276,7 +276,7 @@ public class AuthService {
         authMapper.insertLoginHistory(loginHistory);
 
         // 2) Redis에 세션 저장
-        long ttlMillis = accessExpDate.getTime() - System.currentTimeMillis();
+        long ttlMillis =refreshExpDate.getTime() - System.currentTimeMillis();
         Map<String, Object> redisValue = new HashMap<>();
         redisValue.put("uid", userInfo.getUid());
         redisValue.put("provider", userInfo.getProvider());
