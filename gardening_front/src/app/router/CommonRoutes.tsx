@@ -20,6 +20,7 @@ const EditCompleteProfilePage = lazy(() => import("@/pages/auth/EditCompleteProf
 const SearchPlantPage = lazy(() => import("@/pages/searchPlant/SearchPlantPage"));
 const ScheduleRoutes = lazy(() => import("./ScheduleRoutes"));
 const BoardRoutes = lazy(() => import("./BoardRoutes"));
+const MyPlantRoutes = lazy(() => import("./MyPlantRoutes"));
 
 export function CommonRoutes() {
     return (
@@ -45,6 +46,7 @@ export function CommonRoutes() {
                     <Route path="/plant-search/dict" element={<SearchPlantDictPage/>} />
                     <Route path="/plant-search" element={<SearchPlantMainPage/>} />
                     <Route path="/plant-test" element={<PlantThree/>}></Route>
+                    <Route path="/my-plants/*" element={<MyPlantRoutes/>}></Route>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                     <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
                 </Route>

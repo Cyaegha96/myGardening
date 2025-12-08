@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -67,6 +68,7 @@ public class SecurityConfig {
                                 .requestMatchers("/auth/signup").permitAll()
                                 .requestMatchers("/auth/refresh").permitAll()
                                 .requestMatchers("/oauth/**").permitAll() // OAuth 관련도 열기
+                                .requestMatchers(HttpMethod.GET, "/comment/**").permitAll() // 비로그인시 댓글 get 요청만 허용
 
                                 // 인증이 필요한 경로
                                 .requestMatchers("/auth/**").authenticated()
