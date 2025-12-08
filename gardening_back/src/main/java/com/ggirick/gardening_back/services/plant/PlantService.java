@@ -631,6 +631,43 @@ PlantService {
         }
     }
 
+    public PlantInfoDTO getOne(String scientificName) {
+        PlantInfoDTO plantInfoDTO = plantMapper.getPlantInfo(scientificName);
+        plantInfoDTO.setTags(plantTagMapper.getTagsByScientificNameLike(scientificName));
+        return plantInfoDTO;
+    }
+
+    public record PlantQueryResult(
+            List<PlantInfoDTO> list,
+            int offset,
+            int limit,
+            int total
+    ) {}
+
+    public PlantQueryResult getPlants(int offset, int limit,
+                                      String sortField, String sortOrder,
+                                      Map<String, Object> filters) {
+        List<PlantInfoDTO> plants = plantMapper.findPlants(offset, limit, sortField, sortOrder, filters);
+        int total = plantMapper.countPlants(filters);
+
+        List<String> names = plants.stream()
+                .map(PlantInfoDTO::getScientificName)
+                .toList();
+
+// 태그 한 번에 조회
+        List<PlantTagDTO> tags = plantTagMapper.getTagsByScientificNames(names);
+
+// scientificName 기준으로 그룹핑
+        Map<String, List<PlantTagDTO>> tagMap = tags.stream()
+                .collect(Collectors.groupingBy(PlantTagDTO::getScientificName));
+
+// 각 PlantInfoDTO에 매핑
+        plants.forEach(p -> p.setTags(tagMap.getOrDefault(p.getScientificName(), List.of())));
+
+        return new PlantQueryResult(plants, offset, limit, total);
+    }
+
+
     //일단 잘 불러오는지 테스트
     public List<PlantInfoDTO> getAllPlantInfo() {
 
