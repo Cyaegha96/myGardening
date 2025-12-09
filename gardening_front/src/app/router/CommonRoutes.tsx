@@ -7,8 +7,10 @@ import SearchPlantDictPage from "@/pages/searchPlant/SearchPlantDictPage.tsx";
 import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
 import PlantThree from "@/pages/test/PlantThree.tsx";
 import {PopularPlantsPage} from "@/pages/PopularPlants/PopularPlantsPage.tsx";
+import MinimalChatBox from "@/shared/shadcn/components/ui/minimal-chat-box.tsx";
 import TempPasswordLogin from "@/features/auth/login/TempPasswordLogin.tsx";
 import ChangePassword from "@/features/auth/login/ChangePassword.tsx";
+import PlantDetailPage from "@/features/searchPlant/PlantDetailPage.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
@@ -21,6 +23,7 @@ const SearchPlantPage = lazy(() => import("@/pages/searchPlant/SearchPlantPage")
 const ScheduleRoutes = lazy(() => import("./ScheduleRoutes"));
 const BoardRoutes = lazy(() => import("./BoardRoutes"));
 const MyPlantRoutes = lazy(() => import("./MyPlantRoutes"));
+const PotListRoutes = lazy(() => import("./PotListRoutes"));
 
 export function CommonRoutes() {
     return (
@@ -49,6 +52,8 @@ export function CommonRoutes() {
                     <Route path="/my-plants/*" element={<MyPlantRoutes/>}></Route>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                     <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
+                    <Route path="/pot-list/*" element={<PotListRoutes/>} />
+                    <Route path="/plant-search/dict/:scientificName" element={<PlantDetailPage />} />
                 </Route>
             </Routes>
         </Suspense>

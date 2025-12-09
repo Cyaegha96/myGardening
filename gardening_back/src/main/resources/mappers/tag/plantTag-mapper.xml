@@ -74,4 +74,42 @@
         FROM PLANT_TAG
         WHERE PARENT_TAG_ID = #{parentTagId}
     </select>
+
+    <!-- 부모 태그 기준 자식 태그 ID 전체 가져오기 -->
+    <select id="getChildTagByParent" resultType="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
+        SELECT *
+        FROM PLANT_TAG
+        WHERE PARENT_TAG_ID = #{parentTagId}
+    </select>
+
+    <resultMap id="PlantTagDTOMap" type="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
+        <id property="tagId" column="TAG_ID"/>
+        <result property="tagName" column="TAG_NAME"/>
+        <result property="parentTagId" column="PARENT_TAG_ID"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+        <result property="scientificName" column="PLANT_SCIENTIFIC_NAME"/>
+
+    </resultMap>
+
+    <!-- 여러 식물의 태그 정보 한 번에 가져오기 -->
+    <select id="getTagsByScientificNames"
+            parameterType="list"
+            resultMap="PlantTagDTOMap">
+        SELECT DISTINCT
+        t.TAG_ID,
+        t.TAG_NAME,
+        t.PARENT_TAG_ID,
+        t.DESCRIPTION,
+        t.CREATED_AT,
+        t.UPDATED_AT,
+        w.PLANT_SCIENTIFIC_NAME
+        FROM plant_tag t
+        JOIN plant_tag_with w ON t.TAG_ID = w.TAG_ID
+        WHERE LOWER(w.PLANT_SCIENTIFIC_NAME) IN
+        <foreach item="name" collection="list" open="(" separator="," close=")">
+            LOWER(#{name})
+        </foreach>
+    </select>
 </mapper>

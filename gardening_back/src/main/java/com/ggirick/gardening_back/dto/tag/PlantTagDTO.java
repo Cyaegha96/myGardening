@@ -24,4 +24,6 @@ public class PlantTagDTO {
 
     @Schema(description = "수정 시간", example = "2025-11-23 15:20:10")
     private String updatedAt;
+
+    private String ScientificName;
 }

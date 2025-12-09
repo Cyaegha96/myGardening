@@ -82,4 +82,13 @@ public class FileService {
 
         fileUtil.deleteFile(sysName);
     }
+
+    /**
+     * 폴더 삭제
+     *
+     * @param folderName 삭제할 폴더의 이름 (예: file/1/
+     */
+    public void deleteFolder(String folderName) {
+        fileUtil.deleteFolder(folderName);
+    }
 }

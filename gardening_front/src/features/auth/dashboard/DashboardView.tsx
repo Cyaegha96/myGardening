@@ -5,6 +5,7 @@ import { LogOut, Home } from 'lucide-react';
 import TokenDisplay from '../../../widgets/auth/TokenDisplay';
 import TokenTimer from './TokenTimer';
 
+
 interface Props {
   accessToken?: string | null;
   refreshToken?: string | null;

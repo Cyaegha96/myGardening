@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.potList.PotListTagMappingMapper">
+    <!--    태그 매핑-->
+    <insert id="insertTag">
+        INSERT INTO pot_listing_tag_mapping(id, pot_listing_id, plant_tag_id)
+        VALUES(pot_listing_tag_mapping_seq.nextval, #{id}, #{tagId})
+    </insert>
+
+    <!--    태그 조회-->
+    <select id="getTagByPotListingId" resultType="com.ggirick.gardening_back.dto.potList.PotListTagMappingDTO">
+        SELECT * FROM pot_listing_tag_mapping WHERE pot_listing_id=#{potListingId}
+    </select>
+
+    <!--    태그 삭제-->
+    <delete id="deleteTagById">
+        DELETE FROM pot_listing_tag_mapping WHERE id=#{id}
+    </delete>
+</mapper>
