@@ -2,6 +2,7 @@ package com.ggirick.gardening_back.mappers.terrarium;
 
 import com.ggirick.gardening_back.dto.terrarium.TerrariumDTO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ public interface TerrariumMapper {
 
     int insertTerrarium(TerrariumDTO tDTO);
     TerrariumDTO getTerrariumById(int id);
-    List<TerrariumDTO> getAllTerrariums();
+    List<TerrariumDTO> getAllTerrariums(@Param("id")Integer id);
 
     void deleteLayersByTerrariumId(int id);
     void deleteImagesByTerrariumId(int id);

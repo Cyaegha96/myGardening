@@ -1,30 +1,32 @@
-import {create} from "zustand";
-import {TerrariumAssetImageControllerApi} from "@/shared/api";
+import { create } from "zustand";
+import { TerrariumAssetImageControllerApi } from "@/shared/api";
+import type { CategoryValue } from "@/features/terrarium/lib/categoryMap";
 
-export type PanelType = "images"|"icons"|"myDesigns"|null;
+export type PanelType = "images" | "icons" | "myDesigns" | "rock" | "soil" | "tree" | "case" | "raptile" | null;
+
 const assetApi = new TerrariumAssetImageControllerApi();
 
-export interface PanelItem{
+export interface PanelItem {
     id: number | string;
     url: string;
-    sysName?:string;
-    oriName?:string;
-    name?:string;
+    sysName?: string;
+    oriName?: string;
+    name?: string;
 }
 
-interface PanelStore{
-    panelType:PanelType;
-    items:PanelItem[];
-    isOpen:boolean;
+interface PanelStore {
+    panelType: PanelType;
+    items: PanelItem[];
+    isOpen: boolean;
 
-    setPanelType:(type:PanelType)=>void;
-    setItems:(items:PanelItem[])=>void;
+    setPanelType: (type: PanelType) => void;
+    setItems: (items: PanelItem[]) => void;
 
     open: () => void;
     close: () => void;
     toggle: () => void;
 
-    loadAssets: () => Promise<void>;
+    loadAssets: (category?: CategoryValue) => Promise<void>;
 }
 
 export const usePanelStore = create<PanelStore>((set, get) => ({
@@ -39,14 +41,16 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
     close: () => set({ isOpen: false }),
     toggle: () => set({ isOpen: !get().isOpen }),
 
-    loadAssets: async () => {
+    loadAssets: async (category?: CategoryValue) => {
         try {
-            const response = await assetApi.getAllAssets(); // axiosInterceptor가 자동으로 헤더 처리
+            const response = await assetApi.getAllAssets(category);
+
             const items = response.data.map((img) => ({
                 id: img.id!,
                 url: img.url!,
                 name: img.name || "",
             }));
+
             set({ items, panelType: "images", isOpen: true });
         } catch (err) {
             console.error("공용 이미지 로드 실패", err);

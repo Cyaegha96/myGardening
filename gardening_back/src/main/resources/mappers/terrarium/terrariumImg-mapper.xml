@@ -5,9 +5,10 @@
 <mapper namespace="com.ggirick.gardening_back.mappers.terrarium.ImageMapper">
 
     <select id="getAllAssets" resultType="com.ggirick.gardening_back.dto.terrarium.TerrariumAssetImageDTO">
-        SELECT ID, CATEGORY, NAME, URL, CREATED_AT
-        FROM TERRARIUM_ASSET_IMAGE
-        ORDER BY ID ASC
+        SELECT *
+        FROM terrarium_asset_image
+        WHERE CATEGORY = #{category}
+        ORDER BY CREATED_AT DESC
     </select>
 
     <!-- 이미지 오브젝트 insert -->
