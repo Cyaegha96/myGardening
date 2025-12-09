@@ -32,4 +32,5 @@ public interface PlantTagMapper {
     List<String> getChildTagNames(@Param("parentTagId") int parentTagId);
 
     List<PlantTagDTO> getChildTagByParent(@Param("parentTagId") int parentTagId);
+    List<PlantTagDTO> getTagsByScientificNames(List<String> names);
 }
