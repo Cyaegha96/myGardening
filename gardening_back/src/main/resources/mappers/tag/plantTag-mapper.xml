@@ -74,6 +74,12 @@
         FROM PLANT_TAG
         WHERE PARENT_TAG_ID = #{parentTagId}
     </select>
+
+    <!-- 부모 태그 기준 자식 태그 ID 전체 가져오기 -->
+    <select id="getChildTagByParent" resultType="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
+        SELECT *
+        FROM PLANT_TAG
+        WHERE PARENT_TAG_ID = #{parentTagId}
     <resultMap id="PlantTagDTOMap" type="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
         <id property="tagId" column="TAG_ID"/>
         <result property="tagName" column="TAG_NAME"/>
