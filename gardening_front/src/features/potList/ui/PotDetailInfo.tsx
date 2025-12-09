@@ -107,7 +107,7 @@ export default function PotDetailInfo() {
             <div className="flex justify-between items-center mb-2 grid grid-cols-3">
                 <div className="col-span-2 flex items-center gap-2">
                     <p className="text-2xl font-semibold text-gray-900 truncate">
-                        제목
+                        {potDetail.title}
                     </p>
                     <span className="text-sm text-muted-foreground flex-shrink-0">
                         {(potDetail.bumpedAt && new Date(potDetail.bumpedAt) > new Date(potDetail.createdAt!) ? "끌올 " : "")
