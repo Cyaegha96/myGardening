@@ -28,4 +28,14 @@ public interface AuthMapper {
 
    //유저 auth db에 삽입
     int insertAuth(AuthDTO auth);
+
+    int countAuthByEmail(@Param("email") String email);
+
+    int countEmailExceptSelf(@Param("email") String email, @Param("uuid") String uuid);
+
+    int countPhoneExceptSelf(@Param("phone") String phone, @Param("uuid") String uuid);
+
+    String findUidByIdAndEmail(String email,String id);
+
+    void updatePassword(String uid, @Param("password") String encode);
 }

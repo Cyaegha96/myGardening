@@ -65,7 +65,7 @@ const BoardNoImageCard = ({
             </div>
 
             {/* ---------- 제목 ---------- */}
-            <h3 className="font-semibold text-base z-20 pt-8 line-clamp-1 leading-snug">
+            <h3 className="font-semibold text-base z-20 pt-8 line-clamp-1 leading-snug truncate">
                 {title}
             </h3>
 

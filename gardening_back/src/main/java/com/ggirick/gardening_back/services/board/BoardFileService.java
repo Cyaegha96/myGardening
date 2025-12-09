@@ -57,6 +57,7 @@ public class BoardFileService {
     }
 
     // 파일 삭제
+    @Transactional
     public void deleteFile(BoardFileDTO dto) {
         // 1. DB에서 파일 정보 조회
         BoardFileDTO resultDTO = boardFileMapper.getFileById(dto.getId());
@@ -70,16 +71,17 @@ public class BoardFileService {
     }
 
     // 게시글 삭제 시 전체 파일 삭제
+    @Transactional
     public void deleteFileByBoardId(int boardId) {
 
         List<BoardFileDTO> list = boardFileMapper.getFileListByBoardId(boardId);
+
+        // DB 삭제
+        boardFileMapper.deleteFileByBoardId(boardId);
 
         // GCP 삭제
         for (BoardFileDTO file : list) {
             fileUtil.deleteFile(file.getSysName());
         }
-
-        // DB 삭제
-        boardFileMapper.deleteFileByBoardId(boardId);
     }
 }

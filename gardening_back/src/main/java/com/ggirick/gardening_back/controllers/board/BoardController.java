@@ -205,11 +205,15 @@ public class BoardController {
     })
     @GetMapping("/search")
     public ResponseEntity<List<BoardResponseDTO>> searchBoards(
+            @AuthenticationPrincipal UserTokenDTO userInfo,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String tagName
     ) {
-        List<BoardResponseDTO> list = boardService.searchBoards(keyword, type, tagName);
+        // 로그인 여부 반영
+        String loginUid = (userInfo != null) ? userInfo.getUid() : "";
+
+        List<BoardResponseDTO> list = boardService.searchBoards(keyword, type, tagName, loginUid);
         return ResponseEntity.ok(list);
     }
 
@@ -244,9 +248,12 @@ public class BoardController {
     })
     @GetMapping("/filter/tag")
     public ResponseEntity<List<BoardResponseDTO>> filterBoardsByParentTag(
+            @AuthenticationPrincipal UserTokenDTO userInfo,
             @RequestParam int parentTagId
     ) {
-        return ResponseEntity.ok(boardService.filterBoardsByParentTag(parentTagId));
+        // 로그인 여부 반영
+        String loginUid = (userInfo != null) ? userInfo.getUid() : "";
+        return ResponseEntity.ok(boardService.filterBoardsByParentTag(parentTagId,loginUid));
     }
 
 }

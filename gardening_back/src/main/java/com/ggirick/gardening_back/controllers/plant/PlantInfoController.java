@@ -70,7 +70,7 @@ public class PlantInfoController {
 
     @Operation(summary = "사진을 기반으로 식물을 추출합니다. 파일 업로드를 사용합니다.",
             description = "결과에 따라 다른 ResponseEntity를 반환한다. 식물이 인식된다면 식물 학명을 포함한 식물 정보를 PlantInfo 형태가 반환된다. ")
-    @PostMapping("/identifyByMultipartFiles") //
+    @PostMapping(value = "/identifyByMultipartFiles", consumes = "multipart/form-data")
     public ResponseEntity<?> identifyPlantByPlantNetByFile(
             @AuthenticationPrincipal UserTokenDTO userTokenDTO,
 

@@ -6,12 +6,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -200,6 +202,65 @@ public class RedisService {
         if (sessionId == null || sessionId.isEmpty()) return false;
         return redis.hasKey("session:" + sessionId);
     }
+    // OTP 일치 여부 확인 후 true/false 로 리턴
+    public boolean verifyOtp(String userUid, String otp) {
+        String key = OTP_PREFIX + userUid;
+
+        if (!redis.hasKey(key)) {
+            return false;
+        }
+
+        String stored = (String) redis.opsForValue().get(key);
+        if (stored != null && stored.equals(otp)) {
+            return true;
+        }
+        return false;
+    }
+
+    // OTP 사용 후 제거 (보안상 필수)
+    public void consumeOtp(String userUid) {
+        redis.delete(OTP_PREFIX + userUid);
+    }
+
+    public void setDataExpire(String key, String value, long duration) {
+        ValueOperations<String, Object> valueOperations = redis.opsForValue();
+        Duration expireDuration = Duration.ofSeconds(duration);
+        valueOperations.set(key, value, expireDuration);
+    }
+
+    public String getData(String key) {
+        return redis.opsForValue().get(key).toString();
+    }
+
+    // key 삭제
+    public void deleteData(String key) {
+        redis.delete(key);
+    }
 
 
+    public String createResetToken(String uid) {
+        String resetToken = RandomStringUtils.randomAlphanumeric(40);
+        redis.opsForValue().set(
+                "PASSWORD_RESET:" + resetToken,
+                uid,
+                Duration.ofMinutes(5)
+        );
+
+        return resetToken;
+    }
+
+    public String verifyResetToken(String resetToken) {
+    try{
+        String redisKey = "PASSWORD_RESET:" + resetToken;
+        return redis.opsForValue().get(redisKey).toString();
+    } catch (Exception e) {
+
+        throw new RuntimeException("해당 resetToken을 찾을 수 없습니다(token만료)");
+    }
+    }
+
+    public void deleteResetToken(String resetToken){
+        String redisKey = "PASSWORD_RESET:" + resetToken;
+        redis.delete(redisKey);
+    }
 }

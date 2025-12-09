@@ -8,6 +8,8 @@ import SearchPlantMainPage from "@/pages/searchPlant/SearchPlantMainPage.tsx";
 import PlantThree from "@/pages/test/PlantThree.tsx";
 import {PopularPlantsPage} from "@/pages/PopularPlants/PopularPlantsPage.tsx";
 import MinimalChatBox from "@/shared/shadcn/components/ui/minimal-chat-box.tsx";
+import TempPasswordLogin from "@/features/auth/login/TempPasswordLogin.tsx";
+import ChangePassword from "@/features/auth/login/ChangePassword.tsx";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
@@ -19,6 +21,7 @@ const EditCompleteProfilePage = lazy(() => import("@/pages/auth/EditCompleteProf
 const SearchPlantPage = lazy(() => import("@/pages/searchPlant/SearchPlantPage"));
 const ScheduleRoutes = lazy(() => import("./ScheduleRoutes"));
 const BoardRoutes = lazy(() => import("./BoardRoutes"));
+const MyPlantRoutes = lazy(() => import("./MyPlantRoutes"));
 const PotListRoutes = lazy(() => import("./PotListRoutes"));
 
 export function CommonRoutes() {
@@ -28,6 +31,8 @@ export function CommonRoutes() {
                 {/* 로그인 필요 없는 라우트 */}
                 <Route path="/auth/login" element={<LoginPage />} />
                 <Route path="/auth/register" element={<RegisterPage />} />
+                <Route path="/auth/login/temp" element={<TempPasswordLogin />} />
+                <Route path="/auth/password/new" element={<ChangePassword />} />
                 <Route path="/oauth/redirect" element={<OAuthRedirectHandler />} />
                 <Route path="/board/*" element={<BoardRoutes/>}/>
                 <Route path="*" element={<HomePage />} />
@@ -43,6 +48,7 @@ export function CommonRoutes() {
                     <Route path="/plant-search/dict" element={<SearchPlantDictPage/>} />
                     <Route path="/plant-search" element={<SearchPlantMainPage/>} />
                     <Route path="/plant-test" element={<PlantThree/>}></Route>
+                    <Route path="/my-plants/*" element={<MyPlantRoutes/>}></Route>
                     <Route path="/terrariumEdit" element={<TerrariumEditPage/>}/>
                     <Route path="/popularPlants" element={<PopularPlantsPage/>}/>
                     <Route path="/pot-list/*" element={<PotListRoutes/>} />

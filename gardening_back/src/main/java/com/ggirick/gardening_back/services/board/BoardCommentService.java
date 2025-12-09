@@ -20,6 +20,10 @@ public class BoardCommentService {
     // 게시글 기준 댓글 전체 조회 + 트리 구조 변환
     public List<BoardCommentResponseDTO> getCommentsWithTree(int boardId, String loginUid) {
 
+        if (loginUid == null) {
+            loginUid = "";
+        }
+
         // 1) 전체 댓글 목록 조회
         List<BoardCommentResponseDTO> list = boardCommentMapper.getByBoardId(boardId, loginUid);
 
@@ -120,6 +124,10 @@ public class BoardCommentService {
 
     // 베스트 댓글 조회 (좋아요 Top3)
     public List<BoardCommentResponseDTO> getBestComments(int boardId, String loginUid) {
+        if (loginUid == null) {
+            loginUid = "";
+        }
+
         List<BoardCommentResponseDTO> list = boardCommentMapper.getBestComments(boardId, loginUid);
 
         if (list == null || list.isEmpty()) return List.of();

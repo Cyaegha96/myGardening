@@ -80,6 +80,9 @@ export default function LoginFormView({ id, setId, password, setPassword, loadin
                 회원가입
               </Button>
             </Link>
+              <Link to="/auth/login/temp" className="w-full text-center text-sm text-blue-600 hover:underline">
+                  임시 비밀번호로 로그인
+              </Link>
 
             <SocialLoginButtons onSocialLogin={handleSocialLogin} loading={loading} />
           </CardFooter>
