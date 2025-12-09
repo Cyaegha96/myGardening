@@ -8,7 +8,7 @@ import {
     CarouselNext,
     CarouselPrevious
 } from "@/shared/shadcn/components/ui/carousel.tsx";
-import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.tsx";
+import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.ts";
 import {Card, CardContent} from "@/shared/shadcn/components/ui/card.tsx";
 import {Dialog, DialogClose, DialogContent} from "@/shared/shadcn/components/ui/dialog.tsx";
 import {useEffect, useState} from "react";

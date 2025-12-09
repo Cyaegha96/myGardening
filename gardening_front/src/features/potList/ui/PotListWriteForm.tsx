@@ -3,13 +3,12 @@ import {Input} from "@/shared/shadcn/components/ui/input";
 import {Button} from "@/shared/shadcn/components/ui/button";
 import {Label} from "@/shared/shadcn/components/ui/label";
 import {Card, CardContent} from "@/shared/shadcn/components/ui/card";
-import type {PotListResponseDTO} from "@/shared/api";
 import {Checkbox} from "@/shared/shadcn/components/ui/checkbox.tsx";
 import ImageCarouselUploader from "@/features/potList/ui/ImageCarouselUploader.tsx";
 import {Editor} from "@/shared/shadcn/components/editor/blocks/editor-x/editor.tsx";
 import {CornerDownLeft} from "lucide-react";
 import {usePotListWriteStore} from "@/entities/potList/model/potListWriteStore.ts";
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import {RadioGroup, RadioGroupItem} from "@/shared/shadcn/components/ui/radio-group.tsx";
 import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 import {
@@ -22,17 +21,16 @@ import {formatPrice} from "@/entities/potList/libs/formatPrice.ts";
 
 type Props = {
     mode: "create" | "edit";
-    initialData?: PotListResponseDTO | null;
-    onSubmitSuccess?: () => void;
 };
 
-export default function PotListWriteForm({mode, onSubmitSuccess}: Props) {
+export default function PotListWriteForm({mode}: Props) {
     const {id} = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const tagList = usePotListStore(state => state.tagFilterList);
     const fetchPotTagList = usePotListStore(state => state.fetchPotTagList);
     const {
         title, setTitle,
-        setDescription,
+        description, setDescription,
         type, setType,
         price, setPrice,
         isFree, setIsFree,
@@ -46,9 +44,20 @@ export default function PotListWriteForm({mode, onSubmitSuccess}: Props) {
         reset, submit
     } = usePotListWriteStore();
 
+    const onSubmitSuccess = () => {
+        if(mode === "create") {
+            navigate("/pot-list");
+        } else {
+            navigate(`/pot-list/${id}`);
+        }
+    }
+
     useEffect(() => {
         console.log(mode);
-        if (mode === "create") reset();
+        if (mode === "create") {
+
+            reset();
+        }
     }, [mode, reset]);
 
     useEffect(() => {
@@ -219,7 +228,11 @@ export default function PotListWriteForm({mode, onSubmitSuccess}: Props) {
                     {/* 내용 */}
                     <div>
                         <Label className="mb-1 text-md">분양 설명</Label>
-                        <Editor onSerializedChange={(value) => setDescription(value)}/>
+                        <Editor
+                            reset={mode !== "edit"}
+                            editorSerializedState={description}
+                            onSerializedChange={(value) => setDescription(value)}
+                        />
                     </div>
 
                     <div className="flex justify-end mt-5">

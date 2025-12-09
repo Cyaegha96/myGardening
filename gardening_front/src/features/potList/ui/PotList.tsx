@@ -6,7 +6,7 @@ import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 import {useNavigate} from "react-router-dom";
 import {getRelativeTime} from "@/shared/libs/getRelativeTime.ts";
 import {formatPrice} from "@/entities/potList/libs/formatPrice.ts";
-import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.tsx";
+import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.ts";
 import {useEffect, useState} from "react";
 import {type AddressParts, splitKoreanAddress} from "@/shared/libs/splitKoreanAddress.ts";
 

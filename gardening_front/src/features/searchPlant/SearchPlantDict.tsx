@@ -59,9 +59,6 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
         setPage(1);
     }, [debouncedSearch, filterFamily, filterGenus, selectedTags, sortKey]);
 
-    /** ----------------------------------------
-     *   1) FILTER 작업 useMemo
-     * ---------------------------------------- */
     const filteredItems = useMemo(() => {
         return items
             .filter((item) => (filterFamily ? item.family === filterFamily : true))
@@ -82,9 +79,6 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
             );
     }, [items, debouncedSearch, filterFamily, filterGenus, selectedTags]);
 
-    /** ----------------------------------------
-     *   2) SORT 작업 useMemo
-     * ---------------------------------------- */
     const sortedItems = useMemo(() => {
         if (sortKey === "none") return filteredItems;
 
@@ -98,9 +92,6 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
         return copy;
     }, [filteredItems, sortKey]);
 
-    /** ----------------------------------------
-     *   3) PAGINATION useMemo
-     * ---------------------------------------- */
     const currentItems = useMemo(() => {
         const lastIndex = page * itemsPerPage;
         const firstIndex = lastIndex - itemsPerPage;
@@ -119,7 +110,7 @@ const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
     const uniqueGenus = unique("genus");
 
     const uniqueTags = useMemo(
-        () => Array.from(new Set(items.flatMap(i => i.tags?.map(t => t.tagName) ?? []))),
+        () => Array.from(new Set(items.flatMap(i => i.tags?.map(tag => tag.tagName) ?? []))),
         [items]
     );
 

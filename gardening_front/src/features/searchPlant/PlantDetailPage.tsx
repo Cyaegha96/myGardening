@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PlantInfoControllerApi, type PlantInfoDTO } from "@/shared/api";
 import { Badge } from "@/shared/shadcn/components/ui/badge";
@@ -6,9 +6,10 @@ import { Skeleton } from "@/shared/shadcn/components/ui/skeleton";
 import { motion } from "framer-motion";
 import Lottie from "lottie-react";
 
+
+
 // sprout 애니메이션
 import map from "../../../public/assets/lottie/Map-Icon.json";
-import sprout from "../../../public/assets/lottie/PlantLoading.json";
 import growing from "../../../public/assets/lottie/Flower-growing.json";
 import watering from "../../../public/assets/lottie/Watering-Flower.json";
 import sun from "../../../public/assets/lottie/Sun.json";
@@ -18,13 +19,15 @@ import propagation from "../../../public/assets/lottie/GrowingSeed.json";
 import commonUse from "../../../public/assets/lottie/LivingRoom.json";
 import pestTips from "../../../public/assets/lottie/Covid19.json";
 import temperature from "../../../public/assets/lottie/Thermometer.json";
+import ferti from "../../../public/assets/lottie/Ferti.json";
+import PlantInfoRequestModal from "@/widgets/report/PlantInfoRequestModal.tsx";
 
 export default function PlantDetailPage() {
 
     const { scientificName } = useParams();
     const [plant, setPlant] = useState<PlantInfoDTO | null>(null);
     const [loading, setLoading] = useState(true);
-
+    const [modalOpen, setModalOpen] = useState(false);
     useEffect(() => {
         const api = new PlantInfoControllerApi();
         api.getPlantInfoByScientificName(scientificName!)
@@ -54,7 +57,7 @@ export default function PlantDetailPage() {
         sun,
         seeds,
         propagation,
-        sprout,
+        ferti,
         pestTips,
         pot,
         temperature,
@@ -134,7 +137,72 @@ export default function PlantDetailPage() {
                     />
                 ))}
             </div>
+            <div className="w-full flex flex-col items-center mt-20 mb-20 gap-8">
+                {/* 안내 카드 2개 */}
+                <div className="flex flex-col md:flex-row items-center gap-6">
+
+                    {/* PlantNet 카드 */}
+                    <div className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-3 shadow-sm">
+                        <img
+                            src="/assets/plantnet-logo-title.svg"
+                            alt="PlantNet Logo"
+                            className="h-7 w-auto"
+                        />
+                        <div className="text-sm text-muted-foreground">
+                            식물 검색에 Pl@ntNet API가 활용되었습니다.
+                            <a
+                                href="https://plantnet.org"
+                                target="_blank"
+                                className="underline hover:text-foreground ml-1"
+                            >
+                                (Pl@ntNet 공식 페이지)
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Gemini 카드 */}
+                    <div className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-3 shadow-sm">
+                        <img
+                            src="/assets/Google_Gemini_logo_2025.svg"
+                            alt="Gemini Logo"
+                            className="h-6"
+                        />
+                        <div className="text-sm text-muted-foreground">
+                            식물 정보 요약 및 설명 생성에는 Google Gemini 모델이 사용되었습니다.
+                            <a
+                                href="https://deepmind.google/technologies/gemini/"
+                                target="_blank"
+                                className="underline hover:text-foreground ml-1"
+                            >
+                                (Gemini 정보)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 제보 문구 + 버튼 */}
+                <div className="flex flex-col items-center gap-4">
+                    <p className="text-muted-foreground">
+                        어라? 혹시 이 식물의 정보가 잘못된 것 같나요?
+                    </p>
+
+                    <button
+                        onClick={() => setModalOpen(true)}
+                        className="px-6 py-3 rounded-xl bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition"
+                    >
+                        이 식물 정보 제보하기
+                    </button>
+                </div>
+            </div>
+
+
+            <PlantInfoRequestModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                scientificName={plant.scientificName}
+            />
         </div>
+
     );
 }
 
@@ -155,6 +223,8 @@ function Section({ title, content }: { title: string; content?: string }) {
             <p className="text-gray-700 leading-relaxed whitespace-pre-line text-lg">
                 {content}
             </p>
+
+
         </motion.section>
     );
 }
@@ -167,7 +237,7 @@ function AlternatingCardSection({
                                 }: {
     title: string;
     value?: string;
-    animation: any;
+    animation: unknown;
     reverse?: boolean;
 }) {
     if (!value) return null;

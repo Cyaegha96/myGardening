@@ -48,10 +48,12 @@ public class PotListProcessService {
     @Transactional
     public void updatePotProcess(int id, List<MultipartFile> images, List<Integer> deleteImageIdList, PotListPatchDTO patchInfo) throws Exception {
         // 기존 이미지 중, 삭제된 이미지 제거
-        for (Integer deleteImageId : deleteImageIdList) {
-            if (deleteImageId != null) {
-                fileService.deleteFile(potListImageService.getImageById(deleteImageId));
-                potListImageService.deleteImageById(deleteImageId);
+        if(deleteImageIdList != null && !deleteImageIdList.isEmpty()) {
+            for (Integer deleteImageId : deleteImageIdList) {
+                if (deleteImageId != null) {
+                    fileService.deleteFile(potListImageService.getImageById(deleteImageId));
+                    potListImageService.deleteImageById(deleteImageId);
+                }
             }
         }
 

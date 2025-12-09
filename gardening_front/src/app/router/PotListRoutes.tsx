@@ -15,6 +15,7 @@ export default function PotListRoutes() {
             <Routes>
                 <Route path="/" element={<PotListPage/>}/>
                 <Route path="write" element={<PotWritePage mode="create"/>}/>
+                <Route path="edit/:id" element={<PotWritePage mode="edit"/>}/>
                 <Route path=":id" element={<PotDetailPage/>}/>
             </Routes>
         </>
