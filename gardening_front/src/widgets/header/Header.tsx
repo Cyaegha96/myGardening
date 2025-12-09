@@ -127,7 +127,7 @@ export function Header() {
                                 <span className="text-sm font-medium">{userInfo?.nickname}</span>
                             </div>
 
-                            <Button variant="outline" onClick={() => navigate('/auth/dashboard')}>
+                            <Button variant="outline" onClick={() => navigate('/dashboard')}>
                                 대시보드
                             </Button>
                             <Button variant="outline" onClick={() => navigate('/oauth/edit-complete-profile')}>

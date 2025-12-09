@@ -10,6 +10,7 @@ import BoardDetailContents from "@/widgets/board/BoardDetailContents";
 import BoardDetailComments from "@/widgets/comment/BoardDetailComments.tsx";
 import { useParams, useNavigate } from "react-router-dom";
 import useUserStore from "@/app/store/userStore";
+import ReportModal from "@/widgets/report/ReportModal.tsx";
 
 export default function DetailBoardPage() {
     const { id } = useParams<{ id: string }>();
@@ -27,7 +28,7 @@ export default function DetailBoardPage() {
     const [bookmarked, setBookmarked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [bookmarkCount, setBookmarkCount] = useState(0);
-
+    const [reportOpen, setReportOpen] = useState(false);
     // 댓글 토글
     const commentRef = useRef<HTMLDivElement | null>(null);
     const [commentOpen, setCommentOpen] = useState(false);
@@ -148,8 +149,15 @@ export default function DetailBoardPage() {
                 onDelete={handleDelete}
                 onToggleComments={handleToggleComments}
                 commentOpen={commentOpen}
+                reportOpen={reportOpen}
+                setReportOpen={setReportOpen}
             />
-
+            <ReportModal
+                open={reportOpen}
+                onClose={() => setReportOpen(false)}
+                targetId={boardId}
+                targetType="BOARD"   // ★ enum처럼 강제하고 싶다면 여기서 통일
+            />
             {/* 댓글 영역 */}
             {commentOpen && (
                 <div ref={commentRef} className="w-full flex justify-center mt-2">

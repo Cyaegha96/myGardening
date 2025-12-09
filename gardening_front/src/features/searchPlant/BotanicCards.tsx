@@ -45,6 +45,7 @@ const BotanicalCard: React.FC<BotanicalCardProps> = ({ plant }) => {
     const [loaded, setLoaded] = useState(false);
     const navigate = useNavigate();
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoaded(false);  // key가 바뀔 때 완전히 리셋
     }, [plant.scientificName]);
 

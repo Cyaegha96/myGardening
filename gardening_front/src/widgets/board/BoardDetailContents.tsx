@@ -20,7 +20,9 @@ export default function BoardDetailContents({
                                                 onEdit,
                                                 onDelete,
                                                 commentOpen,
-                                                onToggleComments
+                                                onToggleComments,
+
+                                                setReportOpen
                                             }: BoardDetailContentsProps) {
 
     const images = (data.files ?? [])
@@ -64,6 +66,8 @@ export default function BoardDetailContents({
                                 onLike={onLike}
                                 onBookmark={onBookmark}
                                 onToggleComments={onToggleComments}
+
+                                setReportOpen={setReportOpen}
                             />
                         </div>
                     </>
@@ -97,6 +101,7 @@ export default function BoardDetailContents({
                                 onLike={onLike}
                                 onBookmark={onBookmark}
                                 onToggleComments={onToggleComments}
+                                setReportOpen={setReportOpen}
                             />
                         </div>
                     )}
