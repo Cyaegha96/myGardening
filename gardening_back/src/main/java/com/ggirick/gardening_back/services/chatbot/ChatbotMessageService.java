@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -53,4 +54,22 @@ public class ChatbotMessageService {
     public Timestamp getLastMessageBySessionId(int sessionId) {
         return messageMapper.getLastMessageBySessionId(sessionId).getCreatedAt();
     }
+
+    // 특정 세션의 전체 메시지 조회 - 과거 ~ 현재순 (챗봇용)
+    public List<ChatbotMessageDTO> getMessagesBySessionId(int sessionId) {
+        // createdAt 오름차순(sorted by time ASC)
+        return messageMapper.getMessagesBySessionId(sessionId);
+    }
+
+    // UI용 메시지 조회 (페이징 지원)
+    public List<ChatbotMessageDTO> getMessagesForUI(int sessionId, int offset, int limit) {
+        return messageMapper.getMessagesForUI(sessionId, offset, limit);
+    }
+
+    // 시스템 정책 저장
+    @Transactional
+    public void saveSystemPrompt(int sessionId, String content) {
+        messageMapper.insertSystemPrompt(sessionId, content);
+    }
+
 }

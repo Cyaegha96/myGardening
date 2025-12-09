@@ -51,7 +51,14 @@ export default function ChatDrawer() {
             <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
                     <div className="fixed bottom-23 right-6 md:bottom-27 md:right-8 z-50">
-                        <Button className="cursor-pointer relative bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
+                        <Button
+                            className="
+                                        cursor-pointer relative bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg
+                                        w-12 h-12        /* 모바일 */
+                                        md:w-16 md:h-16  /* 데스크탑 */
+                                        transition-transform hover:scale-105
+                                    "
+                        >
                             <MessageCircle className="size-5 md:size-6" />
                             <Badge className="absolute top-0 right-0 w-5 h-5 md:w-6 md:h-6" variant="destructive">
                                 3

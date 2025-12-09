@@ -39,4 +39,43 @@
         DELETE FROM chatbot_message
         WHERE session_id = #{sessionId}
     </delete>
+
+    <!-- 특정 세션의 전체 메시지 조회 - 과거 ~ 현재순 (챗봇용) -->
+    <select id="getMessagesBySessionId"
+            resultType="com.ggirick.gardening_back.dto.chatbot.ChatbotMessageDTO">
+        SELECT *
+        FROM chatbot_message
+        WHERE session_id = #{sessionId}
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- UI용: 최신 메시지 페이지 조회 -->
+    <select id="getMessagesForUI"
+            resultType="com.ggirick.gardening_back.dto.chatbot.ChatbotMessageDTO">
+        SELECT *
+        FROM (
+                 SELECT t.*, ROWNUM rnum
+                 FROM (
+                          SELECT *
+                          FROM chatbot_message
+                          WHERE session_id = #{sessionId}
+                          ORDER BY created_at DESC
+                      ) t
+                 WHERE ROWNUM &lt;= #{offset} + #{limit}
+             )
+        WHERE rnum &gt; #{offset}
+    </select>
+
+    <!-- 시스템 정책 저장 -->
+    <insert id="insertSystemPrompt">
+        INSERT INTO chatbot_message (id, session_id, sender, content)
+        VALUES (
+                   chatbot_message_seq.NEXTVAL,
+                   #{sessionId},
+                   'system',
+                   #{content}
+               )
+    </insert>
+
+
 </mapper>
