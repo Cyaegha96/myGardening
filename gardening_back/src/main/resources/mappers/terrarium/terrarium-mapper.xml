@@ -15,12 +15,11 @@
         select * from terrarium where user_uid = #{userId}
     </select>
 
-    <select id="getAllTerrariums" resultType="com.ggirick.gardening_back.dto.terrarium.TerrariumDTO">
-        select * from terrarium  <where>
-        <if test="id != null">
-            AND id = #{id}
-        </if>
-    </where>
+    <select id="getTerrariumsByUserId" resultType="com.ggirick.gardening_back.dto.terrarium.TerrariumDTO">
+        select *
+        from terrarium
+        where user_uid = #{userId}
+        order by created_at desc
     </select>
 
 

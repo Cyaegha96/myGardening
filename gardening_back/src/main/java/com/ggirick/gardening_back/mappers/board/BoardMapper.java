@@ -46,4 +46,7 @@ public interface BoardMapper {
 
     // 부모 태그 기반으로 게시글 필터링
     List<BoardResponseDTO> searchBoardsByTagNames(@Param("tagNames") List<String> tagNames);
+
+    // 대시보드에 사용될 게시글 리스트
+    List<BoardResponseDTO> getMyBoardList(String writerUid);
 }

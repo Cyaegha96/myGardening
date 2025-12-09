@@ -276,4 +276,9 @@ public class BoardService {
 
         return list;
     }
+
+    // 대시보드에 사용될 게시글 리스트
+    public List<BoardResponseDTO> getMyBoardList(String loginUid) {
+        return boardMapper.getMyBoardList(loginUid);
+    }
 }

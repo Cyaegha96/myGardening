@@ -12,7 +12,7 @@ export function TerrariumSelector({ onSelect }: TerrariumSelectorProps) {
     const api = new TerrariumControllerApi();
 
     useEffect(() => {
-        api.getAllTerrariums().then(res => {
+        api.getMyTerrariums().then(res => {
             const mapped = res.data.map((t: any) => ({
                 id: t.id,
                 title: t.title,

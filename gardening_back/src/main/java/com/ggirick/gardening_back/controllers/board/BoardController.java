@@ -256,4 +256,16 @@ public class BoardController {
         return ResponseEntity.ok(boardService.filterBoardsByParentTag(parentTagId,loginUid));
     }
 
+    // 대시보드에 사용될 게시글 리스트
+    @GetMapping("/mine")
+    public ResponseEntity<List<BoardResponseDTO>> getMyBoardList(
+            @AuthenticationPrincipal UserTokenDTO userInfo
+    ) {
+        if (userInfo == null) return ResponseEntity.status(401).build();
+
+        return ResponseEntity.ok(
+                boardService.getMyBoardList(userInfo.getUid())
+        );
+    }
+
 }

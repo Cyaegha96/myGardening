@@ -30,19 +30,15 @@ public class TerrariumController {
         return ResponseEntity.ok(tServ.getTerrariumById(id));
     }
 
-    @GetMapping("/terrariums")
-    public ResponseEntity<List<TerrariumDTO>> getAllTerrariums(
-            @RequestParam(required = false) Integer id
+    @GetMapping("/my")
+    public ResponseEntity<List<TerrariumDTO>> getMyTerrariums(
+            @AuthenticationPrincipal UserTokenDTO userTokenDTO
     ) {
-        List<TerrariumDTO> terrariums = tServ.getAllTerrariums(id);
+        // 로그인한 사용자 UID 가져오기
+        String userId = userTokenDTO.getUid();
 
-        if (id != null) {
-            List<TerrariumDTO> filtered = terrariums.stream()
-                    .filter(t -> t.getId() == id)
-                    .toList();
-
-            return ResponseEntity.ok(filtered);
-        }
+        // 서비스에서 userId 기준으로 테라리움 조회
+        List<TerrariumDTO> terrariums = tServ.getTerrariumsByUserId(userId);
 
         return ResponseEntity.ok(terrariums);
     }
