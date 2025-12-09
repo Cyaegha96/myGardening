@@ -306,4 +306,21 @@ public class PotListController {
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+
+
+    @Operation(
+            summary = "내 분양글 목록 조회",
+            description = "로그인한 사용자가 작성한 분양글 목록을 조회합니다."
+    )
+    @GetMapping("/my")
+    public ResponseEntity<List<PotListDetailDTO>> getMyPotList(
+            @AuthenticationPrincipal UserTokenDTO userInfo) {
+
+        if (userInfo == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<PotListDetailDTO> myPots = potListService.getPotByUserId(userInfo.getUid());
+        return ResponseEntity.ok(myPots);
+    }
 }

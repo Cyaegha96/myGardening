@@ -39,18 +39,20 @@ export default function TerrariumCanvas() {
         attachTransformer(transformerRef, stageRef, selectedId);
     }, [selectedId, objects]);
 
-    // 테라리움 리스트 로드
+    // 로그인한 사용자 테라리움 리스트 로드
     const loadTerrariums = async () => {
-        const res = await terrariumApi.getAllTerrariums(
-            selectedTerrariumId ?? undefined
-        );
-
-        const mapped = res.data.map((t: any) => ({
-            id: t.id,
-            title: t.title,
-        }));
-        setTerrariums(mapped);
+        try {
+            const res = await terrariumApi.getMyTerrariums(); // 이제 인자 없음
+            const mapped = res.data.map((t: any) => ({
+                id: t.id,
+                title: t.title,
+            }));
+            setTerrariums(mapped);
+        } catch (err) {
+            console.error("테라리움 로드 실패:", err);
+        }
     };
+
     useEffect(() => {
         loadTerrariums();
     }, []);
@@ -60,8 +62,8 @@ export default function TerrariumCanvas() {
         try {
             await terrariumApi.deleteTerrarium(id);
             setSelectedTerrariumId(null);
-            loadTerrariums(); // 삭제 후 리스트 갱신
             setObjects([]); // 삭제 후 캔버스 초기화
+            loadTerrariums(); // 삭제 후 리스트 갱신
         } catch (err) {
             console.error("삭제 실패:", err);
         }
@@ -69,6 +71,7 @@ export default function TerrariumCanvas() {
 
     return (
         <Card className="w-full h-full p-2 flex flex-col">
+            {/* 테라리움 생성 폼 */}
             <CardContent className="flex gap-2 mb-2">
                 <Input placeholder="테라리움 제목" value={title} onChange={e => setTitle(e.target.value)} />
                 <Input placeholder="설명" value={description} onChange={e => setDescription(e.target.value)} />
@@ -88,35 +91,37 @@ export default function TerrariumCanvas() {
                         alert("저장완료!");
                         const terrariumId = terrarium.data.id as number;
                         await saveCanvas(terrariumId);
-                        loadTerrariums();
+                        loadTerrariums(); // 저장 후 리스트 갱신
                     }}
                 >
                     저장
                 </Button>
             </CardContent>
 
-            {/* 테라리움 선택 + 삭제 버튼 */}
+            {/* 테라리움 선택 + 삭제 + 불러오기 */}
             <div className="flex items-center gap-2 mb-2">
                 <TerrariumSelector
                     terrariums={terrariums}
                     onSelect={id => setSelectedTerrariumId(id)}
                 />
                 {selectedTerrariumId && (
-                    <Button
-                        variant="destructive"
-                        onClick={() => handleDeleteTerrarium(selectedTerrariumId)}
-                    >
-                        삭제
-                    </Button>
+                    <>
+                        <Button
+                            variant="destructive"
+                            onClick={() => handleDeleteTerrarium(selectedTerrariumId)}
+                        >
+                            삭제
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={async () => {
+                                await loadTerrarium(selectedTerrariumId);
+                            }}
+                        >
+                            불러오기
+                        </Button>
+                    </>
                 )}
-                <Button
-                    variant="secondary"
-                    onClick={async () => {
-                        if (selectedTerrariumId) await loadTerrarium(selectedTerrariumId);
-                    }}
-                >
-                    불러오기
-                </Button>
             </div>
 
             {/* 캔버스 영역 */}
@@ -180,16 +185,14 @@ export default function TerrariumCanvas() {
                     </Layer>
                 </Stage>
             </div>
+
+            {/* 캔버스 이미지 다운로드 */}
             <Button
                 onClick={() => {
                     if (stageRef.current) {
-                        // 1. 캔버스를 이미지 데이터 URL로 변환
                         const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
-                        // pixelRatio를 높이면 해상도가 더 선명해집니다.
-
-                        // 2. 다운로드 링크 생성
                         const link = document.createElement("a");
-                        link.download = `${title || "terrarium"}.png`; // 파일명
+                        link.download = `${title || "terrarium"}.png`;
                         link.href = uri;
                         document.body.appendChild(link);
                         link.click();

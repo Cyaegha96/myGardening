@@ -21,8 +21,8 @@ public class TerrariumService {
         return terrariumMapper.getTerrariumById(id);
     }
 
-    public List<TerrariumDTO> getAllTerrariums(Integer id){
-        return terrariumMapper.getAllTerrariums(id);
+    public List<TerrariumDTO> getTerrariumsByUserId(String userId){
+        return terrariumMapper.getTerrariumsByUserId(userId);
     }
 
     @Transactional

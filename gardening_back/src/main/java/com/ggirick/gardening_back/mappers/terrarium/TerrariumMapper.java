@@ -11,7 +11,7 @@ public interface TerrariumMapper {
 
     int insertTerrarium(TerrariumDTO tDTO);
     TerrariumDTO getTerrariumById(int id);
-    List<TerrariumDTO> getAllTerrariums(@Param("id")Integer id);
+    List<TerrariumDTO> getTerrariumsByUserId(String userId);
 
     void deleteLayersByTerrariumId(int id);
     void deleteImagesByTerrariumId(int id);
