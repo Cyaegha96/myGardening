@@ -1,4 +1,4 @@
-package com.ggirick.gardening_back.dto.potList;
+package com.ggirick.gardening_back.dto.chat;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;

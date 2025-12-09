@@ -20,7 +20,7 @@ type PotListStore = {
     selectedTags: number[];
     toggleSelectedTags: (id: number) => void;
 
-    fetchPotList: () => void;
+    fetchPotList: (initial:boolean | null) => void;
     fetchBookmarkPotLists: () => void;
     fetchPotTagList: () => void;
 
@@ -55,7 +55,7 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
 
     selectedTags: [],
 
-    fetchPotList: async () => {
+    fetchPotList: async (initial) => {
         const {
             cursorId,
             size,
@@ -67,6 +67,10 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
         } = get();
 
         try {
+            if(initial) {
+                set({cursorId: undefined, potLists: []});
+            }
+
             set({isLoading: true});
 
             const resp = await potListApi.getPotList(
@@ -79,6 +83,7 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
             );
 
             const newItems = resp.data;
+            console.log(newItems);
 
             // 데이터 없음 → 더 불러올 게 없음
             if (newItems.length === 0) {

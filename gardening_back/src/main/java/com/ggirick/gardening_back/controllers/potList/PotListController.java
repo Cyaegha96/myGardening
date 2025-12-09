@@ -115,7 +115,6 @@ public class PotListController {
     public ResponseEntity<Void> updatePot(@Parameter(description = "분양글 ID") @PathVariable int id,
                                           @Parameter(description = "수정 할 분양글 정보") @RequestPart("potListInfo") PotListPatchDTO patchInfo,
                                           @Parameter(description = "분양글 이미지 목록") @RequestPart(value = "images", required = false) List<MultipartFile> images,
-                                          @Parameter(description = "삭제할 이미지 id 목록") @RequestPart(value = "deleteImages", required = false) List<Integer> deleteImageIdList,
                                           @Parameter(description = "요청을 보낸 사용자 정보") @AuthenticationPrincipal UserTokenDTO userInfo) throws Exception {
         if (userInfo != null) {
             if (!potListImageService.validateImagesInfo(images)) {
@@ -125,7 +124,7 @@ public class PotListController {
 
             PotListDetailDTO potInfo = potListService.getPotById(id);
             if (potInfo.getWriterUid().equals(userInfo.getUid())) {
-                potListProcessService.updatePotProcess(id, images, deleteImageIdList, patchInfo);
+                potListProcessService.updatePotProcess(id, images, patchInfo);
                 return ResponseEntity.ok().build();
             }
         }

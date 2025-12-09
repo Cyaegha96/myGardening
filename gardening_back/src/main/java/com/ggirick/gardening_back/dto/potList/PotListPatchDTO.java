@@ -41,4 +41,7 @@ public class PotListPatchDTO {
     int thumbnailIndex;
     @Schema(description = "설정 태그 목록")
     List<Integer> tags;
+
+    @Schema(description = "지울 이미지 아이디 목록")
+    List<Integer> toDeleteImageIds;
 }

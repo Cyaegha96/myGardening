@@ -6,6 +6,7 @@ import com.ggirick.gardening_back.dto.potList.PotListPatchDTO;
 import com.ggirick.gardening_back.dto.potList.PotListTagMappingDTO;
 import com.ggirick.gardening_back.services.file.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +22,9 @@ public class PotListProcessService {
     private final PotListService potListService;
     private final PotListImageService potListImageService;
     private final PotListTagMappingService potListTagMappingService;
+
+    @Value("${spring.cloud.gcp.storage.bucket}")
+    private String bucketName;
 
     // 분양글 작성에 따른 흐름
     @Transactional
@@ -46,12 +50,14 @@ public class PotListProcessService {
 
     // 분양글 수정에 따른 흐름
     @Transactional
-    public void updatePotProcess(int id, List<MultipartFile> images, List<Integer> deleteImageIdList, PotListPatchDTO patchInfo) throws Exception {
+    public void updatePotProcess(int id, List<MultipartFile> images, PotListPatchDTO patchInfo) throws Exception {
         // 기존 이미지 중, 삭제된 이미지 제거
-        if(deleteImageIdList != null && !deleteImageIdList.isEmpty()) {
-            for (Integer deleteImageId : deleteImageIdList) {
+        if(patchInfo.getToDeleteImageIds() != null && !patchInfo.getToDeleteImageIds().isEmpty()) {
+            for (Integer deleteImageId : patchInfo.getToDeleteImageIds()) {
                 if (deleteImageId != null) {
-                    fileService.deleteFile(potListImageService.getImageById(deleteImageId));
+                    String imageUrl = potListImageService.getImageById(deleteImageId);
+                    String imageName = imageUrl.substring(imageUrl.indexOf(bucketName) + bucketName.length() + 1);
+                    fileService.deleteFile(imageName);
                     potListImageService.deleteImageById(deleteImageId);
                 }
             }

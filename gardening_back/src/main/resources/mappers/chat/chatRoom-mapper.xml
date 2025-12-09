@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.potList.PotListBookmarkMapper">
+    <!-- 채팅방 생성 -->
+    <insert id="insertChatRoom">
+        INSERT
+        INTO chat_room(id, pot_listing_id)
+        VALUES(chat_room_seq.nextval, #{potListingId})
+    </insert>
+
+    <!-- 채팅방 상태 변경 -->
+    <update id="updateChatRoomStatus">
+        UPDATE chat_room
+        SET status = #{status}
+    </update>
+
+    <!-- 사용자 Uid에 따른 채팅방 목록 조회 -->
+    <select id="getChatRoomListByUserUid" resultType="com.ggirick.gardening_back.dto.chat.ChatRoomDTO">
+        SELECT *
+        FROM chat_room cr
+        JOIN chat_room_participants crp ON cr.id = crp.chat_room_id
+        WHERE crp.user_uid = #{userUid}
+        ORDER BY cr.created_at DESC
+    </select>
+</mapper>

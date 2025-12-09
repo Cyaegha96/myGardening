@@ -54,10 +54,10 @@ export const usePotDetailStore = create<PotDetailState>((set, get) => ({
         }
     },
 
-    deletePot: () => {
+    deletePot: async () => {
         const state = get();
         if (state.potDetail?.id != null) {
-            potListApi.deletePot(state.potDetail.id)
+            await potListApi.deletePot(state.potDetail.id);
         }
     },
 
