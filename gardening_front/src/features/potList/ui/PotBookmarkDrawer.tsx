@@ -5,7 +5,7 @@ import {useEffect, useState} from "react";
 import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
 import {potListApi} from "@/entities/potList/api/potListApi.ts";
 import {useNavigate} from "react-router-dom";
-import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.tsx";
+import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.ts";
 import {formatPrice} from "@/entities/potList/libs/formatPrice.ts";
 
 export default function PotBookmarkDrawer() {
