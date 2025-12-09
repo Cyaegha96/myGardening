@@ -320,4 +320,19 @@
         ORDER BY b.ID DESC
     </select>
 
+    <select id="getMyBoardList" parameterType="string"
+            resultType="com.ggirick.gardening_back.dto.board.BoardResponseDTO">
+        SELECT
+            ID,
+            TITLE,
+            CONTENTS,
+            VIEW_COUNT,
+            CREATED_AT,
+            UPDATED_AT
+        FROM BOARD
+        WHERE STATUS = 'active'
+          AND WRITER_UID = #{writerUid}
+        ORDER BY ID DESC
+    </select>
+
 </mapper>
