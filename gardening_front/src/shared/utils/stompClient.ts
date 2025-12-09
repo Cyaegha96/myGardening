@@ -1,4 +1,6 @@
-import { Client } from "@stomp/stompjs";
+import {Client} from "@stomp/stompjs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import SockJS from "sockjs-client/dist/sockjs.min";
 
 export const stompClient = new Client({
@@ -8,9 +10,5 @@ export const stompClient = new Client({
     },
     onConnect: () => {
         console.log("Connected!");
-
-        stompClient.subscribe("/topic/messages", msg => {
-            console.log("Received:", JSON.parse(msg.body));
-        });
     }
 });

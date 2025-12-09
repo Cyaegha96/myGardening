@@ -149,6 +149,11 @@
                 description = #{patchInfo.description},
             </if>
 
+            <!-- 상태 변경(구매, 판매 글) -->
+            <if test="patchInfo.type != null">
+                type = #{patchInfo.type},
+            </if>
+
             <!-- 상태 변경 (거래완료 포함) -->
             <if test="patchInfo.status != null">
                 status = #{patchInfo.status},

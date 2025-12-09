@@ -45,7 +45,7 @@ export default function PotListWriteForm({mode}: Props) {
     } = usePotListWriteStore();
 
     const onSubmitSuccess = () => {
-        if(mode === "create") {
+        if (mode === "create") {
             navigate("/pot-list");
         } else {
             navigate(`/pot-list/${id}`);
@@ -97,8 +97,14 @@ export default function PotListWriteForm({mode}: Props) {
 
                     {/* 유형 라디오 버튼 */}
                     <div>
-                        <RadioGroup value={type} onValueChange={(v) => setType(v as "SELL" | "BUY")}
-                                    className="flex gap-4">
+                        <RadioGroup
+                            value={type}
+                            onValueChange={(v) => {
+                                setType(v as "SELL" | "BUY");
+                                setPrice(0);
+                            }
+                            }
+                            className="flex gap-4">
                             <div className="flex items-center gap-2">
                                 <RadioGroupItem value="SELL" id="type-sell"/>
                                 <label htmlFor="type-sell" className="cursor-pointer select-none">판매</label>
@@ -124,7 +130,7 @@ export default function PotListWriteForm({mode}: Props) {
                                 type="text"
                                 value={formatPrice(price, "\\ ")}
                                 onChange={handlePriceChange}
-                                disabled={isFree}
+                                disabled={isFree || type === "BUY"}
                                 className="w-40"
                             />
                             <div className="flex items-center gap-2 cursor-pointer">
@@ -135,6 +141,7 @@ export default function PotListWriteForm({mode}: Props) {
                                         setIsFree(Boolean(checked));
                                         if (checked) setPrice(0);
                                     }}
+                                    disabled={type === "BUY"}
                                 />
                                 <label htmlFor="freeCheck" className="cursor-pointer select-none text-sm">
                                     무료 나눔

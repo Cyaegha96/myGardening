@@ -1,4 +1,3 @@
-import {useState} from "react";
 import {Search} from "lucide-react";
 import {Button} from "@/shared/shadcn/components/ui/button";
 import {usePotListStore} from "@/entities/potList/model/potListStore.ts";
@@ -36,7 +35,7 @@ export default function PotSearchBox() {
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === "Enter") fetchPotList()
+                        if (e.key === "Enter") fetchPotList(true)
                     }}
                     placeholder="검색..."
                     className="w-full outline-none text-sm"
@@ -47,7 +46,7 @@ export default function PotSearchBox() {
             <Button
                 variant="outline"
                 size="icon"
-                onClick={() => fetchPotList()}
+                onClick={() => fetchPotList(true)}
                 className="aspect-square rounded-md"
             >
                 검색

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.chat.ChatMapper">
+    <!-- 채팅 기록 -->
+    <insert id="insertChat">
+        INSERT
+        chat_message(id, chat_room_id, sender_uid, content)
+        VALUES(chat_message_seq.nextval, #{chatRoomId}, #{senderUid}, #{content})
+    </insert>
+
+    <!-- 채팅방에 따른 채팅 조회 -->
+    <select id="getChatListByChatRoomId" resultType="com.ggirick.gardening_back.dto.chat.ChatDTO">
+        SELECT *
+        FROM
+        (
+        SELECT *
+        FROM chat_message
+        WHERE chat_room_id = #{chatRoomId}
+        <if test="cursorId != null">
+            AND sent_at &gt; #{cursorId}
+        </if>
+        ORDER BY sent_at DESC
+        )
+        WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+    <!-- 채팅방에 따른 사용자가 작성자가 아닌 채팅 읽음 처리 -->
+    <update id="updateChatIsReadByUserUidAndChatRoomId">
+        UPDATE chat_message SET is_read = 'Y' WHERE chat_room_id = #{chatRoomId} AND sender_uid != #{userUid}
+    </update>
+</mapper>
