@@ -1,45 +1,30 @@
 package com.ggirick.gardening_back.controllers.potList;
 
+import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.potList.ChatDTO;
-import com.ggirick.gardening_back.services.potList.ChatService;
-import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
 
-import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 
-@RestController
+@Slf4j
+@Controller
 @RequiredArgsConstructor
-@RequestMapping("/chat")
 public class ChatController {
-    private final ChatService chatService;
 
-    @PostMapping("/send")
-    public ResponseEntity<Void> sendMessage(@RequestBody ChatDTO chat) {
-        chatService.sendMessage(chat);
-        return ResponseEntity.ok().build();
-    }
+    @MessageMapping("/chat.send")  // -> /app/chat.send
+    @SendTo("/topic/messages")     // 모든 구독자에게 broadcast
+    public ChatDTO sendMessage(@Payload ChatDTO msg,
+                               Principal principal) {
+        Authentication auth = (Authentication) principal;
+        UserTokenDTO userInfo = (UserTokenDTO) auth.getPrincipal();
 
-    @RabbitListener(queues = "hello1.queue", ackMode = "MANUAL")
-    public void listener(Message msg, Channel channel) throws Exception {
-        long tag = msg.getMessageProperties().getDeliveryTag();
-
-        try {
-            // 처리 실패 테스트용
-//            throw new RuntimeException("Test fail!");
-            String body = new String(msg.getBody(), StandardCharsets.UTF_8);
-            System.out.println("받은 메시지: " + body);
-            channel.basicAck(tag, false);
-
-        } catch (Exception e) {
-            // requeue=false 로 DLX로 보내기
-            channel.basicNack(tag, false, false);
-        }
+        ChatController.log.info("Received from client: {}유저 UUID: {}", msg.getContent(), userInfo.getUid());
+        return msg;  // 그대로 브로드캐스트
     }
 }

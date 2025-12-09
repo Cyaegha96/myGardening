@@ -10,6 +10,8 @@ import { MessageCircle } from "lucide-react";
 import { Badge } from "@/shared/shadcn/components/ui/badge";
 import { useState } from "react";
 import { useChatStore } from "@/entities/potList/model/chatStore.ts";
+import {stompClient} from "@/shared/utils/stompTest.ts";
+import type {ChatMessage} from "@/entities/potList/types/chat.ts";
 
 export default function ChatDrawer() {
     const [input, setInput] = useState("");
@@ -35,6 +37,20 @@ export default function ChatDrawer() {
         });
 
         setInput("");
+
+        const body: ChatMessage = {
+            id: null,
+            chatRoomId: 1,
+            senderUid: null,
+            content: input,
+            isRead: null,
+            sentAt: null,
+        }
+
+        stompClient.publish({
+            destination: "/chat.send",
+            body: JSON.stringify(body)
+        })
 
         // 봇 자동 응답
         setTimeout(() => {

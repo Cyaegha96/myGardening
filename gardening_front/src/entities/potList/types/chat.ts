@@ -1,7 +1,10 @@
 export type ChatMessage = {
-    id: number;
-    text: string;
-    sender: "user" | "bot";
+    id: number | null,
+    chatRoomId: number,
+    senderUid: number | null,
+    content: string,
+    isRead: string | null,
+    sentAt: string | null,
 };
 
 export type ChatRoom = {
