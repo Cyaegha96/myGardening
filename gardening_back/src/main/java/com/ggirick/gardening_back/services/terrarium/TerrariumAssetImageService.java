@@ -12,7 +12,7 @@ import java.util.List;
 public class TerrariumAssetImageService {
     private final ImageMapper imageMapper;
 
-    public List<TerrariumAssetImageDTO> getAllAssets(){
-        return imageMapper.getAllAssets();
+    public List<TerrariumAssetImageDTO> getAllAssets(String category){
+        return imageMapper.getAllAssets(category);
     }
 }
