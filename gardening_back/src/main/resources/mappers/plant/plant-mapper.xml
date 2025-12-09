@@ -30,27 +30,22 @@
     <select id="getAllPlantInfo" resultMap="PlantInfoMap">
         SELECT
             COMMON_NAME       AS commonName,
-            COMMON_USES       AS commonUses,
-            CULTURAL_SIGNIFICANCE AS culturalSignificance,
+
             DESCRIPTION       AS description,
             ENVIRONMENT       AS environment,
             FAMILY            AS family,
-            FERTILIZER        AS fertilizer,
+
             GENUS             AS genus,
-            LIGHT             AS light,
-            ORIGIN            AS origin,
-            PESTS_TIPS        AS pestsTips,
-            POT_REPOT         AS potRepot,
-            PROPAGATION       AS propagation,
+
+
             SAMPLE_IMAGE_URL  AS sampleImageUrl,
-            SCIENTIFIC_NAME   AS scientificName,
-            SOIL              AS soil,
-            TEMPERATURE_HUMIDITY AS temperatureHumidity,
-            WATERING          AS watering
+            SCIENTIFIC_NAME   AS scientificName
+
         FROM PLANT_INFO
         WHERE SAMPLE_IMAGE_URL IS NOT NULL
         ORDER BY COMMON_NAME
     </select>
+
     <select id="getAllPlantInfoScientificName">
         SELECT
             COMMON_NAME      AS commonName,
@@ -187,4 +182,106 @@
         WHERE ROWNUM &lt;= 10
 
     </select>
+
+    <select id="findPlants" >
+
+        SELECT *
+        FROM (
+        SELECT inner_query.*, ROWNUM rnum
+        FROM (
+        SELECT
+
+        p.SCIENTIFIC_NAME        AS scientificName,
+        p.COMMON_NAME            AS commonName,
+        p.FAMILY                 AS family,
+        p.GENUS                  AS genus,
+        p.ORIGIN                 AS origin,
+        p.DESCRIPTION            AS description,
+        p.SAMPLE_IMAGE_URL       AS sampleImageUrl,
+        p.COMMON_USES            AS commonUses,
+        p.CULTURAL_SIGNIFICANCE  AS culturalSignificance,
+        p.ENVIRONMENT            AS environment,
+        p.LIGHT                  AS light,
+        p.TEMPERATURE_HUMIDITY   AS temperatureHumidity,
+        p.WATERING               AS watering,
+        p.SOIL                   AS soil,
+        p.FERTILIZER             AS fertilizer,
+        p.POT_REPOT              AS potRepot,
+        p.PESTS_TIPS             AS pestsTips,
+        p.PROPAGATION            AS propagation
+
+        FROM PLANT_INFO p
+
+        <!-- 필터 조건 -->
+        <where>
+            SAMPLE_IMAGE_URL IS NOT NULL
+            <if test="filters.scientificName != null">
+                AND p.SCIENTIFIC_NAME LIKE '%' || #{filters.scientificName} || '%'
+            </if>
+
+            <if test="filters.commonName != null">
+                AND p.COMMON_NAME LIKE '%' || #{filters.commonName} || '%'
+            </if>
+
+            <if test="filters.family != null">
+                AND p.FAMILY LIKE '%' || #{filters.family} || '%'
+            </if>
+
+            <if test="filters.genus != null">
+                AND p.GENUS LIKE '%' || #{filters.genus} || '%'
+            </if>
+
+            <if test="filters.origin != null">
+                AND p.ORIGIN LIKE '%' || #{filters.origin} || '%'
+            </if>
+        </where>
+
+        <!-- 정렬 조건 -->
+        ORDER BY
+        <choose>
+            <when test="sortField != null">
+                ${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                p.SCIENTIFIC_NAME ASC
+            </otherwise>
+        </choose>
+
+        ) inner_query
+        WHERE ROWNUM &lt;= #{offset} + #{limit}
+        )
+        WHERE rnum &gt; #{offset}
+
+    </select>
+    <select id="countPlants" resultType="int">
+
+        SELECT COUNT(*)
+        FROM PLANT_INFO p
+
+        <where>
+            SAMPLE_IMAGE_URL IS NOT NULL
+
+            <if test="filters.scientificName != null">
+                AND p.SCIENTIFIC_NAME LIKE '%' || #{filters.scientificName} || '%'
+            </if>
+
+            <if test="filters.commonName != null">
+                AND p.COMMON_NAME LIKE '%' || #{filters.commonName} || '%'
+            </if>
+
+            <if test="filters.family != null">
+                AND p.FAMILY LIKE '%' || #{filters.family} || '%'
+            </if>
+
+            <if test="filters.genus != null">
+                AND p.GENUS LIKE '%' || #{filters.genus} || '%'
+            </if>
+
+            <if test="filters.origin != null">
+                AND p.ORIGIN LIKE '%' || #{filters.origin} || '%'
+            </if>
+        </where>
+
+    </select>
+
 </mapper>

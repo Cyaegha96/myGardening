@@ -188,6 +188,7 @@ export default function DomeGallery({
         new PlantInfoControllerApi()
             .randomSearchRequestFile()
             .then(r => {
+
                 const mapped: ImageItem[] = r.data.map((url, idx) => ({
                     src: url,
                     alt: `Random plant image ${idx + 1}`

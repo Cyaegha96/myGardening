@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState, useMemo } from "react";
 import { PlantInfoControllerApi, type PlantInfoDTO } from "@/shared/api";
 import type { AxiosResponse } from "axios";
-import {Skeleton} from "@/shared/shadcn/components/ui/skeleton.tsx";
-import type {PlantDetail} from "@/entities/searchPlant/searchPlantStore.ts";
-import {Badge} from "@/shared/shadcn/components/ui/badge.tsx";
-import {badgeColors} from "@/shared/utils/badgeColors.ts";
+import BotanicalCard from "@/features/searchPlant/BotanicCards.tsx";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+
 function generateBotanicalGradient(seed: string) {
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
@@ -14,105 +13,17 @@ function generateBotanicalGradient(seed: string) {
     return `linear-gradient(135deg, hsl(${hue}, 25%, 88%) 0%, hsl(${(hue + 25) % 360}, 20%, 94%) 100%)`;
 }
 
-interface BotanicalCardProps {
-    plant: PlantDetail & {
-        gradient: string;
-    };
-
-}
-
-const BotanicalCard: React.FC<BotanicalCardProps> = ({ plant }) => {
-    const [isFlipped, setIsFlipped] = useState(false);
-    const [frontLoaded, setFrontLoaded] = useState(false);
-    const [backLoaded, setBackLoaded] = useState(false);
-
-    useEffect(() => {
-        setFrontLoaded(false);
-
-    }, [plant.sampleImageUrl]);
-
-    return (
-        <div
-            className="relative w-full h-full group [perspective:2000px] rounded-xl"
-            onMouseEnter={() => setIsFlipped(true)}
-            onMouseLeave={() => setIsFlipped(false)}
-        >
-            <div className={`relative w-full h-full [transform-style:preserve-3d] transition-all duration-700 ${isFlipped ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'}`}>
-
-                {/* FRONT */}
-                <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] overflow-hidden rounded-xl border border-gray-300 shadow-sm`} style={{ background: plant.gradient }}>
-                    <div className="w-full h-[320px] p-2 bg-white">
-                        {!frontLoaded && <Skeleton className="w-full h-full rounded-lg" />}
-                        <img
-                            src={plant.sampleImageUrl}
-                            alt={plant.commonName}
-                            className={`w-full h-full object-cover rounded-lg ${frontLoaded ? "block" : "hidden"}`}
-                            onLoad={() => setFrontLoaded(true)}
-                        />
-                    </div>
-                    <footer className="p-4 text-[#2b3a2b]">
-                        <h3 className="text-[1.1rem] font-semibold leading-snug">{plant.commonName}</h3>
-                        <p className="mt-1 text-[0.9rem] opacity-70 italic">{plant.scientificName }</p>
-
-
-                        <div className="flex flex-wrap gap-2">
-                            {plant.tags &&
-                                plant.tags.map((tag, index) => (
-                                    <Badge
-                                        key={tag.tagId}
-                                        className={badgeColors[index % badgeColors.length]} // 색상 배열에서 순환
-                                    >
-                                        {tag.tagName}
-                                    </Badge>
-                                ))}
-                        </div>
-                    </footer>
-                </div>
-
-                {/* BACK */}
-                <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] p-4 rounded-xl border border-gray-300 shadow-sm bg-gradient-to-b from-green-50 to-green-100 flex flex-col justify-start gap-2 text-left overflow-y-auto`}>
-                    <h3 className="text-lg font-semibold text-green-800 mb-1">{plant.commonName}</h3>
-                    <div className="w-full h-[200px] p-2">
-                        {!backLoaded && <Skeleton className="w-full h-full rounded-lg" />}
-                        <img
-                            src={plant.sampleImageUrl}
-                            alt={plant.commonName}
-                            className={`w-full h-full object-cover rounded-lg ${backLoaded ? "block" : "hidden"}`}
-                            onLoad={() => setBackLoaded(true)}
-                        />
-                    </div>
-                    <p className=" text-sm italic mb-2">학명: {plant.scientificName }</p>
-                    {plant.family && <p className=" text-sm">과: {plant.family}</p>}
-                    {plant.genus && <p className="text-sm">속: {plant.genus}</p>}
-                    {plant.origin && <p className=" text-sm">원산지: {plant.origin}</p>}
-                    {plant.environment && <p className=" text-sm">환경: {plant.environment}</p>}
-                    {plant.light && <p className=" text-sm">빛: {plant.light}</p>}
-                    {plant.temperatureHumidity && <p className="text-sm">온도/습도: {plant.temperatureHumidity}</p>}
-                    {plant.watering && <p className=" text-sm">물주기: {plant.watering}</p>}
-                    {plant.soil && <p className="text-sm">토양: {plant.soil}</p>}
-                    {plant.fertilizer && <p className="text-sm">비료: {plant.fertilizer}</p>}
-                    {plant.potRepot && <p className=" text-sm">분갈이: {plant.potRepot}</p>}
-                    {plant.propagation && <p className="text-sm">번식: {plant.propagation}</p>}
-                    {plant.pestsTips && <p className="text-sm">병충해 관리: {plant.pestsTips}</p>}
-                    {plant.commonUses && <p className=" text-sm">용도: {plant.commonUses}</p>}
-                    {plant.culturalSignificance && <p className="text-sm">문화적 의미: {plant.culturalSignificance}</p>}
-                    {plant.description && <p className=" text-sm">설명: {plant.description}</p>}
-                </div>
-
-            </div>
-        </div>
-    );
-};
-
-const ChromaGrid = ({ className = "", itemsPerPage = 12 }) => {
+const PlantGrid = ({ className = "", itemsPerPage = 12 }) => {
     const [items, setItems] = useState<any[]>([]);
     const [page, setPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 300);
 
-    // 🔎 정렬 & 필터 상태
     const [sortKey, setSortKey] = useState("none");
     const [filterFamily, setFilterFamily] = useState("");
     const [filterGenus, setFilterGenus] = useState("");
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
     useEffect(() => {
         const api = new PlantInfoControllerApi();
         api.getAllPlantInfo()
@@ -141,61 +52,86 @@ const ChromaGrid = ({ className = "", itemsPerPage = 12 }) => {
                 }));
                 setItems(mapped);
             })
-            .catch((err) => console.error("Failed to fetch:", err));
+            .catch(console.error);
     }, []);
 
-    // ============================
-    // 🔎 필터링 + 정렬 적용
-    // ============================
-    const filtered = items
-        .filter((item) => (filterFamily ? item.family === filterFamily : true))
-        .filter((item) => (filterGenus ? item.genus === filterGenus : true))
-        .filter(item =>
-            selectedTags.length > 0
-                ? item.tags?.some(t => selectedTags.includes(t.tagName))
-                : true
-        )
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, filterFamily, filterGenus, selectedTags, sortKey]);
 
-    const toggleTag = (tag: string) => {
-        setSelectedTags(prev =>
-            prev.includes(tag)
-                ? prev.filter(t => t !== tag)   // 있으면 제거
-                : [...prev, tag]                // 없으면 추가
-        );
-    };
+    /** ----------------------------------------
+     *   1) FILTER 작업 useMemo
+     * ---------------------------------------- */
+    const filteredItems = useMemo(() => {
+        return items
+            .filter((item) => (filterFamily ? item.family === filterFamily : true))
+            .filter((item) => (filterGenus ? item.genus === filterGenus : true))
+            .filter(item =>
+                selectedTags.length > 0
+                    ? item.tags?.some(tag => selectedTags.includes(tag.tagName))
+                    : true
+            )
+            .filter(item =>
+                debouncedSearch
+                    ? (
+                        item.commonName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                        item.scientificName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                        item.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
+                    )
+                    : true
+            );
+    }, [items, debouncedSearch, filterFamily, filterGenus, selectedTags]);
 
-    const sorted = [...filtered].sort((a, b) => {
+    /** ----------------------------------------
+     *   2) SORT 작업 useMemo
+     * ---------------------------------------- */
+    const sortedItems = useMemo(() => {
+        if (sortKey === "none") return filteredItems;
+
+        const copy = [...filteredItems];
         if (sortKey === "scientific") {
-            return a.scientificName.localeCompare(b.scientificName);
+            return copy.sort((a, b) => a.scientificName.localeCompare(b.scientificName));
         }
         if (sortKey === "common") {
-            return a.commonName.localeCompare(b.commonName);
+            return copy.sort((a, b) => a.commonName.localeCompare(b.commonName));
         }
-        return 0;
-    });
+        return copy;
+    }, [filteredItems, sortKey]);
 
-    const lastIndex = page * itemsPerPage;
-    const firstIndex = lastIndex - itemsPerPage;
-    const currentItems = sorted.slice(firstIndex, lastIndex);
-    const totalPages = Math.ceil(sorted.length / itemsPerPage);
+    /** ----------------------------------------
+     *   3) PAGINATION useMemo
+     * ---------------------------------------- */
+    const currentItems = useMemo(() => {
+        const lastIndex = page * itemsPerPage;
+        const firstIndex = lastIndex - itemsPerPage;
+        return sortedItems.slice(firstIndex, lastIndex);
+    }, [sortedItems, page, itemsPerPage]);
 
-    // ============================
-    // 🔎 필터 옵션용 unique 리스트
-    // ============================
+    const totalPages = useMemo(
+        () => Math.ceil(sortedItems.length / itemsPerPage),
+        [sortedItems, itemsPerPage]
+    );
+
     const unique = (key: string) =>
         Array.from(new Set(items.map((i) => i[key]).filter(Boolean)));
 
     const uniqueFamilies = unique("family");
     const uniqueGenus = unique("genus");
 
-    const uniqueTags = Array.from(
-        new Set(items.flatMap((i) => i.tags?.map((t) => t.tagName) ?? []))
+    const uniqueTags = useMemo(
+        () => Array.from(new Set(items.flatMap(i => i.tags?.map(t => t.tagName) ?? []))),
+        [items]
     );
+
+    const toggleTag = (tag: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
 
     return (
         <div className="w-full flex flex-col items-center">
 
-            {/* 🔥 정렬 + 필터 UI 영역 */}
             <div className="w-full p-4 rounded-lg bg-gray-50 mb-6 flex flex-wrap gap-4 items-center justify-between">
 
                 {/* 정렬 */}
@@ -210,6 +146,15 @@ const ChromaGrid = ({ className = "", itemsPerPage = 12 }) => {
                         <option value="scientific">학명순</option>
                         <option value="common">이름순</option>
                     </select>
+                </div>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        placeholder="식물 검색 (이름, 설명 등)"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="border rounded px-3 py-1 w-64"
+                    />
                 </div>
 
                 {/* 필터링 */}
@@ -241,7 +186,7 @@ const ChromaGrid = ({ className = "", itemsPerPage = 12 }) => {
 
 
 
-                    {/* 🔥 태그 필터 */}
+                    {/* 태그 필터 */}
                     <div className="flex flex-wrap gap-2 items-center mt-2">
                         {uniqueTags.map((tag) => {
                             const isActive = selectedTags.includes(tag);
@@ -299,5 +244,4 @@ const ChromaGrid = ({ className = "", itemsPerPage = 12 }) => {
     );
 };
 
-
-export default ChromaGrid;
+export default PlantGrid;
