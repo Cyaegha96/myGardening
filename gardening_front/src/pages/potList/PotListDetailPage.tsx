@@ -1,6 +1,6 @@
 import React, {useEffect} from "react";
 import {useParams} from "react-router-dom";
-import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.tsx";
+import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.ts";
 import PotDetailImageCarousel from "@/features/potList/ui/PotDetailImageCarousel.tsx";
 import PotDetailInfo from "@/features/potList/ui/PotDetailInfo.tsx";
 import PotList from "@/features/potList/ui/PotList.tsx";
