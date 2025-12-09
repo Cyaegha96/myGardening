@@ -21,7 +21,7 @@ type PotListWriteState = {
 
     // setters
     setTitle: (title: string) => void;
-    setDescription: (desc: SerializedEditorState | null) => void;
+    setDescription: (desc: SerializedEditorState) => void;
     setType: (type: "SELL" | "BUY") => void;
     setPrice: (price: number) => void;
     setIsFree: (isFree: boolean) => void;
@@ -88,7 +88,8 @@ export const usePotListWriteStore = create<PotListWriteState>((set, get) => ({
         if (!data) return;
         set({
             title: data.potListDetailDTO?.title ?? "",
-            description: JSON.parse(data.potListDetailDTO?.description ?? "null"),
+            description: JSON.parse(data.potListDetailDTO?.description) ?? null,
+            tags: data.potListDetailDTO?.tags ?? [],
             type: data.potListDetailDTO?.type ?? "SELL",
             price: data.potListDetailDTO?.price ?? 0,
             isFree: (data.potListDetailDTO?.price ?? 0) === 0,
@@ -115,6 +116,8 @@ export const usePotListWriteStore = create<PotListWriteState>((set, get) => ({
             loading: false,
             tags: [],
         });
+        const state = get();
+        console.log(state.description);
     },
 
     submit: async (mode, id, onSubmitSuccess) => {
