@@ -55,7 +55,6 @@ export default function PotListWriteForm({mode}: Props) {
     useEffect(() => {
         console.log(mode);
         if (mode === "create") {
-
             reset();
         }
     }, [mode, reset]);

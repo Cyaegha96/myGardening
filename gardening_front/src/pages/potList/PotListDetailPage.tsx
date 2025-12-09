@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import {useEffect} from "react";
 import {useParams} from "react-router-dom";
 import {usePotDetailStore} from "@/entities/potList/model/potDetailStore.ts";
 import PotDetailImageCarousel from "@/features/potList/ui/PotDetailImageCarousel.tsx";
@@ -11,7 +11,7 @@ export default function PotDetailPage() {
 
     useEffect(() => {
         if (id) getDetail(Number(id));
-    }, []);
+    }, [getDetail, id]);
 
     return (
         <>

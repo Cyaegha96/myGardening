@@ -14,13 +14,14 @@ public class ChatRoomService {
     private final ChatRoomMapper chatRoomMapper;
 
     // 채팅방 생성
-    public void insertChatRoom(ChatRoomDTO chatRoomInfo) {
+    public int insertChatRoom(ChatRoomDTO chatRoomInfo) {
         chatRoomMapper.insertChatRoom(chatRoomInfo);
+        return chatRoomInfo.getId();
     }
 
     // 채팅방 상태 변경
-    public void updateChatRoomStatus(ChatRoomStatus status) {
-        chatRoomMapper.updateChatRoomStatus(status);
+    public void updateChatRoomStatus(ChatRoomStatus status, int chatRoomId) {
+        chatRoomMapper.updateChatRoomStatus(status, chatRoomId);
     }
 
     // 사용자 Uid에 따른 채팅방 목록 조회
