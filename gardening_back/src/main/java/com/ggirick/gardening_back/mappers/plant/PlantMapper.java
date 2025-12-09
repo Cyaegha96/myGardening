@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface PlantMapper {
@@ -21,4 +22,8 @@ public interface PlantMapper {
     void updatePlantSampleImage(@Param("scientificName")String scientificName, @Param("sampleImageUrl")String sampleImageUrl);
     List<PlantInfoDTO> getAllPlantInfoScientificName();
     List<String> randomSearchRequestFile();
+
+    List<PlantInfoDTO> findPlants(int offset, int limit, String sortField, String sortOrder, Map<String, Object> filters);
+
+    int countPlants(Map<String, Object> filters);
 }

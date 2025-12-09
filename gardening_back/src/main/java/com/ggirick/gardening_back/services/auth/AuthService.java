@@ -419,6 +419,8 @@ public class AuthService {
                 .roleId(1)
                 .build());
 
+
+
     }
     /**
      * 비밀번호 재발급 요청

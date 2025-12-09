@@ -1,5 +1,8 @@
 package com.ggirick.gardening_back.controllers.plant;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.plant.PlantInfoDTO;
 import com.ggirick.gardening_back.services.file.FileService;
@@ -8,13 +11,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +76,7 @@ public class PlantInfoController {
 
     @Operation(summary = "사진을 기반으로 식물을 추출합니다. 파일 업로드를 사용합니다.",
             description = "결과에 따라 다른 ResponseEntity를 반환한다. 식물이 인식된다면 식물 학명을 포함한 식물 정보를 PlantInfo 형태가 반환된다. ")
-    @PostMapping("/identifyByMultipartFiles") //
+    @PostMapping(value = "/identifyByMultipartFiles", consumes = "multipart/form-data")
     public ResponseEntity<?> identifyPlantByPlantNetByFile(
             @AuthenticationPrincipal UserTokenDTO userTokenDTO,
 
@@ -108,9 +114,66 @@ public class PlantInfoController {
         return plantService.getAllPlantInfo();
     }
 
+
+//    @GetMapping("/info/all")
+//    public ResponseEntity<PlantService.PlantQueryResult> getPlants(
+//            @RequestParam(value = "sort", required = false) String sort,
+//            @RequestParam(value = "range", required = false) String range,
+//            @RequestParam(value = "filter", required = false) String filter,
+//            HttpServletResponse response
+//    ) throws JsonProcessingException {
+//
+//        ObjectMapper mapper = new ObjectMapper();
+//
+
+//        int offset = 0;
+//        int limit = 12;
+//
+//
+//        if (range != null) {
+//            int[] r = mapper.readValue(range, int[].class);
+//            offset = r[0];
+//            limit = r[1] - r[0] + 1;
+//        }
+//
+
+//        String sortField = null;
+//        String sortOrder = "ASC";
+//        if (sort != null) {
+//            Map<String, String> s = mapper.readValue(sort, new TypeReference<>() {});
+//            sortField = s.get("field");
+//            sortOrder = s.getOrDefault("order", "ASC");
+//        }
+//
+//
+//        Map<String, Object> filters = new HashMap<>();
+//        if (filter != null) {
+//            filters = mapper.readValue(filter, new TypeReference<>() {});
+//        }
+//
+//
+//        PlantService.PlantQueryResult result = plantService.getPlants(offset, limit, sortField, sortOrder, filters);
+//
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.add("Content-Range", String.format("plants %d-%d/%d",
+//                offset, offset + limit - 1, result.total()));
+//        response.setHeader("Access-Control-Expose-Headers", "Content-Range");
+//
+//        return ResponseEntity.ok()
+//                .headers(headers)
+//                .body(result);
+//    }
+
+
     @GetMapping("/info/scientific-name")
     public  List<PlantInfoDTO> getAllPlantInfoScientificName() {
         return plantService.getAllPlantInfoScientificName();
+    }
+
+    @GetMapping("/info/{scientificName}")
+    public PlantInfoDTO getPlantInfoByScientificName(@PathVariable String scientificName) {
+        return plantService.getOne(scientificName);
     }
 
 //            @GetMapping("/tags")

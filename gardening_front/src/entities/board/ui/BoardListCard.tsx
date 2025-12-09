@@ -78,7 +78,7 @@ const BoardListCard = ({
             <div className="px-4 py-3 flex flex-col justify-between h-[45%]">
 
                 {/* 제목 */}
-                <h3 className="font-semibold text-base line-clamp-1 leading-snug">
+                <h3 className="font-semibold text-base line-clamp-1 leading-snug truncate">
                     {title}
                 </h3>
 

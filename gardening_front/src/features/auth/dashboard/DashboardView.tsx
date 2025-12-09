@@ -3,6 +3,7 @@ import {Button} from '@/shared/shadcn/components/ui/button';
 import {LogOut} from 'lucide-react';
 import TokenTimer from './TokenTimer';
 
+
 interface Props {
     accessToken?: string | null;
     refreshToken?: string | null;

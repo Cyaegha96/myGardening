@@ -75,4 +75,9 @@ public class PlantTagService {
     public List<String> getChildTagNames(int parentTagId) {
         return plantTagMapper.getChildTagNames(parentTagId);
     }
+
+    // 부모 기준 자식 태그 dto 전체 가져오기
+    public List<PlantTagDTO> getChildTagByParent(int parentTagId) {
+        return plantTagMapper.getChildTagByParent(parentTagId);
+    }
 }

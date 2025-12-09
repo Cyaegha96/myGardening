@@ -99,7 +99,7 @@ export function ComposerInput({
 
         // 이미지 최대 3개
         if (attachments.length + incoming.length > 3) {
-            alert("이미지는 최대 3장까지 업로드할 수 있습니다.")
+            alert("이미지는 최대 3장까지 10MB 이하로 업로드할 수 있습니다.")
             return
         }
 

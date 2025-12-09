@@ -24,7 +24,6 @@ import java.util.List;
 public class BoardFileController {
 
     private final BoardFileService boardFileService;
-    private final BoardService boardService;
 
     // 게시글 파일 목록 조회
     @Operation(
