@@ -2,7 +2,7 @@ package com.ggirick.gardening_back.services.chatbot;
 
 import com.google.genai.Client;
 import com.google.genai.types.Content;
-import com.google.genai.types.GenerateContentConfig; // *새로 추가: Config 클래스*
+import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +17,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class GeminiService {
-    // ... (이전 코드 생략: MODEL_NAME, chatbotApiKey, chatbotClient, initChatbotClient)
 
     private static final String MODEL_NAME = "gemini-2.5-flash";
+//    private static final String MODEL_NAME = "gemma-3-12b";
 
     @Value("${EUNGYEONG_GEMINI_KEY}")
     private String chatbotApiKey;
@@ -96,5 +96,42 @@ public class GeminiService {
             e.printStackTrace();
             return "오류 발생: " + e.getMessage();
         }
+    }
+
+    // 이미지 분석 먼저 → 식물 관련 판단 → 시스템 정책 적용
+    public String getSmartChatResponse(MultipartFile imageFile,
+                                       String userInput,
+                                       String history) {
+
+        List<Part> parts = new ArrayList<>();
+
+        // 1) 텍스트 + 대화 히스토리
+        parts.add(Part.fromText(history + "\n\n사용자: " + userInput));
+
+        // 2) 이미지가 있다면 분석
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                parts.add(Part.fromBytes(imageFile.getBytes(), imageFile.getContentType()));
+            } catch (Exception ignored) {
+            }
+        }
+
+        Content content = Content.builder()
+                .role("user")
+                .parts(parts)
+                .build();
+
+        GenerateContentConfig config = GenerateContentConfig.builder()
+                .temperature(0.4f)
+                .build();
+
+        GenerateContentResponse response =
+                chatbotClient.models.generateContent(
+                        MODEL_NAME,
+                        content,
+                        config
+                );
+
+        return response.text();
     }
 }

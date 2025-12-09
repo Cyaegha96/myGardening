@@ -4,134 +4,221 @@ import com.ggirick.gardening_back.dto.chatbot.ChatbotMessageDTO;
 import com.ggirick.gardening_back.dto.chatbot.ChatbotRequestDTO;
 import com.ggirick.gardening_back.dto.chatbot.ChatbotResponseDTO;
 import com.ggirick.gardening_back.dto.chatbot.ChatbotSessionDTO;
-import com.ggirick.gardening_back.utils.FileUtil;
+import com.ggirick.gardening_back.dto.plant.PlantInfoDTO;
+import com.ggirick.gardening_back.services.plant.PlantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class ChatbotService {
+
+    // 정책: 식물 관련 질문 외에는 안내 멘트 반환
+    private static final String POLICY_REJECT =
+            "식물 관련 질문만 상담 가능합니다.\n" +
+                    "식물 이름, 물주기, 잎/꽃 사진 등으로 질문해주세요.";
+
     private final ChatbotSessionService sessionService;
     private final ChatbotMessageService messageService;
-    private final FileUtil fileUtil;
+    private final GeminiService geminiService;
+    private final PlantService plantService;
 
-    // 상담 시작 (세션 생성 + 첫 챗봇 응답)
+    // 기존 세션 유지, 없으면 생성
     @Transactional
     public ChatbotResponseDTO startSession(String loginUid) {
 
-        // 1. 해당 사용자의 세션 조회
         ChatbotSessionDTO session = sessionService.findActiveSessionByUserUid(loginUid);
 
-        // 2. 만들어진 세션이 있고, active 상태라면
-        if (session != null && session.getStatus().equals("active")) {
-            return null;
+        if (session != null && "active".equals(session.getStatus())) {
+            return new ChatbotResponseDTO(session.getId(), "어떤 식물 이야기로 도와드릴까요?");
         }
 
-        // 3. 세션 생성
         session = sessionService.createSession(loginUid);
 
-        // 4. 첫 챗봇 안내 메시지
-        String welcomeMessage = "안녕하세요! 무엇을 도와드릴까요?";
-
-        // 5. DB에 저장
-        ChatbotMessageDTO botDTO = ChatbotMessageDTO.builder()
+        ChatbotMessageDTO bot = ChatbotMessageDTO.builder()
                 .sessionId(session.getId())
                 .sender("bot")
-                .content(welcomeMessage)
+                .content("어떤 식물에 대해 상담해드릴까요?")
                 .build();
+        messageService.saveBotMessage(bot);
 
-        messageService.saveBotMessage(botDTO);
-
-        return ChatbotResponseDTO.builder()
-                .sessionId(session.getId())
-                .content(botDTO.getContent())
-                .build();
+        return new ChatbotResponseDTO(session.getId(), bot.getContent());
     }
 
-    // 메시지 처리 (텍스트 또는 이미지)
+    // 메시지 처리 (정책 필터 + DB 우선 + 최소 Gemini 호출)
     @Transactional
-    public ChatbotResponseDTO sendMessage(int sessionId, String loginUid,
-                                          ChatbotRequestDTO dto, MultipartFile file) throws Exception {
-        // 1. sessionId로 세션 조회
+    public ChatbotResponseDTO sendMessage(
+            int sessionId,
+            String loginUid,
+            ChatbotRequestDTO dto,
+            MultipartFile file
+    ) throws Exception {
+
         ChatbotSessionDTO session = sessionService.findById(sessionId);
+        if (session == null || !loginUid.equals(session.getUserUid())) return null;
 
-        // 2. session 이 없거나, loginUid의 세션이 아니라면
-        ChatbotResponseDTO responseDTO = new ChatbotResponseDTO();
-        if (session == null || !loginUid.equals(session.getUserUid())) {
-            return null;
-        }
-
-        // 3. 세션 만료 체크
         if (sessionService.isSessionExpired(sessionId)) {
-            // 3-1. 기존 세션 만료 처리
             sessionService.expiredSession(sessionId);
-            // 3-2. 해당 세션 메세지 DB 삭제
             messageService.deleteBySessionId(sessionId);
-
-            // 3-3. 새 세션 생성
-            session = sessionService.createSession(loginUid);
-            sessionId = session.getId();
+            return startSession(loginUid);
         }
 
-        // 4. 사용자 메시지 저장
-        ChatbotMessageDTO saveMsg = ChatbotMessageDTO.builder()
+        ChatbotMessageDTO userMsg = ChatbotMessageDTO.builder()
                 .sessionId(sessionId)
                 .sender("user")
                 .content(dto.getContent())
                 .build();
-        messageService.saveUserMessage(saveMsg, file);
+        messageService.saveUserMessage(userMsg, file);
 
-        // 5. 봇 응답 받아오기
+        // 1) 이미지 기반 식물 식별 (PlantNet 우선)
+        if (file != null && !file.isEmpty()) {
 
-        // 6. 봇 응답 저장
+            Optional<?> plantResultOpt =
+                    plantService.getPlantDetailFromImage(file, "leaf", loginUid);
 
-        // 7. 응답 리턴
-        return null;
+            if (plantResultOpt.isPresent()) {
+                Object result = plantResultOpt.get();
+                if (result instanceof PlantInfoDTO plantInfo) {
+                    String reply = formatPlantInfo(plantInfo);
+                    saveBotResponse(sessionId, reply);
+                    return new ChatbotResponseDTO(sessionId, reply);
+                }
+
+                String reply = result.toString();
+                saveBotResponse(sessionId, reply);
+                return new ChatbotResponseDTO(sessionId, reply);
+            }
+
+            String fallback = "식물 식별에 실패했어요.\n좀 더 선명한 잎/꽃 사진을 보내주세요.";
+            saveBotResponse(sessionId, fallback);
+            return new ChatbotResponseDTO(sessionId, fallback);
+        }
+
+        // 2) 텍스트 기반 식물 부분 검색 (예) "파리지옥 알아?"
+        List<PlantInfoDTO> foundPlants =
+                plantService.searchPlantsByKeyword(dto.getContent());
+
+        if (!foundPlants.isEmpty()) {
+
+            // 정확하게 1개 발견 → 바로 응답
+            if (foundPlants.size() == 1) {
+                PlantInfoDTO plantInfo = foundPlants.get(0);
+                String reply = formatPlantInfo(plantInfo);
+                saveBotResponse(sessionId, reply);
+                return new ChatbotResponseDTO(sessionId, reply);
+            }
+
+            // 여러 개 발견 → 선택 요청
+            String reply = "여러 식물이 검색되었습니다.\n선택해서 다시 질문해주세요.\n\n" +
+                    foundPlants.stream()
+                            .map(p -> "- " + p.getCommonName())
+                            .limit(5)
+                            .collect(Collectors.joining("\n"));
+
+            saveBotResponse(sessionId, reply);
+            return new ChatbotResponseDTO(sessionId, reply);
+        }
+
+
+        // 3) DB에도 없고 이미지도 없음 → 정책 필터
+        if (!isPlantRelated(dto.getContent())) {
+            saveBotResponse(sessionId, POLICY_REJECT);
+            return new ChatbotResponseDTO(sessionId, POLICY_REJECT);
+        }
+
+        // 4) 최후: Gemini 호출 (식물 질문 but DB 없음)
+        String botAnswer;
+        try {
+            botAnswer = geminiService.getSmartChatResponse(null, dto.getContent(), "");
+        } catch (Exception e) {
+            botAnswer = "지금 상담이 많이 밀려있습니다.\n잠시 후 다시 시도해주세요.";
+        }
+
+        botAnswer = trimToThreeLines(botAnswer);
+        saveBotResponse(sessionId, botAnswer);
+        return new ChatbotResponseDTO(sessionId, botAnswer);
     }
 
+    // 응답 줄 수 제한
+    private String trimToThreeLines(String txt) {
+        List<String> lines = List.of(txt.split("\n"));
+        if (lines.size() <= 3) return txt;
+        return String.join("\n", lines.subList(0, 3));
+    }
 
-    // 챗봇 응답 저장 공통 로직
-    private void saveBotResponse(int sessionId, String botContent) {
-        ChatbotMessageDTO botMessage = ChatbotMessageDTO.builder()
+    private void saveBotResponse(int sessionId, String content) {
+        messageService.saveBotMessage(ChatbotMessageDTO.builder()
                 .sessionId(sessionId)
                 .sender("bot")
-                .content(botContent)
-                .build();
-
-        messageService.saveBotMessage(botMessage);
+                .content(content)
+                .build());
     }
 
+    // 식물 관련 여부 판단
+    private boolean isPlantRelated(String msg) {
 
-    // 세션 종료 (사용자 요청)
+        if (msg == null || msg.isBlank()) return false;
+
+        String t = msg.toLowerCase().trim();
+
+        // 불필요한 문장 표현 제거 (NLP 간단 처리)
+        t = t.replaceAll("[?!.]", "")      // 문장부호 제거
+                .replaceAll("알아|뭐야|맞아|키워도 돼|이름이 뭐야|어떻게", "")
+                .trim();
+
+        // 1) 명확한 식물 관련 키워드 우선 판별
+        if (t.matches(".*(식물|잎|꽃|단풍|묘목|분갈이|뿌리|화분|씨|발아).*")) {
+            return true;
+        }
+
+        // 2) 식물명 패턴 (예: 다육이, 선인장)
+        if (t.matches(".*(다육|선인장|파리지옥|개나리|장미|선인장).*")) {
+            return true;
+        }
+
+        // 3) DB 기반 부분 검색 (키워드 정리 완료된 후)
+        List<PlantInfoDTO> found = plantService.searchPlantsByKeyword(t);
+        return !found.isEmpty();
+    }
+
+    // 식물 정보 응답 2~3줄 요약
+    private String formatPlantInfo(PlantInfoDTO p) {
+        return String.format(
+                "학명: %s\n일반명: %s\n물주기: %s",
+                p.getScientificName(),
+                p.getCommonName(),
+                p.getWatering()
+        );
+    }
+
+    // 기존 기능 복구: 세션 종료
     @Transactional
     public boolean endSession(int sessionId, String loginUid) {
-
         ChatbotSessionDTO session = sessionService.findById(sessionId);
-        if (session == null) return false;
-
-        if (!loginUid.equals(session.getUserUid())) {
-            return false;
-        }
-        // 2. 세션 종료
+        if (session == null || !loginUid.equals(session.getUserUid())) return false;
         sessionService.endSession(sessionId, loginUid);
-        // 3. 종료된 세션 메세지 삭제
         messageService.deleteBySessionId(sessionId);
-
         return true;
     }
 
-//
-//
-//    // 세션 메시지 조회
-//    public List<ChatbotMessageDTO> getMessages(int sessionId, String loginUid) {
-//
-//        ChatbotSessionDTO session = sessionService.findById(sessionId);
-//        if (session == null || !loginUid.equals(session.getUserUid())) {
-//            return null;
-//        }
-//
-//        return messageService.getMessagesBySessionId(sessionId);
-//    }
+    // 기존 기능 유지: 메시지 Paging 조회
+    @Transactional(readOnly = true)
+    public List<ChatbotMessageDTO> getMessagesForUI(
+            int sessionId,
+            String loginUid,
+            int offset,
+            int limit
+    ) {
+        ChatbotSessionDTO session = sessionService.findById(sessionId);
+        if (session == null || !loginUid.equals(session.getUserUid())) {
+            throw new RuntimeException("권한이 없습니다.");
+        }
+        return messageService.getMessagesForUI(sessionId, offset, limit);
+    }
 }
