@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ggirick.gardening_back.mappers.chatbot.ChatbotSessionMapper">
+
+    <!-- 사용자 UID 기준 ACTIVE 세션 조회 -->
+    <select id="findActiveSessionByUserUid" resultMap="com.ggirick.gardening_back.dto.chatbot.ChatbotSessionDTO">
+        SELECT *
+        FROM CHATBOT_SESSION
+        WHERE USER_UID = #{loginUid}
+          AND STATUS = 'active'
+    </select>
+
+    <!-- 세션 ID 조회 -->
+    <select id="findById" resultMap="com.ggirick.gardening_back.dto.chatbot.ChatbotSessionDTO">
+        SELECT *
+        FROM CHATBOT_SESSION
+        WHERE ID = #{id}
+    </select>
+
+    <!-- 세션 생성 -->
+    <insert id="insert">
+        INSERT INTO CHATBOT_SESSION (
+            ID, USER_UID
+        ) VALUES (
+                     CHATBOT_SESSION_SEQ.NEXTVAL,
+                     #{loginUid}
+                 )
+        <selectKey resultType="int" keyProperty="id" order="AFTER">
+            select CHATBOT_SESSION_SEQ.currval from dual
+        </selectKey>
+    </insert>
+
+    <!-- 세션 종료 처리 -->
+    <update id="updateStatusEnded">
+        UPDATE CHATBOT_SESSION
+        SET STATUS = 'ended',
+            ENDED_AT = current_timestamp
+        WHERE ID = #{id}
+    </update>
+
+    <!-- 세션 만료 처리 -->
+    <update id="updateStatusExpired">
+        UPDATE CHATBOT_SESSION
+        SET STATUS = 'expired',
+            ENDED_AT = current_timestamp
+        WHERE ID = #{id}
+    </update>
+
+</mapper>

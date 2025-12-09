@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ggirick.gardening_back.mappers.chatbot.ChatbotMessageMapper">
+    <!-- 메시지 저장 -->
+    <insert id="insertMessage">
+        INSERT INTO chatbot_message (
+            id,
+            session_id,
+            sender,
+            content,
+            created_at
+        )
+        VALUES (
+                   chatbot_message_seq.NEXTVAL,
+                   #{sessionId},
+                   #{sender},
+                   #{content},
+                   CURRENT_TIMESTAMP
+               )
+    </insert>
+
+    <!-- 마지막 메시지 조회 -->
+    <select id="getLastMessageBySessionId"
+            resultType="com.ggirick.gardening_back.dto.chatbot.ChatbotMessageDTO">
+        SELECT *
+        FROM (
+                 SELECT *
+                 FROM chatbot_message
+                 WHERE session_id = #{sessionId}
+                 ORDER BY created_at DESC
+             )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 세션 ID 기반 메시지 삭제 -->
+    <delete id="deleteBySessionId">
+        DELETE FROM chatbot_message
+        WHERE session_id = #{sessionId}
+    </delete>
+</mapper>
