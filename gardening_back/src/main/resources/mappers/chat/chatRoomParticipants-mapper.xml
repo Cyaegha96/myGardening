@@ -2,11 +2,11 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ggirick.gardening_back.mappers.potList.PotListBookmarkMapper">
+<mapper namespace="com.ggirick.gardening_back.mappers.chat.ChatRoomParticipantsMapper">
     <!-- 채팅방 참여자 삽입 -->
     <insert id="insertParticipant">
         INSERT
-        INTO chat_room_participants(id, chat_room_id, user_uid)
-        VALUES(chat_room_participants_seq.nextval, #{chatRoomId}, #{userUid})
+        INTO chatroom_participants(id, chat_room_id, user_uid)
+        VALUES(chatroom_participants_seq.nextval, #{chatRoomId}, #{userUid})
     </insert>
 </mapper>

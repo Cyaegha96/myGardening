@@ -1,7 +1,7 @@
 import {Route, Routes} from "react-router-dom";
 import {lazy} from "react";
 import PotBookmarkDrawer from "@/features/potList/ui/PotBookmarkDrawer.tsx";
-import ChatDrawer from "@/features/potList/ui/ChatDrawer.tsx";
+import ChatDrawer from "@/features/potList/ui/chat/ChatDrawer.tsx";
 
 const PotListPage = lazy(() => import("@/pages/potList/PotListPage.tsx"));
 const PotWritePage = lazy(() => import("@/pages/potList/PotListWritePage.tsx"));

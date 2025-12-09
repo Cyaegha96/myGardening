@@ -22,4 +22,6 @@ public class ChatRoomDTO {
     Timestamp createdAt;
     @Schema(description = "마지막 채팅")
     String lastChat;
+    @Schema(description = "마지막 채팅 일자")
+    Timestamp lastMessageTime;
 }

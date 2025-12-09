@@ -24,6 +24,7 @@ import {usePotListWriteStore} from "@/entities/potList/model/potListWriteStore.t
 import type {PotListResponseDTO} from "@/shared/api";
 import {useNavigate} from "react-router-dom";
 import {Button} from "@/shared/shadcn/components/ui/button.tsx";
+import {useChatStore} from "@/entities/potList/model/chatStore.ts";
 
 export default function PotDetailInfo() {
     const potDetail = usePotDetailStore(state => state.potDetail);
@@ -43,6 +44,11 @@ export default function PotDetailInfo() {
     const setAfterTrade = usePotDetailStore(state => state.setAfterTrade);
     const setBeforeTrade = usePotDetailStore(state => state.setBeforeTrade);
     const setPendingTrade = usePotDetailStore(state => state.setPendingTrade);
+
+    const addChatRoom = useChatStore(state => state.addRoom);
+    const setChatSheetOpen = useChatStore(state => state.setSheetOpen);
+    const setSelectedRoom = useChatStore(state => state.setSelectedRoom);
+    const chatRooms = useChatStore(state => state.chatRooms);
 
     const setCursorId = usePotListStore(state => state.setCursorId);
 
@@ -422,14 +428,28 @@ export default function PotDetailInfo() {
                     </div>
                     <div className="col-span-9">
                         <Button
-                            onClick={() => {
-                                // 채팅 시작 로직
-                                alert("채팅 시작 클릭!");
+                            onClick={ () => {
+                                if (!chatRooms) return;
+
+                                const existingRoom = chatRooms.find(
+                                    (room) => room.potListingId === potDetail.id
+                                );
+
+                                if (existingRoom) {
+                                    setSelectedRoom(existingRoom);
+                                    setChatSheetOpen(true);
+                                } else {
+                                    // 새 채팅방 생성
+                                    addChatRoom(potDetail);
+                                }
                             }}
                             className="w-full p-0 bg-secondary hover:bg-accent/50 text-secondary-foreground font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
                             disabled={potDetail.status === "AFTER_TRADE"}
                         >
-                            채팅 시작
+                            {chatRooms?.some(room => room.potListingId === potDetail.id)
+                                ? "채팅 보기"
+                                : "채팅 시작"
+                            }
                         </Button>
                     </div>
                 </div>

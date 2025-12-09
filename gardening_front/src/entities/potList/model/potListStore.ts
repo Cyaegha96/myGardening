@@ -83,7 +83,6 @@ export const usePotListStore = create<PotListStore>((set, get) => ({
             );
 
             const newItems = resp.data;
-            console.log(newItems);
 
             // 데이터 없음 → 더 불러올 게 없음
             if (newItems.length === 0) {

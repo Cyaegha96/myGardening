@@ -95,6 +95,8 @@ export const usePotListWriteStore = create<PotListWriteState>((set, get) => ({
             isFree: (data.potListDetailDTO?.price ?? 0) === 0,
             location: data.potListDetailDTO?.location ?? "",
             existingImages: data.potListImageDTOList ?? [],
+            toDeleteImageIds: [],
+            newFiles: [],
             thumbnailIndex: data.potListImageDTOList && data.potListDetailDTO?.thumbnail
                 ? data.potListImageDTOList.findIndex(img => img.url === data.potListDetailDTO?.thumbnail)
                 : 0,
@@ -140,6 +142,7 @@ export const usePotListWriteStore = create<PotListWriteState>((set, get) => ({
                 else alert("작성 실패");
             } else if (id) {
                 const payload: PotListPatchDTO = { title, description: descriptionString, type, price: isFree ? 0 : price, location, thumbnailIndex, tags, toDeleteImageIds };
+                console.log(tags);
                 const res = await potListApi.updatePot(id, payload, newFiles);
                 if (res.status === 200) onSubmitSuccess?.();
                 else alert("수정 실패");

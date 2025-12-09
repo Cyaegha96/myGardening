@@ -31,17 +31,17 @@ public class RabbitmqConfig {
     /** Exchanges */
     @Bean
     DirectExchange appExchange() {
-        return new DirectExchange("app.exchange");
+        return new DirectExchange("exchange");
     }
 
     @Bean
     DirectExchange dlxExchange() {
-        return new DirectExchange("app.dlx");
+        return new DirectExchange("dlx");
     }
 
     @Bean
     DirectExchange parkingExchange() {
-        return new DirectExchange("app.parking.exchange");
+        return new DirectExchange("parking.exchange");
     }
 
     /** ---------- CHAT queues ---------- */
@@ -49,7 +49,7 @@ public class RabbitmqConfig {
     @Bean
     Queue chatQueue() {
         Queue q = new Queue("chat.queue", true);
-        q.addArgument("x-dead-letter-exchange", "app.dlx");
+        q.addArgument("x-dead-letter-exchange", "dlx");
         q.addArgument("x-dead-letter-routing-key", "chat.delay.key");
         return q;
     }
@@ -59,15 +59,9 @@ public class RabbitmqConfig {
     Queue chatDelayQueue() {
         Queue q = new Queue("chat.delay.queue", true);
         q.addArgument("x-message-ttl", 1000); // 1s
-        q.addArgument("x-dead-letter-exchange", "app.exchange");
+        q.addArgument("x-dead-letter-exchange", "exchange");
         q.addArgument("x-dead-letter-routing-key", "chat.main.key");
         return q;
-    }
-
-    // Parking queue: 재시도 초과 시 보관(또는 소비자가 DB 저장 후 이 큐에 보낼 수 있음)
-    @Bean
-    Queue chatParkingQueue() {
-        return new Queue("chat.parking.queue", true);
     }
 
     /** Bindings for chat */
@@ -81,16 +75,11 @@ public class RabbitmqConfig {
         return BindingBuilder.bind(chatDelayQueue()).to(dlxExchange()).with("chat.delay.key");
     }
 
-    @Bean
-    Binding bindChatParking() {
-        return BindingBuilder.bind(chatParkingQueue()).to(parkingExchange()).with("chat.parking.key");
-    }
-
     /** ---------- NOTIFICATION queues (same pattern) ---------- */
     @Bean
     Queue notificationQueue() {
         Queue q = new Queue("notification.queue", true);
-        q.addArgument("x-dead-letter-exchange", "app.dlx");
+        q.addArgument("x-dead-letter-exchange", "dlx");
         q.addArgument("x-dead-letter-routing-key", "notification.delay.key");
         return q;
     }
@@ -99,14 +88,9 @@ public class RabbitmqConfig {
     Queue notificationDelayQueue() {
         Queue q = new Queue("notification.delay.queue", true);
         q.addArgument("x-message-ttl", 1000); // 1s
-        q.addArgument("x-dead-letter-exchange", "app.exchange");
+        q.addArgument("x-dead-letter-exchange", "exchange");
         q.addArgument("x-dead-letter-routing-key", "notification.main.key");
         return q;
-    }
-
-    @Bean
-    Queue notificationParkingQueue() {
-        return new Queue("notification.parking.queue", true);
     }
 
     @Bean
@@ -117,11 +101,6 @@ public class RabbitmqConfig {
     @Bean
     Binding bindNotificationDelay() {
         return BindingBuilder.bind(notificationDelayQueue()).to(dlxExchange()).with("notification.delay.key");
-    }
-
-    @Bean
-    Binding bindNotificationParking() {
-        return BindingBuilder.bind(notificationParkingQueue()).to(parkingExchange()).with("notification.parking.key");
     }
 
     /** Connection / Template / Converter */

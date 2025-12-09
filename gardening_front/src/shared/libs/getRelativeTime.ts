@@ -6,15 +6,23 @@ export function getRelativeTime(dateStr: string) {
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
 
-    if(diffMins <= 0) {
+    if (diffMins <= 0) {
         return `방금 전`;
     }
-    if(diffHours <= 0) {
+    if (diffHours <= 0) {
         return `${diffMins}분 전`;
     }
     if (diffHours < 24) {
         return `${diffHours}시간 전`;
     }
-    return `${diffDays}일 전`;
+    if (diffDays < 30) {
+        return `${diffDays}일 전`;
+    }
+    if (diffMonths < 12) {
+        return `${diffMonths}달 전`;
+    }
+    return `${diffYears}년 전`;
 }

@@ -2,26 +2,42 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ggirick.gardening_back.mappers.potList.PotListBookmarkMapper">
+<mapper namespace="com.ggirick.gardening_back.mappers.chat.ChatRoomMapper">
     <!-- 채팅방 생성 -->
     <insert id="insertChatRoom">
         INSERT
-        INTO chat_room(id, pot_listing_id)
-        VALUES(chat_room_seq.nextval, #{potListingId})
+        INTO chatroom(id, pot_listing_id)
+        VALUES(chatroom_seq.nextval, #{potListingId})
+        <selectKey keyProperty="id" resultType="int" order="AFTER">
+            SELECT chatroom_seq.currval FROM dual
+        </selectKey>
     </insert>
 
     <!-- 채팅방 상태 변경 -->
     <update id="updateChatRoomStatus">
-        UPDATE chat_room
+        UPDATE chatroom
         SET status = #{status}
+        WHERE id = #{id}
     </update>
 
     <!-- 사용자 Uid에 따른 채팅방 목록 조회 -->
     <select id="getChatRoomListByUserUid" resultType="com.ggirick.gardening_back.dto.chat.ChatRoomDTO">
-        SELECT *
-        FROM chat_room cr
-        JOIN chat_room_participants crp ON cr.id = crp.chat_room_id
-        WHERE crp.user_uid = #{userUid}
-        ORDER BY cr.created_at DESC
+        SELECT
+        cr.*,
+        cm.CONTENT AS last_chat,
+        cm.SENT_AT AS last_message_time
+        FROM chatroom cr
+        JOIN chatroom_participants crp ON cr.ID = crp.CHAT_ROOM_ID
+        LEFT JOIN (
+        SELECT CHAT_ROOM_ID, CONTENT, SENT_AT
+        FROM (
+        SELECT cm.*,
+        ROW_NUMBER() OVER (PARTITION BY CHAT_ROOM_ID ORDER BY SENT_AT DESC) AS rn
+        FROM chat_message cm
+        )
+        WHERE rn = 1
+        ) cm ON cr.ID = cm.CHAT_ROOM_ID
+        WHERE crp.USER_UID = #{userUid}
+        ORDER BY cr.CREATED_AT DESC
     </select>
 </mapper>
