@@ -41,11 +41,16 @@ export default function TerrariumCanvas() {
 
     // 테라리움 리스트 로드
     const loadTerrariums = async () => {
-        const res = await terrariumApi.getAllTerrariums();
-        const mapped = res.data.map((t: any) => ({ id: t.id, title: t.title }));
+        const res = await terrariumApi.getAllTerrariums(
+            selectedTerrariumId ?? undefined
+        );
+
+        const mapped = res.data.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+        }));
         setTerrariums(mapped);
     };
-
     useEffect(() => {
         loadTerrariums();
     }, []);
@@ -80,6 +85,7 @@ export default function TerrariumCanvas() {
                             width: size.width,
                             height: size.height,
                         });
+                        alert("저장완료!");
                         const terrariumId = terrarium.data.id as number;
                         await saveCanvas(terrariumId);
                         loadTerrariums();
@@ -174,6 +180,25 @@ export default function TerrariumCanvas() {
                     </Layer>
                 </Stage>
             </div>
+            <Button
+                onClick={() => {
+                    if (stageRef.current) {
+                        // 1. 캔버스를 이미지 데이터 URL로 변환
+                        const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+                        // pixelRatio를 높이면 해상도가 더 선명해집니다.
+
+                        // 2. 다운로드 링크 생성
+                        const link = document.createElement("a");
+                        link.download = `${title || "terrarium"}.png`; // 파일명
+                        link.href = uri;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                }}
+            >
+                이미지 다운로드
+            </Button>
         </Card>
     );
 }

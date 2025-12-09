@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React from 'react';
 import {
     Card,
     CardHeader,
@@ -12,11 +12,12 @@ import {Input} from '@/shared/shadcn/components/ui/input';
 import {Button} from '@/shared/shadcn/components/ui/button';
 import {Loader2} from 'lucide-react';
 import type {FieldErrors} from '@/features/auth/completeProfile/types.ts';
+import {Link} from "react-router-dom";
+
 interface DaumPostcodeData {
     roadAddress: string;
     jibunAddress: string;
     zonecode: string;
-    // 필요에 따라 더 추가 가능
 }
 
 interface Props {
@@ -27,8 +28,24 @@ interface Props {
     setNickname: (v: string) => void,
     email: string,
     setEmail: (v: string) => void,
+
+    // 이메일 검증용
+    emailCheckMsg?: string;
+    emailAvailable?: boolean | null;
+    emailCode?: string;
+    setEmailCode?: (v: string) => void;
+    emailVerified?: boolean;
+    emailCodeMsg?: string;
+    requestEmailCode?: () => void;
+    verifyCode?: () => void;
+
     phone: string,
     setPhone: (v: string) => void,
+
+    // 전화번호 중복 검사 메시지
+    phoneCheckMsg?: string;
+    phoneAvailable?: boolean | null;
+
     address: string,
     setAddress: (v: string) => void,
     addressDetail: string,
@@ -37,6 +54,11 @@ interface Props {
     setZipcode: (v: string) => void,
     bio: string,
     setBio: (v: string) => void,
+
+    file?: File | null;
+    setFile?: (f: File | null) => void;
+    handleFileSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+
     profileUrl: string,
     setProfileUrl: (v: string) => void,
     birthDate: string,
@@ -45,39 +67,38 @@ interface Props {
     errors: FieldErrors,
     setErrors: React.Dispatch<React.SetStateAction<FieldErrors>>,
     handleSubmit: (e?: React.FormEvent) => Promise<void> | void,
-    pageTitle?: string | undefined,
-    pageDescription?: string | undefined,
-    phoneCheckMsg?: string;
-    file?:File;
-    setFile?: (v:File) => void,
-    handleFileSelect?: (v:string) => void,
-    phoneAvailable?:boolean|null;
-
+    pageTitle?: string,
+    pageDescription?: string,
 }
 
+
 export default function CompleteProfileView({
-                                                name,
-                                                setName,
-                                                nickname,
-                                                setNickname,
-                                                email,
-                                                setEmail,
-                                                phone,
-                                                setPhone,
-                                                address,
-                                                setAddress,
-                                                addressDetail,
-                                                setAddressDetail,
-                                                zipcode,
-                                                setZipcode,
-                                                bio,
-                                                setBio,
-                                                file, setFile,
+                                                name, setName,
+                                                nickname, setNickname,
+                                                email, setEmail,
+                                                emailCheckMsg,
+                                                emailAvailable,
+                                                emailCode,
+                                                setEmailCode,
+                                                emailVerified,
+                                                emailCodeMsg,
+                                                requestEmailCode,
+                                                verifyCode,
+
+                                                phone, setPhone,
+                                                phoneCheckMsg,
+                                                phoneAvailable,
+
+                                                address, setAddress,
+                                                addressDetail, setAddressDetail,
+                                                zipcode, setZipcode,
+                                                bio, setBio,
+
+                                                file,
                                                 profileUrl,
-                                                setProfileUrl,
                                                 handleFileSelect,
-                                                birthDate,
-                                                setBirthDate,
+
+                                                birthDate, setBirthDate,
                                                 loading,
                                                 errors,
                                                 setErrors,
@@ -87,43 +108,17 @@ export default function CompleteProfileView({
                                             }: Props) {
 
 
-    const validateField = (field: string, value: string) => {
-        switch (field) {
-            case 'name':
-                return !value.trim() ? '이름을 입력해주세요.' : '';
-            case 'nickname':
-                return !value.trim()
-                    ? '닉네임을 입력해주세요.'
-                    : value.length < 2 || value.length > 20
-                        ? '닉네임은 2~20자여야 합니다.'
-                        : '';
-            case 'email':
-                return value && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)
-                    ? '유효한 이메일 형식이 아닙니다.'
-                    : '';
-            case 'phone':
-                return value && /^\d{2,3}-\d{3,4}-\d{4}$/.test(value.replace(/-/g, ''))
-                    ? '유효한 전화번호를 입력해주세요.'
-                    : '';
-            case 'zipcode':
-                return value && !/^\d{5}$/.test(value) ? '우편번호는 5자리 숫자여야 합니다.' : '';
-            case 'birthDate':
-                return value && isNaN(Date.parse(value)) ? '유효한 생년월일을 입력해주세요.' : '';
-            default:
-                return '';
-        }
-    };
-
     return (
-        <div className="flex justify-center items-center min-h-screen p-4">
-            <Card className="w-full max-w-lg shadow-xl rounded-lg border">
+        <div className="w-full flex justify-center items-center min-h-screen p-4">
+            <Card className="w-full shadow-xl rounded-lg border">
                 <CardHeader>
                     <CardTitle>{pageTitle}</CardTitle>
                     <CardDescription>{pageDescription}</CardDescription>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="grid gap-4">
+
+                    <CardContent className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                         {/* 이름 */}
                         <div className="grid gap-2">
                             <Label htmlFor="name">이름</Label>
@@ -131,9 +126,7 @@ export default function CompleteProfileView({
                                 id="name"
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                onBlur={() =>
-                                    setErrors(prev => ({...prev, name: validateField('name', name)}))
-                                }
+                                onBlur={() => setErrors(p => ({...p, name: !name.trim() ? "이름을 입력해주세요." : ""}))}
                                 required
                             />
                             {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
@@ -146,9 +139,6 @@ export default function CompleteProfileView({
                                 id="nickname"
                                 value={nickname}
                                 onChange={e => setNickname(e.target.value)}
-                                onBlur={() =>
-                                    setErrors(prev => ({...prev, nickname: validateField('nickname', nickname)}))
-                                }
                             />
                             {errors.nickname && <p className="text-sm text-red-600">{errors.nickname}</p>}
                         </div>
@@ -160,11 +150,51 @@ export default function CompleteProfileView({
                                 id="email"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                onBlur={() =>
-                                    setErrors(prev => ({...prev, email: validateField('email', email)}))
-                                }
                             />
-                            {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
+
+                            {/* 이메일 메시지 */}
+                            {emailCheckMsg && (
+                                <p className={`text-sm ${
+                                    emailAvailable ? "text-green-600" : "text-red-600"
+                                }`}>
+                                    {emailCheckMsg}
+                                </p>
+                            )}
+
+                            {!emailVerified && emailAvailable && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={requestEmailCode}
+                                    >
+                                        인증번호 요청
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* 인증 코드 입력 */}
+                            {!emailVerified && emailAvailable && (
+                                <div className="flex gap-2 mt-2">
+                                    <Input
+                                        value={emailCode}
+                                        placeholder="인증번호 입력"
+                                        onChange={e => setEmailCode?.(e.target.value)}
+                                        className="flex-1"
+                                    />
+                                    <Button type="button" onClick={verifyCode}>확인</Button>
+                                </div>
+                            )}
+
+                            {emailCodeMsg && (
+                                <p className={`text-sm ${emailVerified ? "text-green-600" : "text-red-600"}`}>
+                                    {emailCodeMsg}
+                                </p>
+                            )}
+
+                            {emailVerified && (
+                                <p className="text-sm text-green-600">이메일 인증 완료</p>
+                            )}
                         </div>
 
                         {/* 전화번호 */}
@@ -174,32 +204,30 @@ export default function CompleteProfileView({
                                 id="phone"
                                 value={phone}
                                 onChange={e => setPhone(e.target.value)}
-                                onBlur={() =>
-                                    setErrors(prev => ({...prev, phone: validateField('phone', phone)}))
-                                }
                             />
-                            {errors.phone && <p className="text-sm text-red-600">{errors.phone}</p>}
+                            {phoneCheckMsg && (
+                                <p className={`text-sm ${
+                                    phoneAvailable ? "text-green-600" : "text-red-600"
+                                }`}>
+                                    {phoneCheckMsg}
+                                </p>
+                            )}
                         </div>
 
                         {/* 주소 */}
                         <div className="grid gap-2">
                             <Label htmlFor="address">주소</Label>
                             <div className="flex gap-2">
-                                <Input
-                                    id="address"
-                                    value={address}
-                                    readOnly
-                                    className="flex-1"
-                                />
+                                <Input id="address" value={address} readOnly className="flex-1"/>
                                 <Button
                                     type="button"
                                     variant="secondary"
                                     onClick={() => {
                                         new window.daum.Postcode({
-                                            oncomplete: function (data:DaumPostcodeData) {
+                                            oncomplete: (data: DaumPostcodeData) => {
                                                 setAddress(data.roadAddress || data.jibunAddress);
                                                 setZipcode(data.zonecode);
-                                            },
+                                            }
                                         }).open();
                                     }}
                                 >
@@ -215,19 +243,14 @@ export default function CompleteProfileView({
                                 id="addressDetail"
                                 value={addressDetail}
                                 onChange={e => setAddressDetail(e.target.value)}
-                                placeholder="상세 주소를 입력해주세요"
+                                placeholder="상세 주소 입력"
                             />
                         </div>
 
                         {/* 우편번호 */}
                         <div className="grid gap-2">
                             <Label htmlFor="zipcode">우편번호</Label>
-                            <Input
-                                id="zipcode"
-                                value={zipcode}
-                                readOnly
-                                className="w-32"
-                            />
+                            <Input id="zipcode" value={zipcode} readOnly className="w-32"/>
                         </div>
 
                         {/* 소개 */}
@@ -236,11 +259,10 @@ export default function CompleteProfileView({
                             <Input id="bio" value={bio} onChange={e => setBio(e.target.value)}/>
                         </div>
 
-                        {/* 프로필 이미지 URL */}
+                        {/* 프로필 이미지 업로드 */}
                         <div className="grid gap-2">
-                            <Label htmlFor="profileUrl">프로필 이미지</Label>
+                            <Label>프로필 이미지</Label>
 
-                            {/* 숨김 input */}
                             <input
                                 id="profileUrl"
                                 type="file"
@@ -249,40 +271,32 @@ export default function CompleteProfileView({
                                 onChange={handleFileSelect}
                             />
 
-                            {/* 버튼 + 이미지 나란히 */}
                             <div className="flex items-center gap-4">
-                                {/* 업로드 버튼 */}
                                 <Button
                                     variant="secondary"
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        document.getElementById("profileUrl")?.click()
+                                        document.getElementById("profileUrl")?.click();
                                     }}
                                 >
                                     이미지 업로드
                                 </Button>
 
-                                {/* 이미지 미리보기 */}
                                 {file ? (
                                     <img
                                         src={URL.createObjectURL(file)}
-                                        alt="preview"
                                         className="w-20 h-20 rounded object-cover"
                                     />
                                 ) : profileUrl ? (
                                     <img
                                         src={profileUrl}
-                                        alt="preview"
                                         className="w-20 h-20 rounded object-cover"
                                     />
                                 ) : (
-                                    <div className="text-sm text-gray-400">
-                                        선택된 이미지 없음
-                                    </div>
+                                    <div className="text-sm text-gray-400">선택된 이미지 없음</div>
                                 )}
                             </div>
                         </div>
-
 
                         {/* 생년월일 */}
                         <div className="grid gap-2">
@@ -292,23 +306,35 @@ export default function CompleteProfileView({
                                 type="date"
                                 value={birthDate}
                                 onChange={e => setBirthDate(e.target.value)}
-                                onBlur={() =>
-                                    setErrors(prev => ({...prev, birthDate: validateField('birthDate', birthDate)}))
-                                }
                             />
                             {errors.birthDate && <p className="text-sm text-red-600">{errors.birthDate}</p>}
                         </div>
+
                     </CardContent>
 
-                    <CardFooter className="pt-4">
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full "
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline"/> : '정보 저장'}
+                    <CardFooter className="gap-2 mt-5 ">
+                        <Link to="/auth/password/new"> <div className="grid grid-1 gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                            >비밀번호 변경
+                            </Button>
+                        </div></Link>
+                        <Button type="submit" disabled={loading} className="grid grid-1 ">
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline"/> : "정보 저장"}
                         </Button>
+
                     </CardFooter>
+                    {Object.values(errors).some(Boolean) && (
+                        <div className="bg-red-50 border border-red-300 text-red-700 p-3 mt-5 rounded-md text-sm">
+                            <p>입력되지 않은 항목이 있습니다. 아래 내용을 확인해주세요:</p>
+                            <ul className="list-disc list-inside mt-1">
+                                {Object.entries(errors).map(([key, value]) =>
+                                    value ? <li key={key}>{value}</li> : null
+                                )}
+                            </ul>
+                        </div>
+                    )}
                 </form>
             </Card>
         </div>

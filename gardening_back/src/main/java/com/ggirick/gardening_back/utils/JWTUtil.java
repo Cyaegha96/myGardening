@@ -36,12 +36,13 @@ public class JWTUtil {
      * @param userInfo 사용자 정보 (uid, provider)
      * @return Access Token
      */
-    public String createAccessToken(UserTokenDTO userInfo) {
+    public String createAccessToken(UserTokenDTO userInfo,String sessionId) {
         // 토큰의 Subject (제목)에 uid를 명시하는 것이 좋습니다.
         return JWT.create()
                 .withSubject(userInfo.getUid())
                 .withClaim("uid", userInfo.getUid()) // 사용자 고유 식별자
                 .withClaim("provider", userInfo.getProvider()) // 로그인 방식
+                .withClaim("sessionId", sessionId)
                 .withIssuedAt(new Date())
                 // Access Token 만료 시간 적용
                 .withExpiresAt(new Date(System.currentTimeMillis() + accessExp * 1000))
@@ -101,6 +102,13 @@ public class JWTUtil {
     public Date getRefreshTokenExpirationDate() {
 
         long expirationTimeMillis = System.currentTimeMillis() + (refreshExp * 1000);
+
+        return new Date(expirationTimeMillis);
+    }
+
+    public Date getAccessTokenExpirationDate() {
+
+        long expirationTimeMillis = System.currentTimeMillis() + (accessExp * 1000);
 
         return new Date(expirationTimeMillis);
     }

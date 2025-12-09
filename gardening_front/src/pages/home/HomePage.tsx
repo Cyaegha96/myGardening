@@ -13,7 +13,7 @@ export function Hero() {
                     src="/assets/videos/hero.mp4"
                     autoPlay
                     loop
-                    muted
+
                     playsInline/>
 
                 {/* Dark Overlay */}

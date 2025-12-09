@@ -41,8 +41,8 @@
             t.UPDATED_AT AS tag_updated_at
 
         FROM plant_info p
-                 LEFT JOIN my_plant mp
-                           ON p.SCIENTIFIC_NAME = mp.PLANT_SCIENTIFIC_NAME
+                 INNER JOIN my_plant mp
+                            ON p.SCIENTIFIC_NAME = mp.PLANT_SCIENTIFIC_NAME
 
                  LEFT JOIN plant_tag_with ptw
                            ON p.SCIENTIFIC_NAME = ptw.PLANT_SCIENTIFIC_NAME

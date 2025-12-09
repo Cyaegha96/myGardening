@@ -1,8 +1,7 @@
 package com.ggirick.gardening_back.services.auth;
 
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.ggirick.gardening_back.exceptions.AuthenticationException;
+import com.ggirick.gardening_back.exceptions.LoginFailedException;
 import com.ggirick.gardening_back.dto.auth.*;
 import com.ggirick.gardening_back.mappers.auth.AuthMapper;
 import com.ggirick.gardening_back.mappers.auth.UserMapper;
@@ -10,7 +9,6 @@ import com.ggirick.gardening_back.mappers.auth.UserSessionMapper;
 import com.ggirick.gardening_back.utils.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,7 +19,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -32,6 +29,8 @@ public class AuthService {
     private final JWTUtil jwtUtil;
 
     private final RedisService redisService;
+
+    private final MailService mailService;
 
 
     private final PasswordEncoder passwordEncoder;
@@ -61,14 +60,26 @@ public class AuthService {
 
         if (authInfo == null) {
             // DB에서 ID를 찾지 못한 경우
-            throw new AuthenticationException("사용자 ID를 찾을 수 없습니다.");
+            throw new LoginFailedException("사용자 ID를 찾을 수 없습니다.");
         }
 
         //  비밀번호 검증 (PasswordEncoder 사용)
         if (!passwordEncoder.matches(rawPassword, authInfo.getPw())) {
             // 비밀번호 불일치
-            throw new AuthenticationException("비밀번호가 일치하지 않습니다.");
+            throw new LoginFailedException("비밀번호가 일치하지 않습니다.");
         }
+
+        UsersDTO usersDTO = userMapper.selectUserByUid(authInfo.getUserUid());
+
+
+        if ("BLOCKED".equals(usersDTO.getStatus())) {
+            throw new LoginFailedException("계정이 차단되었습니다.");
+        }
+
+        if (!"ACTIVE".equals(usersDTO.getStatus())) {
+            throw new LoginFailedException("로그인 불가: 계정이 비활성화 상태입니다.");
+        }
+
 
         //  토큰 생성을 위한 DTO 구성
         String userUid = authInfo.getUserUid(); // auth 테이블에서 가져온 UID
@@ -77,35 +88,40 @@ public class AuthService {
                 .provider(authInfo.getProvider()) // DB에 저장된 provider 사용
                 .build();
 
+
+        String sessionId = UUID.randomUUID().toString();
+
         //  Access Token 및 Refresh Token 발급
-        String accessToken = jwtUtil.createAccessToken(userInfo);
+        String accessToken = jwtUtil.createAccessToken(userInfo,sessionId);
         String refreshToken = jwtUtil.createRefreshToken(userInfo);
 
         // user_session 테이블에 Refresh Token 기록
+        Date accessExpDate = jwtUtil.getAccessTokenExpirationDate();
         Date refreshExpDate = jwtUtil.getRefreshTokenExpirationDate();
 
         //새로운 세션 생성
   
         UserSessionDTO newSession = UserSessionDTO.builder()
-                .sessionId(UUID.randomUUID().toString())
+                .sessionId(sessionId)
                 .userUid(userUid)
                 .provider(authInfo.getProvider())
-//                .refreshToken(refreshToken)
-           .expiresAt(refreshExpDate)
+              .refreshToken(refreshToken)
+                .accessToken(accessToken)
+                .lastAccessTokenExpiresAt(accessExpDate)
+                 .expiresAt(refreshExpDate)
                 .ipAddress(ipAddress)
                 .isRevoked("N")
-                .createdAt(new Date())
                 .build();
 
         userSessionMapper.insertSession(newSession);
 
         log.debug("새 세션 {}", newSession.getSessionId());
 
-
-        long ttlMillis = refreshExpDate.getTime() - System.currentTimeMillis();
+        //세션 시간은 재발급을 위해 refreshToken 만료 시간과 동일
+        long ttlMillis =  refreshExpDate.getTime() - System.currentTimeMillis();
         if (ttlMillis <= 0) {
             // 토큰 만료면 예외
-            throw new AuthenticationException("생성된 Refresh Token 만료시간이 유효하지 않습니다.");
+            throw new LoginFailedException("생성된 Refresh Token 만료시간이 유효하지 않습니다.");
         }
 
 
@@ -154,33 +170,32 @@ public class AuthService {
             // 이미 무효화 되었거나 DB에 없으면 실패
             // 또한 Redis에 있더라도 DB에서 revoked라면 의심스러운 상황으로 처리
             // Redis 키도 제거 (cleanup)
-           redisService.deleteSession(refreshToken);
+            redisService.deleteSession(refreshToken);
             throw new TokenExpiredException("Refresh token session is revoked or invalid.", new Date().toInstant());
         }
         //새로운 Access Token 및 Refresh Token 발급
 
         UserTokenDTO userInfo = UserTokenDTO.builder().uid(uid).provider(provider).build();
-        String newAccessToken = jwtUtil.createAccessToken(userInfo);
+        String newAccessToken = jwtUtil.createAccessToken(userInfo,oldSessionId);
         String newRefreshToken = jwtUtil.createRefreshToken(userInfo);
 
         Date refreshExpDate = jwtUtil.getRefreshTokenExpirationDate();
+        Date accessExpDate  = jwtUtil.getAccessTokenExpirationDate();
+        //새로운 세션 정보로 업데이트
 
-        // DB: 기존 세션을 revoked 처리(선택 사항 — 보안 정책에 따라 달라짐)
-        userSessionMapper.updateRevokedStatus(oldSessionId); // is_revoked='Y'로 변경 및 필요하면 logged_out_at 기록
-
-        //새로운 세션 db에 저장
-        UserSessionDTO  newSession = UserSessionDTO .builder()
-                .sessionId(UUID.randomUUID().toString())
+        UserSessionDTO updateSession = UserSessionDTO.builder()
+                .sessionId(oldSessionId)
                 .userUid(uid)
                 .provider(provider)
+                .refreshToken(newRefreshToken)
+                .accessToken(newAccessToken)
+                .lastAccessTokenExpiresAt(accessExpDate)
                 .expiresAt(refreshExpDate)
-
-                // 현재 요청의 IP 주소를 저장
-                .ipAddress(currentIpAddress)
                 .isRevoked("N")
+                .ipAddress(currentIpAddress)
                 .build();
 
-        userSessionMapper.insertSession(newSession);
+        userSessionMapper.updateSession(updateSession);
 
         Map<String, Object> newRedisValue= new HashMap<>();
         newRedisValue.put("uid", uid);
@@ -191,7 +206,7 @@ public class AuthService {
 
         long newTtlMillis = refreshExpDate.getTime() - System.currentTimeMillis();
         redisService.deleteSession(refreshToken);
-        redisService.saveSession(uid, newSession.getSessionId(), newRefreshToken, newRedisValue, newTtlMillis);
+        redisService.saveSession(uid, updateSession.getSessionId(), newRefreshToken, newRedisValue, newTtlMillis);
         return new TokenPair(newAccessToken, newRefreshToken);
 
     }
@@ -227,22 +242,26 @@ public class AuthService {
 
 
     public TokenPair issueTokenForOAuth(UserTokenDTO userInfo, String ipAddress) {
-        String accessToken = jwtUtil.createAccessToken(userInfo);
+        String sessionId = UUID.randomUUID().toString();
+
+        String accessToken = jwtUtil.createAccessToken(userInfo,sessionId);
         String refreshToken = jwtUtil.createRefreshToken(userInfo);
+        Date accessExpDate = jwtUtil.getAccessTokenExpirationDate();
         Date refreshExpDate = jwtUtil.getRefreshTokenExpirationDate();
 
-        String sessionId = UUID.randomUUID().toString();
+
 
         // 1) DB에 세션 기록
         UserSessionDTO newSession = UserSessionDTO.builder()
                 .sessionId(sessionId)
                 .userUid(userInfo.getUid())
                 .provider(userInfo.getProvider())
-  //              .refreshToken(refreshToken)
+                .refreshToken(refreshToken)
+                .accessToken(accessToken)
+                .lastAccessTokenExpiresAt(accessExpDate)
                 .expiresAt(refreshExpDate)
                 .ipAddress(ipAddress)
                 .isRevoked("N")
-                .createdAt(new Date())
                 .build();
 
         userSessionMapper.insertSession(newSession);
@@ -257,7 +276,7 @@ public class AuthService {
         authMapper.insertLoginHistory(loginHistory);
 
         // 2) Redis에 세션 저장
-        long ttlMillis = refreshExpDate.getTime() - System.currentTimeMillis();
+        long ttlMillis =refreshExpDate.getTime() - System.currentTimeMillis();
         Map<String, Object> redisValue = new HashMap<>();
         redisValue.put("uid", userInfo.getUid());
         redisValue.put("provider", userInfo.getProvider());
@@ -273,6 +292,50 @@ public class AuthService {
         AuthDTO existing = authMapper.selectAuthById(id);
         return existing != null;
     }
+
+    public boolean existEmail(String email) {
+        return  authMapper.countAuthByEmail(email)>0;
+    }
+
+    public boolean existsEmailExceptSelf(String email, String uuid) {
+        return authMapper.countEmailExceptSelf(email, uuid) > 0;
+    }
+
+    public boolean existsPhoneExceptSelf(String phone, String uuid) {
+        return authMapper.countPhoneExceptSelf(phone, uuid) > 0;
+    }
+
+    @Transactional
+    public int inactivateAccount(String uid, LogoutRequestDTO logoutRequest) {
+
+        String accessToken = logoutRequest.getAccessToken();
+        String refreshToken = logoutRequest.getRefreshToken();
+
+        // 1) 사용자 상태 INACTIVE로 변경
+        int updatedUser = userMapper.updateUserStatus(uid, "INACTIVE");
+        if (updatedUser == 0) {
+            throw new IllegalStateException("사용자 상태 업데이트 실패");
+        }
+
+        // 2) 모든 세션 revoke 처리
+        int revokedSessions = userSessionMapper.revokeAllSessionsByUid(uid);
+
+        // 3) Redis 세션 삭제 (refreshToken 기반)
+        if (refreshToken != null) {
+            redisService.deleteSession(refreshToken);
+        }
+
+        redisService.deleteAllSessionsByUid(uid);
+
+        // 4) AccessToken 블랙리스트 추가
+        if (accessToken != null) {
+            redisService.addBlacklist(accessToken);
+        }
+
+
+        return revokedSessions;
+    }
+
 
 
     @Transactional
@@ -357,6 +420,65 @@ public class AuthService {
                 .build());
 
     }
+    /**
+     * 비밀번호 재발급 요청
+     * 1) 사용자 UID 조회
+     * 2) RedisService.requestOtp(uid)
+     * 3) 이메일로 임시 비밀번호 발송
+     */
+    public void sendTempPassword(String email, String id) throws Exception {
+        String uid = authMapper.findUidByIdAndEmail(email,id);
+        if (uid == null) {
+            throw new RuntimeException("사용자 아이디와 이메일 정보가 서로 일치하지 않습니다.");
+        }
+
+        String tempPw = redisService.requestOtp(uid);
+
+        // tempPw 혹은 otp 인증용 비번을 이메일로 보냄
+        mailService.sendTempPasswordMail(email, tempPw );
+
+    }
+
+    /**
+     * 유저가 임시 otp 입력 시:
+     * 1) OTP 사용자 아이디랑 비밀번호를 통해 uuid 확인
+     *2 ) otp 검증
+     * @return
+     */
+    public String verifyTempPassword(String email, String id, String otp) {
+        String uid =  authMapper.findUidByIdAndEmail(email,id);
+        if (uid == null) {
+            throw new RuntimeException("존재하지 않는 사용자입니다.");
+        }
+
+        boolean valid = redisService.verifyOtp(uid, otp);
+        if (!valid) {
+            throw new RuntimeException("임시 비밀번호가 유효하지 않습니다.");
+        }
+
+       return redisService.createResetToken(uid);
 
 
+    }
+
+    public void updatePassword(String resetToken, String pw){
+
+        String uid = redisService.verifyResetToken(resetToken);
+
+
+        if (uid == null || uid.equals("INVALID_TOKEN")) {
+            throw new RuntimeException("유효하지 않거나 만료된 resetToken 입니다.");
+        }
+
+
+
+        authMapper.updatePassword(uid, passwordEncoder.encode(pw));
+
+        redisService.deleteResetToken(resetToken);
+    }
+
+
+    public String issueResetToken(String uid) {
+       return redisService.createResetToken(uid);
+    }
 }

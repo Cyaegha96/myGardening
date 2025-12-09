@@ -38,6 +38,9 @@ public class JWTFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
         if(path.startsWith("/auth/existIdCheck")
+                ||path.startsWith("/auth/qr")
+                ||path.startsWith("/auth/checkOtp")
+                ||path.startsWith("/auth/requestOtp")
                 || path.startsWith("/auth/signup")
                 || path.startsWith("/auth/register")
                 || path.startsWith("/auth/refresh")
@@ -60,21 +63,26 @@ public class JWTFilter extends OncePerRequestFilter {
 
         try {
 
-
-
             // 2. Access Token 검증
             DecodedJWT djwt = jwtUtil.verifyToken(accessToken);
 
             // 3. 토큰에서 기본 정보 추출 (UID와 Provider는 필수 클레임)
             String uid = djwt.getClaim("uid").asString();
             String provider = djwt.getClaim("provider").asString();
-
+            String sessionId = djwt.getClaim("sessionId").asString();
             //블랙리스트 제어
             //만약 블랙리스트에 등록된 토큰이라면 revoked
             if (redisService.isBlacklisted(accessToken)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token is revoked.");
                 return; }
+
+            if (!redisService.isSessionValid(sessionId)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Session revoked.");
+                return;
+            }
+
 
             // 4. UserTokenDTO 생성 (SecurityContext의 Principal로 사용)
             UserTokenDTO userTokenDTO = UserTokenDTO.builder()

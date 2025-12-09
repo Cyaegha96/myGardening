@@ -16,7 +16,11 @@
     </select>
 
     <select id="getAllTerrariums" resultType="com.ggirick.gardening_back.dto.terrarium.TerrariumDTO">
-        select * from terrarium
+        select * from terrarium  <where>
+        <if test="id != null">
+            AND id = #{id}
+        </if>
+    </where>
     </select>
 
 

@@ -33,7 +33,7 @@ export const TopThreePlants = ({ plants }:TopThreeProps) => {
                             {index + 1}등
                         </p>
                         <h3 className="text-lg font-semibold">{plant.name}</h3>
-                        <p className="text-sm text-gray-400 mt-1">❤️ {plant.likes}</p>
+                        <p className="text-sm text-gray-400 mt-1">등록된 수 :  {plant.likes}</p>
                     </CardContent>
                 </Card>
             ))}
