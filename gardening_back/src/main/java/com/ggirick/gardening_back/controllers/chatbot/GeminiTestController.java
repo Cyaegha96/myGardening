@@ -1,5 +1,6 @@
-package com.ggirick.gardening_back.services.chatbot;
+package com.ggirick.gardening_back.controllers.chatbot;
 
+import com.ggirick.gardening_back.services.chatbot.GeminiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
