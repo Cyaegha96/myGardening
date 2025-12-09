@@ -11,6 +11,7 @@ import {Dialog, DialogContent, DialogTrigger} from "@/shared/shadcn/components/u
 import {getRelativeTime} from "@/shared/libs/getRelativeTime.ts";
 import {type AddressParts, splitKoreanAddress} from "@/shared/libs/splitKoreanAddress.ts";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/shared/shadcn/components/ui/tooltip.tsx";
+import {useAuthStore} from "@/entities/auth/useAuthStore.tsx";
 
 export default function PotDetailInfo() {
     const potDetail = usePotDetailStore(state => state.potDetail);
@@ -23,8 +24,6 @@ export default function PotDetailInfo() {
 
     const [open, setOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-
-    const [addressParts, setAddressParts] = useState<AddressParts>();
 
     useEffect(() => {
         const handleResize = () => {
@@ -60,12 +59,6 @@ export default function PotDetailInfo() {
             fetchPotTagList();
         }
     }, [fetchPotTagList, tagList]);
-
-    useEffect(() => {
-        if (potDetail && potDetail.location) {
-            setAddressParts(splitKoreanAddress(potDetail.location));
-        }
-    }, [potDetail, potDetail?.location]);
 
     if (!potDetail) return <div>로딩 중...</div>;
 
@@ -138,7 +131,34 @@ export default function PotDetailInfo() {
             </div>
 
             {/* 가격 */}
-            <p className="mb-3 text-3xl font-bold text-primary">{potDetail.type === "SELL" ? (potDetail.price && potDetail.price! > 0 ? `${formatPrice(potDetail.price)}원` : "무료 나눔") : "삽니다"}</p>
+            <div className="flex justify-between items-center grid grid-cols-3 m-0">
+                <p className="mb-3 text-3xl font-bold text-primary col-span-2">
+                    {potDetail.type === "SELL" ? (potDetail.price && potDetail.price! > 0 ? `${formatPrice(potDetail.price)}원` : "무료 나눔") : "삽니다"}
+                </p>
+                {potDetail.writerUid && (
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogTrigger asChild>
+                            <button
+                                type="button"
+                                className="p-1 rounded-full hover:bg-gray-200 transition"
+                            >
+                                <MapPin className="w-5 h-5 text-primary"/>
+                            </button>
+                        </DialogTrigger>
+
+                        <DialogContent
+                            className="md:max-w-[100vw] md:max-h-[100vh] w-[80vw] h-[80vh] p-0">
+                            <iframe
+                                title="naver-map"
+                                src={`https://map.naver.com/p/search/${encodeURIComponent(potDetail.location ?? "")}`}
+                                width="100%"
+                                height="100%"
+                                className="rounded-lg"
+                            />
+                        </DialogContent>
+                    </Dialog>
+                )}
+            </div>
 
             {/* 판매 상태 */}
             {potDetail.status && potDetail.status !== "BEFORE_TRADE" && (
