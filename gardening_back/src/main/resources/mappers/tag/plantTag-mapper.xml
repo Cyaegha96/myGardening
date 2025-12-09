@@ -80,6 +80,8 @@
         SELECT *
         FROM PLANT_TAG
         WHERE PARENT_TAG_ID = #{parentTagId}
+    </select>
+
     <resultMap id="PlantTagDTOMap" type="com.ggirick.gardening_back.dto.tag.PlantTagDTO">
         <id property="tagId" column="TAG_ID"/>
         <result property="tagName" column="TAG_NAME"/>
