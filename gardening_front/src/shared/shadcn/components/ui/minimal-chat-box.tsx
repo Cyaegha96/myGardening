@@ -135,12 +135,12 @@ export default function MinimalChatBox() {
                     y: isMobile ? "0" : "3.5rem",
                 }}
                 initial={false}
-                className={`
-                    fixed z-[100] flex flex-col bg-white shadow-2xl
+                className={`fixed z-[100] flex flex-col bg-white shadow-2xl
                     ${isMobile
-                    ? "bottom-0 left-0 w-full h-[45vh] rounded-t-xl"
-                    : "bottom-[calc(2rem+3.5rem)] right-[calc(2rem+3.5rem)] w-[360px] h-[420px] rounded-lg"
-                }
+                                ? "bottom-0 left-0 w-full h-[45vh] rounded-t-xl"
+                                : "bottom-[calc(2rem+3.5rem)] right-[calc(2rem+3.5rem)] w-[360px] h-[420px] rounded-lg"
+                            }
+                    ${!isOpen ? "pointer-events-none" : ""}
                 `}
             >
 

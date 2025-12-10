@@ -105,29 +105,31 @@ export default function DiaryWriteModal({
 
     // 저장 버튼
     const handleSave = () => {
-        const trimmed = content.trim();
-        if (!trimmed) {
+        const trimmedContent = content.trim();
+
+        if (!trimmedContent) {
             toast.error("내용을 입력해주세요.");
             return;
         }
 
-        const normalizedWeather = weather.trim() === "" ? "" : weather;
+        // 날씨는 빈 문자열 허용 → 그대로 전달
+        const normalizedWeather = weather;
 
-        // 삭제 의도 boolean 명확화
-        const isDeleteImage =
+        // 이미지 삭제 여부 판정: 기존 이미지가 있었고, 현재 삭제 상태 + 파일 미선택
+        const deleteImage =
             initialHadImage &&
             isRemoved &&
             !file &&
             imagePreview === "noImage";
 
-        console.log("isDeleteImage: ", isDeleteImage);
+        console.log("deleteImage: ", deleteImage);
 
-        // 프론트에서는 DTO만 넘김 (FormData는 상위/API에서 처리)
+        // 그대로 전달 (FormData는 상위에서 처리)
         onSubmit({
-            content: trimmed,
+            content: trimmedContent,
             weather: normalizedWeather,
-            isDeleteImage, // boolean 그대로 전달
-            file: file ?? null  // 명시적 null
+            deleteImage,
+            file: file ?? null,
         });
     };
 

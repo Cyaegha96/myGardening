@@ -87,12 +87,6 @@ public class MyPlantDiaryImageService {
         if (oldImage != null && isDeleteImage && !hasNewFile) {
             System.out.println("case A : 기존 이미지 삭제");
             deleteByImageId(oldImage.getImageId());
-            // 기존 이미지 gcp에서 삭제
-            int count = imageStorageService.countByHash(oldImage.getHash());
-            if (count == 1) {
-                imageStorageService.deleteFile(oldImage.getSysName());
-            }
-            return;
         }
 
         // CASE B: 기존 이미지 없고, 새 파일 있음 → 새 이미지 insert

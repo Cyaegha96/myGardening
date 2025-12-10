@@ -49,16 +49,12 @@ public class MyPlantDiaryService {
 
     // 다이어리 수정
     @Transactional
-    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file, Boolean isDeleteImage) throws Exception {
+    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file) throws Exception {
 
         // 1. 텍스트 수정
         diaryMapper.updateDiary(dto);
-        System.out.println("처음 온 값 : " + isDeleteImage);
-        // isDeleteImage null-safe 처리
-        boolean deleteImage = Boolean.TRUE.equals(isDeleteImage);
-        System.out.println("null 된 값 : " + isDeleteImage);
         // 2. 다이어리 이미지 수정 - 여기서 알아서 케이스 별로 처리.
-        diaryImageService.update(file, dto.getUserPlantId(), dto.getDiaryId(), deleteImage);
+        diaryImageService.update(file, dto.getUserPlantId(), dto.getDiaryId(), dto.isDeleteImage());
     }
 
     // 다이어리 삭제 (이미지 CASCADE 설정된 경우 자동 삭제)

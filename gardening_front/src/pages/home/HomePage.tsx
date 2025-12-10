@@ -33,7 +33,6 @@ export function Hero() {
                                 내 식물 등록
                             </Button>
                         </Link>
-
                     </div>
                 </div>
             </section>

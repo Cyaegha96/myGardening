@@ -31,5 +31,8 @@ public class MyPlantDiaryDTO {
 
     @Schema(description = "수정일자", example = "2025-01-20 14:30:00")
     private Timestamp updatedAt;
+
+    @Schema(description = "이미지 삭제  여부", example = "true/false")
+    private boolean deleteImage;
 }
 

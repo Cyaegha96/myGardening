@@ -1,20 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {
     MyPlantControllerApi,
     MyPlantDiaryControllerApi,
     type MyPlantDiaryResponseDTO,
     type MyPlantResponseDTO,
-    MyPlantDiaryDTOWeatherEnum,
 } from "@/shared/api";
-import { toast } from "sonner";
-import { useParams } from "react-router-dom";
+import {toast} from "sonner";
+import {useParams} from "react-router-dom";
 import LeftPageWidget from "@/widgets/myPlant/LeftPageWidget";
 import RightPageWidget from "@/widgets/myPlant/RightPageWidget";
 import ImageHistoryModal from "@/entities/myPlant/diary/ui/ImageHistoryModal";
 import DiaryWriteModal from "@/features/myPlant/diary/create-diary/ui/DiaryWriteModal";
 
 export default function PlantDetailPage() {
-    const { userPlantId } = useParams();
+    const {userPlantId} = useParams();
     const plantId = userPlantId ? Number(userPlantId) : null;
 
     const api = new MyPlantControllerApi();
@@ -90,10 +89,12 @@ export default function PlantDetailPage() {
 
     // 변경: 페이지 수 변화에 따라 pageIdx를 자동 보정 (데이터가 줄어들어도 사라지지 않도록)
     useEffect(() => {
-        if (pageIdx > totalPages - 1) {
+        if (pageIdx >= totalPages) {
             setPageIdx(Math.max(totalPages - 1, 0));
+        } else if (pageIdx < 0) {
+            setPageIdx(0);
         }
-    }, [pageIdx, totalPages]);
+    }, [totalPages]);
 
     // 종이 넘김 애니메이션
     const playFlip = async (direction: "next" | "prev") => {
@@ -112,13 +113,19 @@ export default function PlantDetailPage() {
         setIsFlipping(false);
     };
 
+    // 네비게이션
+    const hasPrev = pageIdx > 0;
+    const hasNext = (pageIdx + 1) < totalPages;
+    console.log(pageIdx);
+    // 다음 페이지
     const goToNext = async () => {
-        if (pageIdx >= totalPages - 1) return;
+        if (!hasNext) return;
         await playFlip("next");
     };
 
+    // 이전 페이지
     const goToPrev = async () => {
-        if (pageIdx <= 0) return;
+        if (!hasPrev) return;
         await playFlip("prev");
     };
 
@@ -155,12 +162,12 @@ export default function PlantDetailPage() {
     const handleSaveDiary = async ({
                                        content,
                                        weather,
-                                       isDeleteImage,
+                                       deleteImage,
                                        file,
                                    }: {
         content: string;
         weather: string;
-        isDeleteImage: boolean;
+        deleteImage: boolean;
         file: File | null;
     }) => {
         if (!plantId) return;
@@ -178,15 +185,14 @@ export default function PlantDetailPage() {
                 await diaryApi.updateDiary(
                     plantId,
                     editTargetDiary.diaryId,
-                    { content: finalContent, weather: finalWeather },
-                    isDeleteImage, // Boolean 직접 전달
+                    {content: finalContent, weather: finalWeather, deleteImage},
                     file ?? undefined
                 );
             } else {
                 // 신규 작성
                 await diaryApi.insertDiary(
                     plantId,
-                    { content: finalContent, weather: finalWeather },
+                    {content: finalContent, weather: finalWeather},
                     file ?? undefined
                 );
             }
@@ -203,7 +209,7 @@ export default function PlantDetailPage() {
     };
 
     return (
-        <main className="w-full max-w-[1300px] mx-auto py-10 flex justify-center relative">
+        <main className="w-full max-w-[1300px] min-h-[750px] mx-auto py-10 flex justify-center relative">
 
             {/*
                 변경점:
@@ -213,46 +219,13 @@ export default function PlantDetailPage() {
             <div
                 className="
                     flex w-full shadow-2xl rounded-2xl overflow-hidden relative border border-[#d9d3c7]
-                    flex-col sm:flex-row    /* 📌추가: 모바일에서 세로 배치 */
+                    flex-col sm:flex-row
                 "
                 style={{
                     perspective: "2000px",
                     transform: `translateX(${pageIdx * -3}px)`
                 }}
             >
-
-                {/* 중앙 접힌 선 → 모바일에서는 좌우가 아니라 위아래를 구분하도록 width→height 로 전환 */}
-                <div
-                    className="
-                        absolute bg-[#c0bab0] opacity-60 z-30 pointer-events-none
-                        sm:inset-y-0 sm:left-1/2 sm:-translate-x-1/2 sm:w-[2px] /* 기존: PC */
-                        inset-x-0 top-1/2 -translate-y-1/2 h-[2px]            /* 📌추가: 모바일 위/아래 구분선 */
-                    "
-                />
-
-                {/* 자연스러운 그림자 → 모바일과 PC에서 방향 다르게 */}
-                <div
-                    className="
-                        absolute pointer-events-none z-20
-                        sm:inset-y-0 sm:left-1/2 sm:-translate-x-1/2 sm:w-[12px]  /* 기존 */
-                        inset-x-0 top-1/2 -translate-y-1/2 h-[12px]                /* 📌추가 */
-                    "
-                    style={{
-                        background: `
-                            linear-gradient(
-                                to right,
-                                rgba(0, 0, 0, 0.20) 0%,
-                                rgba(0, 0, 0, 0.00) 60%
-                            ),
-                            linear-gradient(
-                                to left,
-                                rgba(0, 0, 0, 0.20) 0%,
-                                rgba(0, 0, 0, 0.00) 60%
-                            )
-                        `,
-                        filter: "blur(4px)",
-                    }}
-                />
 
                 {/* 왼쪽 페이지 */}
                 <LeftPageWidget
@@ -261,7 +234,7 @@ export default function PlantDetailPage() {
                     pageIdx={pageIdx}
                     isFlipping={isFlipping && flipDirection === "prev"}
                     transformStyle={flipDirection === "prev"
-                        ? { transform: "rotateY(180deg)", transformOrigin: "right center" }
+                        ? {transform: "rotateY(180deg)", transformOrigin: "right center"}
                         : undefined}
                     hasPrev={pageIdx > 0}
                     onPrev={goToPrev}
@@ -278,7 +251,7 @@ export default function PlantDetailPage() {
                     hasNext={pageIdx < totalPages - 1}
                     isFlipping={isFlipping && flipDirection === "next"}
                     transformStyle={flipDirection === "next"
-                        ? { transform: "rotateY(-180deg)", transformOrigin: "left center" }
+                        ? {transform: "rotateY(-180deg)", transformOrigin: "left center"}
                         : undefined}
                     onNext={goToNext}
                     onOpenWrite={() => {
@@ -293,6 +266,48 @@ export default function PlantDetailPage() {
                     onDeleteDiary={handleDelete}
                 />
             </div>
+
+            {/* 중앙 접힌 선 */}
+            <div
+                className="
+                                absolute bg-[#c0bab0] opacity-60 z-50 pointer-events-none
+
+                                /* PC: 수직선 */
+                                sm:left-1/2 sm:-translate-x-1/2 sm:w-[2px] sm:h-188
+
+                                /* Mobile: 수평선 */
+                                inset-x-0 top-1/2 -translate-y-1/2 h-[2px] w-auto
+                            "
+            />
+
+            {/* 자연스러운 그림자 */}
+            <div
+                className="
+                                absolute pointer-events-none z-20
+
+                                /* PC: 수직 그림자 */
+                                sm:left-1/2 sm:-translate-x-1/2 sm:w-[12px] sm:h-188
+
+                                /* Mobile: 수평 그림자 */
+                                inset-x-0 top-1/2 -translate-y-1/2 h-[12px] w-full
+                            "
+                style={{
+                    background: `
+                                        /* PC (수직) 그림자 */
+                                        linear-gradient(
+                                            to right,
+                                            rgba(0,0,0,0.20) 0%,
+                                            rgba(0,0,0,0.00) 60%
+                                        ),
+                                        linear-gradient(
+                                            to left,
+                                            rgba(0,0,0,0.20) 0%,
+                                            rgba(0,0,0,0.00) 60%
+                                        )
+                                    `,
+                    filter: "blur(4px)",
+                }}
+            />
 
             {openHistory && (
                 <ImageHistoryModal
