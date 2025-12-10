@@ -10,15 +10,24 @@
             session_id,
             sender,
             content,
+            ori_name,
+            sys_name,
+            url,
             created_at
         )
         VALUES (
                    chatbot_message_seq.NEXTVAL,
                    #{sessionId},
                    #{sender},
-                   #{content},
+                   #{content, jdbcType=VARCHAR},
+                   #{oriName, jdbcType=VARCHAR},
+                   #{sysName, jdbcType=VARCHAR},
+                   #{url, jdbcType=VARCHAR},
                    CURRENT_TIMESTAMP
                )
+        <selectKey resultType="int" keyProperty="id" order="AFTER">
+            select chatbot_message_seq.currval from dual
+        </selectKey>
     </insert>
 
     <!-- 마지막 메시지 조회 -->
@@ -49,33 +58,47 @@
         ORDER BY created_at ASC
     </select>
 
-    <!-- UI용: 최신 메시지 페이지 조회 -->
+    <!-- UI용: 최신 메시지 조회 (user, bot만) -->
     <select id="getMessagesForUI"
             resultType="com.ggirick.gardening_back.dto.chatbot.ChatbotMessageDTO">
         SELECT *
         FROM (
-                 SELECT t.*, ROWNUM rnum
-                 FROM (
-                          SELECT *
-                          FROM chatbot_message
-                          WHERE session_id = #{sessionId}
-                          ORDER BY created_at DESC
-                      ) t
-                 WHERE ROWNUM &lt;= #{offset} + #{limit}
-             )
-        WHERE rnum &gt; #{offset}
+        SELECT t.*, ROWNUM rnum
+        FROM (
+        SELECT *
+        FROM chatbot_message
+        WHERE session_id = #{sessionId}
+        AND sender IN ('user', 'bot')
+        ORDER BY created_at DESC
+        ) t
+        WHERE ROWNUM &lt;= #{offset} + #{limit}
+        )
+        WHERE rnum > #{offset}
     </select>
 
     <!-- 시스템 정책 저장 -->
     <insert id="insertSystemPrompt">
-        INSERT INTO chatbot_message (id, session_id, sender, content)
+        INSERT INTO chatbot_message (id, session_id, sender, content, created_at)
         VALUES (
                    chatbot_message_seq.NEXTVAL,
                    #{sessionId},
                    'system',
-                   #{content}
+                   #{content},
+                   CURRENT_TIMESTAMP
                )
     </insert>
+
+    <!-- 최근 메세지 가져오기 -->
+    <select id="getLastNMessages" resultType="com.ggirick.gardening_back.dto.chatbot.ChatbotMessageDTO">
+        SELECT *
+        FROM (
+        SELECT *
+        FROM chatbot_message
+        WHERE session_id = #{sessionId}
+        ORDER BY created_at DESC
+        )
+        WHERE ROWNUM &lt;= #{limit}
+    </select>
 
 
 </mapper>

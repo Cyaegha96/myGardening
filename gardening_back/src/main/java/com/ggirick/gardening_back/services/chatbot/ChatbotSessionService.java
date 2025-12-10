@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 public class ChatbotSessionService {
 
     private final ChatbotSessionMapper sessionMapper;
-    private final ChatbotMessageService chatbotMessageService;
+    private final ChatbotMessageService messageService;
+
     // 세션 만료 시간
     private final long MAX_SESSION_HOURS = 3;
 
@@ -59,10 +60,12 @@ public class ChatbotSessionService {
         // 2. 로그인한 UID와 요청한 세션 정보의 UID 비교 후 종료 처리
         if (session.getUserUid().equals(loginUid)) {
             sessionMapper.updateStatusEnded(sessionId);
+            System.out.println("세션 종료됨 !");
         }
 
         // 3. 해당 세션의 메세지 기록 삭제
-
+        messageService.deleteBySessionId(sessionId);
+        System.out.println("메세지도 삭제 됨!");
     }
 
     // 시간 만료 여부 확인 후 종료 처리
@@ -77,6 +80,7 @@ public class ChatbotSessionService {
             sessionMapper.updateStatusExpired(sessionId);
 
             // 4. 해당 세션의 메세지 기록 삭제
+            messageService.deleteBySessionId(sessionId);
         }
 
     }
@@ -84,7 +88,7 @@ public class ChatbotSessionService {
     // 세션이 만료되었는지 여부
     public boolean isSessionExpired(int sessionId) {
 
-        LocalDateTime last = chatbotMessageService.getLastMessageBySessionId(sessionId).toLocalDateTime();
+        LocalDateTime last = messageService.getLastMessageBySessionId(sessionId).toLocalDateTime();
         LocalDateTime now = LocalDateTime.now();
 
         long hours = Duration.between(last, now).toHours();
@@ -92,4 +96,8 @@ public class ChatbotSessionService {
         return hours >= MAX_SESSION_HOURS;
     }
 
+    // 세션 복구 처리
+    public void reactivateSession(int sessionId) {
+        sessionMapper.updateStatusActive(sessionId);
+    }
 }

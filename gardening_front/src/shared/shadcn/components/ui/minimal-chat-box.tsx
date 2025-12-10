@@ -13,15 +13,19 @@ export default function MinimalChatBox() {
 
     const { send, startSessionIfNeeded } = useSendMessage();
     const messages = useChatbotStore(s => s.messages);
-
-    // ⬇️ 로딩 상태 (봇 응답 중) 가져오기
     const isLoading = useChatbotStore(s => s.isLoading);
 
     const navigate = useNavigate();
     const isLogin = Boolean(localStorage.getItem("accessToken"));
 
-    // 🔽 자동 스크롤 ref 추가
     const scrollRef = React.useRef<HTMLDivElement>(null);
+    const isMobile = window.innerWidth < 768;
+
+    // 파일 업로드 ref
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // 드래그 앤 드롭
+    const [isDragging, setIsDragging] = React.useState(false);
 
     React.useEffect(() => {
         if (isOpen && isLogin) {
@@ -29,7 +33,6 @@ export default function MinimalChatBox() {
         }
     }, [isOpen]);
 
-    // 🔽 메시지 추가되거나 로딩 시작되면 자동 스크롤
     React.useEffect(() => {
         scrollRef.current?.scrollTo({
             top: scrollRef.current.scrollHeight,
@@ -37,17 +40,53 @@ export default function MinimalChatBox() {
         });
     }, [messages, isLoading]);
 
+    // 텍스트, 또는 텍스트 + 이미지 전송
     const handleSend = () => {
-        if (!input.trim() || !isLogin) return;
+        if (!isLogin) return;
+        if (!input.trim()) return;
+
         send(input);
         setInput("");
     };
 
-    const isMobile = window.innerWidth < 768;
+    // 이미지 선택
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        send(input, file); // 텍스트가 있으면 같이 보냄
+        setInput("");
+        e.target.value = "";
+    };
+
+    // Drag Over
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    // Drag Leave
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    // Drop to upload
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        if (!isLogin) return;
+
+        const file = e.dataTransfer.files?.[0];
+        if (file && file.type.startsWith("image/")) {
+            send(input, file);
+            setInput("");
+        }
+    };
 
     return (
         <MotionConfig>
-            {/* Toggle Button */}
             <Button
                 onClick={() => setIsOpen(!isOpen)}
                 className="
@@ -70,83 +109,112 @@ export default function MinimalChatBox() {
                 }}
                 initial={false}
                 className={`
-                    fixed z-[10000] flex flex-col bg-white shadow-2xl 
+                    fixed z-[100] flex flex-col bg-white shadow-2xl
                     ${isMobile
                     ? "bottom-0 left-0 w-full h-[45vh] rounded-t-xl"
                     : "bottom-[calc(2rem+3.5rem)] right-[calc(2rem+3.5rem)] w-[360px] h-[420px] rounded-lg"
                 }
                 `}
             >
+
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 bg-green-700 text-white">
-                    <span className="font-medium">AI한테 물어보기</span>
+                    <span className="font-medium">🌿 마이가드닝 챗봇</span>
                     <X className="cursor-pointer" onClick={() => setIsOpen(false)} />
                 </div>
 
-                {/* Message Area */}
+                {/* Message List */}
                 <div
                     ref={scrollRef}
-                    className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 flex flex-col items-start"
+                    className={`flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 flex flex-col items-start relative
+                        ${isDragging ? "bg-green-100/60" : ""}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
                 >
+                    {isDragging && (
+                        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-green-200/60 border-2 border-dashed border-green-500 rounded-md">
+                            <p className="text-green-700 font-medium">여기에 이미지를 드롭하세요</p>
+                        </div>
+                    )}
+
                     {!isLogin ? (
                         <div className="flex flex-col items-center justify-center text-center gap-3 mt-8 text-gray-500">
-                            <p>로그인 후 AI 상담을 이용하실 수 있어요 🌱</p>
+                            <p>로그인 후 AI 상담 가능</p>
                             <div className="flex gap-2">
-                                <Button onClick={() => navigate("/login")} className="bg-green-700 text-white">로그인</Button>
-                                <Button onClick={() => navigate("/join")} variant="outline">회원가입</Button>
+                                <Button className="bg-green-700 text-white" onClick={() => navigate("/login")}>로그인</Button>
+                                <Button variant="outline" onClick={() => navigate("/join")}>회원가입</Button>
                             </div>
                         </div>
                     ) : (
                         <>
-                            {messages.map((m, i) => (
-                                <div
-                                    key={i}
-                                    className={`
-                                        relative px-3 py-2 rounded-lg shadow-sm text-sm
-                                        inline-block break-words
-                                        max-w-[75%]
-                                        ${m.sender === "user"
-                                        ? "bg-secondary text-gray-900 self-end ml-auto"
-                                        : "bg-green-100 text-green-800 self-start mr-auto"
-                                    }
-                                    `}
-                                >
-                                    {m.content}
+                            {messages.map((m, i) => {
+                                const isUser = m.sender === "user";
+                                const hasImage = !!m.url;
+                                const hasText = !!m.content?.trim();
 
-                                    {/* 꼬리 */}
-                                    {m.sender === "user" ? (
-                                        <span className="absolute -right-1 bottom-2 w-3 h-3 bg-secondary rotate-45"></span>
-                                    ) : (
-                                        <span className="absolute -left-1 bottom-2 w-3 h-3 bg-green-100 rotate-45"></span>
-                                    )}
-                                </div>
-                            ))}
+                                // 빈 메시지 제외
+                                if (!hasImage && !hasText) return null;
 
-                            {/* 👇 봇 입력중 표시 */}
+                                // 봇은 이미지 전송하지 않음 → 즉시 제외
+                                if (!isUser && hasImage) return null;
+
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`
+                                                        relative px-2 py-2 rounded-lg shadow-sm text-sm text-green-800 max-w-[75%]
+                                                        ${isUser ? "bg-secondary self-end ml-auto" : "bg-green-100 self-start mr-auto"}
+                                                    `}
+                                    >
+                                        {/* 이미지(사용자 메시지에만) */}
+                                        {hasImage && isUser && (
+                                            <img
+                                                src={m.url}
+                                                alt="uploaded"
+                                                className="aspect-square max-w-[220px] max-h-[220px] rounded-md object-cover mb-1"
+                                            />
+                                        )}
+
+                                        {/* 텍스트 있을 때만 */}
+                                        {hasText && <span>{m.content}</span>}
+
+                                        {/* 말풍선 꼬리 */}
+                                        <span
+                                            className={`
+                                                        absolute bottom-2 w-3 h-3 rotate-45
+                                                        ${isUser ? "bg-secondary -right-1" : "bg-green-100 -left-1"}
+                                                    `}
+                                        />
+                                    </div>
+                                );
+                            })}
+
                             {isLoading && (
-                                <div className="
-        bg-green-100 text-green-800 px-3 py-2 rounded-lg shadow-sm text-sm
-        self-start mr-auto relative
-    ">
-        <span className="flex gap-1">
-            <span className="animate-bounce">.</span>
-            <span className="animate-bounce" style={{ animationDelay: "0.15s" }}>.</span>
-            <span className="animate-bounce" style={{ animationDelay: "0.3s" }}>.</span>
-        </span>
-                                    <span className="absolute -left-1 bottom-2 w-3 h-3 bg-green-100 rotate-45"></span>
+                                <div className="bg-green-100 text-green-800 px-3 py-2 rounded-lg shadow-sm text-sm self-start mr-auto relative">
+                                    <span className="flex gap-1"> <span className="animate-bounce">.</span><span className="animate-bounce" style={{ animationDelay: "0.15s" }}>.</span><span className="animate-bounce" style={{ animationDelay: "0.3s" }}>.</span> </span>
                                 </div>
                             )}
                         </>
                     )}
                 </div>
 
-                {/* Input Box */}
+                {/* Input */}
                 <div className="flex items-center gap-2 px-3 py-2 bg-white border-t">
                     {isLogin ? (
                         <>
-                            <Button size="icon" variant="ghost" className="text-gray-500">
+                            <Button variant="ghost" size="icon" className="text-gray-500" onClick={() => fileInputRef.current?.click()}>
                                 <Image size={22} />
                             </Button>
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
@@ -154,11 +222,8 @@ export default function MinimalChatBox() {
                                 className="flex-1 h-10"
                                 placeholder="메시지를 입력하세요..."
                             />
-                            <Button
-                                size="icon"
-                                onClick={handleSend}
-                                className="bg-green-700 hover:bg-green-800 text-white"
-                            >
+
+                            <Button size="icon" className="bg-green-700 hover:bg-green-800 text-white" onClick={handleSend}>
                                 <Send size={18} />
                             </Button>
                         </>
@@ -166,6 +231,7 @@ export default function MinimalChatBox() {
                         <p className="w-full text-center text-xs text-gray-400">로그인 후 사용 가능</p>
                     )}
                 </div>
+
             </motion.div>
         </MotionConfig>
     );

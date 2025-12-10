@@ -29,4 +29,7 @@ public interface ChatbotMessageMapper {
     void insertSystemPrompt(@Param("sessionId") int sessionId,
                             @Param("content") String content);
 
+    // 최근 메세지 가져오기
+    List<ChatbotMessageDTO> getLastNMessages(@Param("sessionId") int sessionId,
+                                             @Param("limit") int limit);
 }

@@ -8,8 +8,6 @@ export interface PlantImageUploaderProps {
     imagePreview: string;
     // 드래그 중 여부
     isDragging: boolean;
-    // 이미지가 세로형인지 여부 (세로 >= 가로)
-    isPortrait: boolean;
     // 학명 대신 보여줄 익숙한 이름
     commonName: string;
     // 제목 텍스트
@@ -23,7 +21,7 @@ export interface PlantImageUploaderProps {
     // 드래그 오버 핸들러
     onDragOver: (e: React.DragEvent<HTMLLabelElement>) => void;
     // 드래그 leave 핸들러
-    onDragLeave: () => void;
+    onDragLeave: (e: React.DragEvent<HTMLLabelElement>) => void;
     // 드롭 핸들러
     onDrop: (e: React.DragEvent<HTMLLabelElement>) => void;
 

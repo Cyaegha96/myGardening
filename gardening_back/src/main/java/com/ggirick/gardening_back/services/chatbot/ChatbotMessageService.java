@@ -22,7 +22,7 @@ public class ChatbotMessageService {
 
     // 사용자 메시지 저장
     @Transactional
-    public void saveUserMessage(ChatbotMessageDTO dto, MultipartFile file) throws Exception {
+    public ChatbotMessageDTO saveUserMessage(ChatbotMessageDTO dto, MultipartFile file) throws Exception {
         // 1. file이 있으면 GCP 저장 -> fileInfo 받아서 set 해주기
         if (file != null && !file.isEmpty()) {
             int sessionId = dto.getSessionId();
@@ -37,6 +37,7 @@ public class ChatbotMessageService {
         }
         // 2. DB 저장
         messageMapper.insertMessage(dto);
+        return dto;
     }
 
     // 챗봇 메시지 저장
@@ -46,7 +47,19 @@ public class ChatbotMessageService {
     }
 
     // 종료&만료된 세션 대화 기록 삭제
+    @Transactional
     public void deleteBySessionId(int sessionId) {
+        // 1. 삭제할 리스트 가져오기
+        List<ChatbotMessageDTO> list = getMessagesBySessionId(sessionId);
+
+        // GCP 삭제
+        for (ChatbotMessageDTO msg : list) {
+            if (msg.getUrl() != null && !msg.getUrl().isBlank()) {
+                fileUtil.deleteFile(msg.getUrl());
+            }
+        }
+
+        // DB 삭제
         messageMapper.deleteBySessionId(sessionId);
     }
 
@@ -68,8 +81,13 @@ public class ChatbotMessageService {
 
     // 시스템 정책 저장
     @Transactional
-    public void saveSystemPrompt(int sessionId, String content) {
+    public void insertSystemPrompt(int sessionId, String content) {
         messageMapper.insertSystemPrompt(sessionId, content);
+    }
+
+    // 최근 메세지 가져오기
+    public List<ChatbotMessageDTO> getLastNMessages(int sessionId, int limit) {
+        return messageMapper.getLastNMessages(sessionId, limit);
     }
 
 }

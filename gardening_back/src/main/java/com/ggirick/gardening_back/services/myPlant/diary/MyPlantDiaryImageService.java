@@ -76,32 +76,41 @@ public class MyPlantDiaryImageService {
 
     // 다이어리 이미지 수정
     @Transactional
-    public void update(MultipartFile file, int userPlantId, int diaryId) throws Exception {
+    public void update(MultipartFile file, int userPlantId, int diaryId, boolean isDeleteImage) throws Exception {
         // 1. 기존 이미지 조회
         MyPlantDiaryImageDTO oldImage = myPlantDiaryImageMapper.getImageByDiaryId(diaryId);
 
         // 2. 새로운 파일이 있는지 확인
         boolean hasNewFile = (file != null && !file.isEmpty());
 
-        // CASE A: 기존 이미지 있고, 새 파일 없음 → 기존 이미지 삭제
-        if (oldImage != null && !hasNewFile) {
+        // CASE A: 삭제 의도 있음 → 기존 이미지 삭제
+        if (oldImage != null && isDeleteImage && !hasNewFile) {
+            System.out.println("case A : 기존 이미지 삭제");
             deleteByImageId(oldImage.getImageId());
+            // 기존 이미지 gcp에서 삭제
+            int count = imageStorageService.countByHash(oldImage.getHash());
+            if (count == 1) {
+                imageStorageService.deleteFile(oldImage.getSysName());
+            }
             return;
         }
 
         // CASE B: 기존 이미지 없고, 새 파일 있음 → 새 이미지 insert
         if (oldImage == null && hasNewFile) {
+            System.out.println("case B : 새 이미지 등록");
             insert(file, diaryId, userPlantId);
             return;
         }
 
         // CASE C: 기존 이미지 O + 새 파일 O → 변경 여부 판단
         if (oldImage != null && hasNewFile) {
+            System.out.println("case C : 이미지 교체 판단");
 
             String newHash = HashUtil.sha256(file);
 
             // C-1: 동일 파일이면 아무 작업 안 함
             if (newHash.equals(oldImage.getHash())) {
+                System.out.println("case C-1 : 동일 파일, 작업 없음");
                 return;
             }
 
@@ -113,8 +122,8 @@ public class MyPlantDiaryImageService {
 
             // 중복 이미지 재활용 체크
             MyPlantImageDTO exist = imageStorageService.findEntityByHash(newHash);
-            if (exist != null) { // 중복이미지가 있다면
-                // PK 유지하여 update
+            if (exist != null) {
+                System.out.println("case C-2 : 동일 해시 이미지 재활용");
                 MyPlantDiaryImageDTO reused = MyPlantDiaryImageDTO.builder()
                         .imageId(oldImage.getImageId())
                         .diaryId(diaryId)
@@ -128,6 +137,7 @@ public class MyPlantDiaryImageService {
             }
 
             // 중복 없으면 새 업로드 후 update
+            System.out.println("case C-3 : 새 업로드");
             String folderPath = "my-plant/" + userPlantId + "/diary/" + diaryId + "/";
             Map<String, String> fileInfo = fileUtil.uploadFileAndGetInfo(file.getOriginalFilename(), folderPath, file);
 
@@ -141,9 +151,17 @@ public class MyPlantDiaryImageService {
                     .build();
 
             myPlantDiaryImageMapper.update(updated);
+            return;
         }
 
-        // CASE D: 기존 이미지 X + 새 파일 X → 아무 행동 없음
+        // CASE D: 기존 이미지 O + 삭제 의도 없음 + 새 파일 없음 → 아무 행동 없음
+        if (oldImage != null && !hasNewFile && !isDeleteImage) {
+            System.out.println("case D : 기존 이미지 유지");
+            return;
+        }
+
+        // CASE E: 기존 이미지 X + 새 파일 X → 아무 행동 없음
+        System.out.println("case E : 이미지 없음 유지 상태");
     }
 
     // 식물별 다이어리 이미지 목록 조회 - 클라이언트용

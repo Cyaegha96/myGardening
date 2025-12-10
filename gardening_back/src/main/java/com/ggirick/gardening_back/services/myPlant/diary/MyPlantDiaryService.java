@@ -1,10 +1,8 @@
 package com.ggirick.gardening_back.services.myPlant.diary;
 
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO;
-import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO;
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryResponseDTO;
 import com.ggirick.gardening_back.mappers.myPlant.diary.MyPlantDiaryMapper;
-import com.ggirick.gardening_back.utils.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,47 +49,16 @@ public class MyPlantDiaryService {
 
     // 다이어리 수정
     @Transactional
-    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file) throws Exception {
+    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file, Boolean isDeleteImage) throws Exception {
 
         // 1. 텍스트 수정
         diaryMapper.updateDiary(dto);
-
+        System.out.println("처음 온 값 : " + isDeleteImage);
+        // isDeleteImage null-safe 처리
+        boolean deleteImage = Boolean.TRUE.equals(isDeleteImage);
+        System.out.println("null 된 값 : " + isDeleteImage);
         // 2. 다이어리 이미지 수정 - 여기서 알아서 케이스 별로 처리.
-        diaryImageService.update(file, dto.getUserPlantId(), dto.getDiaryId());
-        MyPlantDiaryImageDTO oldImage = diaryImageService.getImageByDiaryId(dto.getDiaryId());
-
-        // 3. 새로운 파일이 있는지 확인 -> 있으면 true
-        boolean hasNewFile = (file != null && !file.isEmpty());
-
-        // Case A: 이미지 있었는데 새 파일 없음 → 삭제
-        if (oldImage != null && !hasNewFile) {
-            diaryImageService.deleteByImageId(oldImage.getImageId());
-            return;
-        }
-
-        // Case B: 이미지 없었는데 새 파일 업로드 → 신규 등록
-        if (oldImage == null && hasNewFile) {
-            diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId());
-            return;
-        }
-
-        // Case C: 이미지 있었고, 새 파일도 있음 → 변경 여부 판단
-        if (oldImage != null) {
-            // 새 파일 hash 생성
-            String newHash = HashUtil.sha256(file);
-
-            // 동일 파일이면 아무 작업 안 함
-            if (newHash.equals(oldImage.getHash())) {
-                return;
-            }
-
-            // 다른 파일이면 기존 삭제 + 새 업로드
-            diaryImageService.deleteByImageId(oldImage.getImageId());
-            diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId());
-            return;
-        }
-
-        // Case D: 이미지도 없고 새 파일도 없음 → 변경 없음
+        diaryImageService.update(file, dto.getUserPlantId(), dto.getDiaryId(), deleteImage);
     }
 
     // 다이어리 삭제 (이미지 CASCADE 설정된 경우 자동 삭제)

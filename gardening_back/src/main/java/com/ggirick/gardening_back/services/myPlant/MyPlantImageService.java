@@ -44,6 +44,7 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
 
         // 3-1. 중복이라면 재활용
         if (exist != null) {
+
             // 기존 이미지 재활용
             MyPlantImageDTO reused = MyPlantImageDTO.builder()
                     .userPlantId(userPlantId)
@@ -104,9 +105,9 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
                     .url(exist.getUrl())
                     .hash(exist.getHash())
                     .build();
-            myPlantImageMapper.update(reused);
             // 히스토리에도 백업
             backupImage(reused);
+            myPlantImageMapper.update(reused);
             return;
         }
 
@@ -121,10 +122,9 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
                 .url(fileInfo.get("url"))
                 .hash(hash)
                 .build();
-        myPlantImageMapper.update(newThumb);
-
         // 6. 히스토리에도 백업
         backupImage(newThumb);
+        myPlantImageMapper.update(newThumb);
     }
 
     // 대표 이미지 변경 - 히스토리에서 승격
@@ -150,10 +150,10 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
                 .url(history.getUrl())
                 .hash(history.getHash())
                 .build();
-        // 대표이미지 DB 업데이트
-        myPlantImageMapper.update(updated);
         // 히스토리 업데이트
         backupImage(updated);
+        // 대표이미지 DB 업데이트
+        myPlantImageMapper.update(updated);
     }
 
     // 이미지Id로 대표 이미지 조회

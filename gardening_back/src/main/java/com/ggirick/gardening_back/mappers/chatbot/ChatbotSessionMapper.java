@@ -21,4 +21,7 @@ public interface ChatbotSessionMapper {
 
     // 세션 만료 처리
     void updateStatusExpired(int id);
+
+    // 세션 복구 처리
+    void updateStatusActive(int id);
 }

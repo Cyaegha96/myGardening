@@ -5,6 +5,7 @@ export interface PlantCreateModalProps {
     defaultValues?: {
         userPlantId: number;
         imageUrl: string;
+        plantScientificName: string;
         commonName: string;
         nickname?: string;
         memo?: string;

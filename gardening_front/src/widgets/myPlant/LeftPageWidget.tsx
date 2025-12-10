@@ -11,10 +11,11 @@ export default function LeftPageWidget({
                                        }: LeftPageWidgetProps) {
     return (
         <section
-            className="w-1/2 h-[750px] overflow-visible
+            className="w-full sm:w-1/2 h-[750px] overflow-visible
                 bg-[url('/assets/diary-paper-a.png')] bg-cover
                 p-10 relative
                 "
+            style={{ pointerEvents: 'auto' }}
         >
             {plant?.url ? (
                 <img
@@ -47,7 +48,7 @@ export default function LeftPageWidget({
 
             {/* Prev 버튼 (책 왼쪽 아래) */}
             <Button
-                variant="secondary"
+                variant="outline"
                 size="icon"
                 disabled={!hasPrev}
                 onClick={onPrev}

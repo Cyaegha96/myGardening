@@ -49,4 +49,11 @@
         WHERE ID = #{id}
     </update>
 
+    <!-- 세션 복구 처리 -->
+    <update id="updateStatusActive">
+        UPDATE chatbot_session
+        SET status = 'active'
+        WHERE id = #{id}
+    </update>
+
 </mapper>
