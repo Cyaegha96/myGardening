@@ -1,12 +1,15 @@
 import {type PlantDetail, useSearchPlantStore} from '@/entities/searchPlant/searchPlantStore.ts';
 import { type DragEvent, useRef } from 'react';
 import axiosInterceptor from "@/shared/api/axiosInterceptor.ts";
+import {useNavigate} from "react-router-dom";
 
 export const useSearchPlantModel = () => {
     const {
         files, filePreview, analysisResult, isUploading,addToHistory,
         setFiles, setFilePreview, setAnalysisResult, setIsUploading, reset
     } = useSearchPlantStore();
+
+    const navigate = useNavigate();
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -35,9 +38,13 @@ export const useSearchPlantModel = () => {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const handleMyPlantClick = async () =>{
-        alert("아직 내 식물 추가는 만들어지지 않았습니다!")
-    }
+    const handleMyPlantClick = () => {
+        if (!analysisResult || !files?.[0]) return;
+
+        navigate("/my-plants");
+
+        //구현하기에는 시간 부족
+    };
 
 
     const handleUploadClick = async () => {

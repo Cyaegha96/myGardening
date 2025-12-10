@@ -222,9 +222,9 @@ export const SearchPlantView = ({
                     )
                 )}
 
-                {(analysisResult &&(     <Button onClick={handleMyPlantClick} className="mt-6 w-full py-3 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white" disabled={!files || isUploading}>
-                    {isUploading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />내 식물로 만드는 중...</> : '내 식물로 설정하기'}
-                </Button>))}
+                {/*{(analysisResult &&(     <Button onClick={handleMyPlantClick} className="mt-6 w-full py-3 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white" disabled={!files || isUploading}>*/}
+                {/*    {isUploading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />내 식물로 만드는 중...</> : '내 식물로 설정하기'}*/}
+                {/*</Button>))}*/}
 
                 {(files || analysisResult) && !isUploading && (
                     <Button variant="outline" onClick={handleRemoveFile} className="mt-3 w-full">
