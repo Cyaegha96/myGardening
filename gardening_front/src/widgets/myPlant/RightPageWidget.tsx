@@ -94,13 +94,12 @@ export default function RightPageWidget({
                 size="icon"
                 disabled={!hasNext}
                 onClick={onNext}
-                className="absolute bottom-6 right-10 z-30"
+                className="absolute bottom-6 right-10 z-150"
             >
                 ▶
             </Button>
 
             {/* 다이어리 작성 버튼 */}
-            {/* 변경: handleWriteComplete 제거, 상위에서 onOpenWrite만 호출 */}
             <Button
                 variant="default"
                 onClick={() => onOpenWrite()}

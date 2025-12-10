@@ -107,7 +107,6 @@ public class MyPlantDiaryController {
             @PathVariable("userPlantId") int userPlantId,
             @PathVariable("diaryId") int diaryId,
             @RequestPart("myPlantDiary") MyPlantDiaryDTO dto,
-            @RequestPart(value = "isDeleteImage", required = false) Boolean isDeleteImage,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal UserTokenDTO userInfo
     ) throws Exception{
@@ -122,7 +121,7 @@ public class MyPlantDiaryController {
         dto.setDiaryId(diaryId);
         dto.setUserPlantId(userPlantId);
 
-        diaryService.updateDiary(dto, file, isDeleteImage);
+        diaryService.updateDiary(dto, file);
 
         return ResponseEntity.ok().build();
     }

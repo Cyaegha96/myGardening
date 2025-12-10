@@ -105,9 +105,10 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
                     .url(exist.getUrl())
                     .hash(exist.getHash())
                     .build();
+            // 대표이미지 변경
+            myPlantImageMapper.update(reused);
             // 히스토리에도 백업
             backupImage(reused);
-            myPlantImageMapper.update(reused);
             return;
         }
 
@@ -117,14 +118,16 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
 
         MyPlantImageDTO newThumb = MyPlantImageDTO.builder()
                 .imageId(beforeThumb.getImageId())
+                .userPlantId(userPlantId)
                 .oriName(fileInfo.get("oriName"))
                 .sysName(fileInfo.get("sysName"))
                 .url(fileInfo.get("url"))
                 .hash(hash)
                 .build();
+
         // 6. 히스토리에도 백업
-        backupImage(newThumb);
         myPlantImageMapper.update(newThumb);
+        backupImage(newThumb);
     }
 
     // 대표 이미지 변경 - 히스토리에서 승격
@@ -150,10 +153,10 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
                 .url(history.getUrl())
                 .hash(history.getHash())
                 .build();
-        // 히스토리 업데이트
-        backupImage(updated);
         // 대표이미지 DB 업데이트
         myPlantImageMapper.update(updated);
+        // 히스토리 업데이트
+        backupImage(updated);
     }
 
     // 이미지Id로 대표 이미지 조회
@@ -166,7 +169,10 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
     public void backupImage(MyPlantImageDTO img) {
         if (img == null) return;
 
-        // 1. 최신으로 히스토리 저장
+        // 1. 기존 히스토리에서 해당 이미지 제거 (중복 방지)
+        historyMapper.deleteByHash(img.getHash());
+
+        // 2. 최신으로 다시 삽입
         historyMapper.insert(MyPlantImageHistoryDTO.builder()
                 .userPlantId(img.getUserPlantId())
                 .oriName(img.getOriName())
@@ -175,9 +181,6 @@ public class MyPlantImageService { // 대표이미지 + 히스토리 관리
                 .hash(img.getHash())
                 .build()
         );
-
-        // 2. 먼저 기존에 있던 히스토리 삭제
-        historyMapper.deleteByHash(img.getHash());
 
         // 3. 히스토리 3개 초과분 삭제
         trimHistory(img.getUserPlantId());

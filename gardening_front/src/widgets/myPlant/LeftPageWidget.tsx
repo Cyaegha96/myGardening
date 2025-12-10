@@ -52,7 +52,7 @@ export default function LeftPageWidget({
                 size="icon"
                 disabled={!hasPrev}
                 onClick={onPrev}
-                className="absolute bottom-6 left-6"
+                className="absolute bottom-6 left-6 z-100"
             >
                 ◀
             </Button>
