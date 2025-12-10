@@ -12,6 +12,7 @@ import CommentInput from "@/features/comment/write-comment/ui/CommentInput";
 
 import type { CommentItemProps } from "@/entities/comment/model/CommentItemProps";
 import type { CommentNode } from "@/entities/comment/model/CommentNode";
+import {type AuthState, useAuthStore} from "@/entities/auth/useAuthStore.tsx";
 
 
 // 자식 active 댓글 개수 계산
@@ -51,7 +52,7 @@ export default function CommentItem({
     const isActive = comment.status === "active";
 
     const hasChildren = comment.children && comment.children.length > 0;
-
+    const isLoggedIn = useAuthStore((s:AuthState) => s.isLoggedIn);
     // 삭제 + 자식 없음 → 완전 숨김
     if (isDeleted && !hasChildren) return null;
 
@@ -152,7 +153,7 @@ export default function CommentItem({
                     )}
 
                     {/* 하단 버튼: active만 */}
-                    {!isEditing && isActive && (
+                    {isLoggedIn&& !isEditing && isActive && (
                         <div className="flex items-center gap-4 mt-2 text-xs">
                             <button
                                 className="text-gray-500"
@@ -236,7 +237,7 @@ export default function CommentItem({
                 open={showReportModal}
                 onClose={() => setShowReportModal(false)}
                 onConfirm={() => {
-                    onReport?.(comment.id);
+                    onReport?.(comment.id, comment.writerNickname);
                     setShowReportModal(false);
                 }}
             />

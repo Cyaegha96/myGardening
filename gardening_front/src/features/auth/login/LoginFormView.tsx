@@ -5,7 +5,7 @@ import { Label } from '@/shared/shadcn/components/ui/label';
 import { Input } from '@/shared/shadcn/components/ui/input';
 import { Button } from '@/shared/shadcn/components/ui/button';
 import {Eye, EyeOff, Loader2} from 'lucide-react';
-import SocialLoginButtons from './SocialLoginButtons';
+// import SocialLoginButtons from './SocialLoginButtons';
 
 import {
     registerLink
@@ -22,7 +22,9 @@ interface Props {
   handleSocialLogin: (platform: 'kakao' | 'google' | 'naver') => void;
 }
 
-export default function LoginFormView({ id, setId, password, setPassword, loading, error, handleLogin, handleSocialLogin }: Props) {
+export default function LoginFormView({ id, setId, password, setPassword, loading, error, handleLogin,
+                                          //handleSocialLogin
+}: Props) {
     const [showPw, setShowPw] = React.useState(false);
 
   return (
@@ -84,7 +86,7 @@ export default function LoginFormView({ id, setId, password, setPassword, loadin
                   임시 비밀번호로 로그인
               </Link>
 
-            <SocialLoginButtons onSocialLogin={handleSocialLogin} loading={loading} />
+            {/*<SocialLoginButtons onSocialLogin={handleSocialLogin} loading={loading} />*/}
           </CardFooter>
         </form>
       </Card>
