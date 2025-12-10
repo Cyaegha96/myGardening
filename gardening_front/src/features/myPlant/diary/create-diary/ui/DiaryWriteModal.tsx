@@ -1,13 +1,14 @@
 // DiaryWriteModal.tsx
 // 다이어리 작성 모달
 
-import { useState, useRef } from "react";
-import type { DiaryWriteModalProps } from "../model/DiaryWriteModalProps";
-import { Button } from "@/shared/shadcn/components/ui/button";
-import { X } from "lucide-react";
-import PolaroidCard from "@/entities/myPlant/ui/PolaroidCard"; // 변경: 미리보기를 PolaroidCard로 직접 사용
+import {useRef, useState} from "react";
+import type {DiaryWriteModalProps} from "../model/DiaryWriteModalProps";
+import {Button} from "@/shared/shadcn/components/ui/button";
+import {Cloud, CloudRain, Snowflake, Sun, X} from "lucide-react";
+import PolaroidCard from "@/entities/myPlant/ui/PolaroidCard";
 import PlantImageUploader from "@/features/myPlant/create-my-plant/ui/PlantImageUploader";
 import DiaryWritePreview from "@/features/myPlant/diary/create-diary/ui/DiaryWritePreview.tsx";
+import {toast} from "sonner";
 
 export default function DiaryWriteModal({
                                             diary,
@@ -15,28 +16,86 @@ export default function DiaryWriteModal({
                                             onSubmit,
                                         }: DiaryWriteModalProps) {
 
+    // 초기 상태 설정: diary가 없을 경우 신규 작성 모드
     const [imagePreview, setImagePreview] = useState(diary?.imageUrl ?? "noImage");
     const [file, setFile] = useState<File | null>(null);
     const [content, setContent] = useState(diary?.content ?? "");
-    const [weather, setWeather] = useState(diary?.weather ?? "");
+    const [weather, setWeather] = useState(diary?.weather ?? ""); // enum 문자열 사용됨 (빈값 허용)
+    const [initialHadImage] = useState(!!diary?.imageUrl); // 초기에 이미지가 있었는지 저장
+    const [isRemoved, setIsRemoved] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // 텍스트 입력 핸들러: 줄수 & byte 제한 적용
+    // 드래그 상태 추가
+    const [isDragging, setIsDragging] = useState(false);
+
+    // 드래그 이벤트 핸들러
+    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        const droppedFile = e.dataTransfer.files?.[0];
+        if (!droppedFile) return;
+        if (!droppedFile.type.startsWith("image/")) {
+            toast.error("이미지 파일만 업로드할 수 있습니다.");
+            return;
+        }
+
+        setFile(droppedFile);
+        setIsRemoved(false); // 이미지 업로드 시 삭제 의도 해제
+
+        const reader = new FileReader();
+        reader.onload = () => setImagePreview(reader.result as string);
+        reader.readAsDataURL(droppedFile);
+
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    // 이미지 제거
+    const handleClearImage = () => {
+        setFile(null);
+        setImagePreview("noImage");
+        setIsRemoved(true); // 삭제 의도 설정
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const weatherIcon = (() => {
+        switch (weather) {
+            case "SUNNY":
+                return <Sun size={14} className="text-yellow-500"/>;
+            case "CLOUDY":
+                return <Cloud size={14} className="text-gray-500"/>;
+            case "RAINY":
+                return <CloudRain size={14} className="text-blue-500"/>;
+            case "SNOWY":
+                return <Snowflake size={14} className="text-blue-400"/>;
+            default:
+                return null;
+        }
+    })();
+
+    // 텍스트 입력 핸들러
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         let text = e.target.value;
         const encoder = new TextEncoder();
 
-        // 이미지 여부에 따른 최대 줄 수 설정
         const maxLines = imagePreview === "noImage" ? 5 : 3;
 
-        // 줄수 제한
         const lines = text.split("\n");
         if (lines.length > maxLines) {
             text = lines.slice(0, maxLines).join("\n");
         }
 
-        // byte 제한 (500byte)
         while (encoder.encode(text).length > 500) {
             text = text.slice(0, -1);
         }
@@ -46,21 +105,29 @@ export default function DiaryWriteModal({
 
     // 저장 버튼
     const handleSave = () => {
-        if (!content.trim()) return;
+        const trimmed = content.trim();
+        if (!trimmed) {
+            toast.error("내용을 입력해주세요.");
+            return;
+        }
 
-        const normalizedWeather = weather.trim() === "" ? null : weather;
+        const normalizedWeather = weather.trim() === "" ? "" : weather;
 
-        // 수정 모드에서 기존 이미지 → 삭제되는 상황
+        // 삭제 의도 boolean 명확화
         const isDeleteImage =
-            diary?.imageUrl &&
+            initialHadImage &&
+            isRemoved &&
             !file &&
             imagePreview === "noImage";
 
+        console.log("isDeleteImage: ", isDeleteImage);
+
+        // 프론트에서는 DTO만 넘김 (FormData는 상위/API에서 처리)
         onSubmit({
-            content,
-            weather: normalizedWeather, // 빈값을 null로 전달
-            file,
-            isDeleteImage,
+            content: trimmed,
+            weather: normalizedWeather,
+            isDeleteImage, // boolean 그대로 전달
+            file: file ?? null  // 명시적 null
         });
     };
 
@@ -70,47 +137,54 @@ export default function DiaryWriteModal({
     const maxLines = imagePreview === "noImage" ? 5 : 3;
 
     return (
-        // 전체 배경
         <div className="fixed inset-0 bg-black/40 z-[999] flex items-center justify-center p-4">
-
-            {/* 모달 박스 */}
-            <div className="
-                w-full max-w-[900px] bg-white rounded-xl shadow-lg
-                flex flex-col md:flex-row gap-6 p-6 relative
-                overflow-y-auto max-h-[calc(100vh-60px)]
-            ">
-
-                {/* 헤더 */}
+            <div
+                className="
+                    w-full max-w-[900px] bg-white rounded-xl shadow-lg
+                    flex flex-col md:flex-row gap-6 p-6 relative
+                    overflow-y-auto max-h-[calc(100vh-60px)]
+                "
+            >
                 <div className="absolute top-5 left-8 right-6 flex items-center justify-between">
                     <h2 className="text-lg font-bold text-gray-900">
                         {diary ? "다이어리 수정" : "다이어리 작성"}
                     </h2>
-
                     <button
                         onClick={onClose}
                         className="text-gray-400 hover:text-gray-600 transition"
                         aria-label="close"
                     >
-                        <X size={20} />
+                        <X size={20}/>
                     </button>
                 </div>
 
-                {/* 변경: 이미지 여부에 따라 UI 분기 */}
-                <div className="w-full md:w-1/2 pt-10 flex justify-center min-h-[550px]">
-
+                {/* 이미지 여부에 따라 UI 분기 */}
+                <div className="
+                    w-full md:w-1/2 pt-10 flex justify-center
+                    min-h-auto md:min-h-[550px]
+                    h-auto md:h-[550px]
+                ">
                     {imagePreview === "noImage" ? (
-                        // 이미지 없을 때: 기존 미리보기 유지
                         <DiaryWritePreview
                             content={content}
                             weather={weather}
                             imagePreview={imagePreview}
                         />
                     ) : (
-                        // 이미지 있을 때: PolaroidCard + 종이 배경 + 날짜 표시
-                        <div className="w-full h-full max-h-[550px] relative bg-[url('/assets/diary-paper-a.png')] bg-cover bg-center p-8 rounded-md border border-gray-300 shadow-sm">
-                            <p className="text-xs text-gray-500 absolute top-3 left-3">
-                                {new Date().toLocaleDateString("ko-KR")}
-                            </p>
+                        <div
+                            className="
+                                w-full h-full max-h-[550px] relative
+                                bg-[url('/assets/diary-paper-a.png')]
+                                bg-cover bg-center p-8 rounded-md
+                                border border-gray-300 shadow-sm
+                            "
+                        >
+                            <div className="absolute top-3 left-3 flex items-center gap-1">
+                                <span className="text-xs text-gray-500">
+                                    {new Date().toLocaleDateString("ko-KR")}
+                                </span>
+                                {weatherIcon}
+                            </div>
 
                             <div className="flex justify-center mt-6">
                                 <PolaroidCard
@@ -126,8 +200,16 @@ export default function DiaryWriteModal({
                 </div>
 
                 {/* 입력폼 */}
-                <div className="w-full md:w-1/2 flex flex-col pt-10 min-h-[550px] max-h-[550px] overflow-hidden p-3 justify-center">
-
+                <div
+                    className="
+                        w-full md:w-1/2 flex flex-col
+                        pt-10
+                        min-h-auto md:min-h-[550px]
+                        max-h-none md:max-h-[550px]
+                        overflow-auto md:overflow-hidden
+                        p-3 justify-start md:justify-center
+                    "
+                >
                     <PlantImageUploader
                         mode="diary"
                         imagePreview={imagePreview}
@@ -137,6 +219,7 @@ export default function DiaryWriteModal({
                             if (!file) return;
 
                             setFile(file);
+                            setIsRemoved(false); // 업로드 시 삭제 취소
 
                             const reader = new FileReader();
                             reader.onload = () => setImagePreview(reader.result as string);
@@ -146,25 +229,16 @@ export default function DiaryWriteModal({
                                 fileInputRef.current.value = "";
                             }
                         }}
-                        onClearImage={() => {
-                            setFile(null);
-                            setImagePreview("noImage");
-                            if (fileInputRef.current) {
-                                fileInputRef.current.value = "";
-                            }
-                        }}
-                        isDragging={false}
-                        isPortrait={false}
+                        onClearImage={handleClearImage}
+                        isDragging={isDragging}
                         commonName=""
                         nickname=""
                         memoLines={[]}
-                        onDragOver={() => {}}
-                        onDragLeave={() => {}}
-                        onDrop={() => {}}
-                        className="max-h-full flex justify-center items-center"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
                     />
 
-                        {/* 날씨 */}
                     <select
                         value={weather}
                         onChange={(e) => setWeather(e.target.value)}
@@ -177,30 +251,25 @@ export default function DiaryWriteModal({
                         <option value="SNOWY">눈</option>
                     </select>
 
-                        {/* 텍스트 입력 */}
-                        {/* 변경: placeholder 이모지 제거 */}
                     <textarea
                         value={content}
                         onChange={handleContentChange}
-                        className="w-full h-[180px] mt-4 mb-2 border rounded-md p-3 text-sm"
+                        className="w-full min-h-[130px] h-[130px] mt-4 mb-2 border rounded-md p-3 text-sm"
                         placeholder="일지를 기록하세요"
                     />
 
-                        {/* 줄수/바이트 안내 */}
                     <div className="text-right text-xs text-gray-400 mb-4">
                         {imagePreview === "noImage"
                             ? `줄바꿈 ${currentLines}/${maxLines}줄 · ${byteSize}/500 byte`
                             : `이미지 포함: ${currentLines}/${maxLines}줄 · ${byteSize}/500 byte`}
                     </div>
 
-                        {/* 버튼 */}
                     <div className="flex justify-end">
                         <Button className="px-6 py-2" onClick={handleSave}>
                             {diary ? "수정" : "등록"}
                         </Button>
                     </div>
                 </div>
-
             </div>
         </div>
     );

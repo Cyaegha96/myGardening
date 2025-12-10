@@ -6,7 +6,7 @@ const useChatbotStore = create<ChatbotState>((set) => ({
     messages: [],
     isLoading: false,
 
-    setSessionId: (id) => set({ sessionId: id }),
+    setSessionId: (id: number) => set({ sessionId: id }),
     addMessage: (msg) => set((state) => ({
         messages: [...state.messages, msg]
     })),
@@ -14,7 +14,9 @@ const useChatbotStore = create<ChatbotState>((set) => ({
     clear: () => set({ sessionId: null, messages: [] }),
 
     // 로딩 상태 변경 함수
-    setIsLoading: (v: boolean) => set({ isLoading: v })
+    setIsLoading: (v: boolean) => set({ isLoading: v }),
+
+    resetMessages: () => set({ messages: [] }),
 }));
 
 export default useChatbotStore;

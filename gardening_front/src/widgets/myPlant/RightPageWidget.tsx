@@ -30,9 +30,10 @@ export default function RightPageWidget({
 
     return (
         <section
-            className="w-1/2 h-[750px] overflow-visible
+            className="w-full sm:w-1/2 h-[750px] overflow-visible
             bg-[url('/assets/diary-paper-a.png')] bg-cover bg-center
             p-10 relative"
+            style={{ pointerEvents: 'auto' }}
         >
 
             {/* 다이어리 블록 리스트 */}

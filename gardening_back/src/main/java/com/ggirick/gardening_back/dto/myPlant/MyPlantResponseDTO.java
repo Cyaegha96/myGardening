@@ -20,7 +20,7 @@ public class MyPlantResponseDTO {
     private String userUid;
 
     @Schema(description = "식물 학명", example = "Sansevieria stuckyi")
-    private String plant_scientific_name;
+    private String plantScientificName;
 
     @Schema(description = "식물 일반 명 (common name)", example = "Snake Plant")
     private String commonName;

@@ -62,8 +62,11 @@ public class MyPlantService {
     // 식물 정보 수정
     @Transactional
     public void update(MyPlantDTO dto, MultipartFile file) throws Exception {
-        // 1. 대표이미지 수정 + 히스토리 백업
-        myPlantImageService.update(file, dto.getUserPlantId());
+
+        if (file != null && !file.isEmpty()) {
+            // 1. 대표이미지 수정 + 히스토리 백업
+            myPlantImageService.update(file, dto.getUserPlantId());
+        }
         // 2. 식물 정보 수정
         myPlantMapper.update(dto);
     }

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import type { PolaroidCardProps } from "@/entities/myPlant/model/PolaroidCardProps.ts";
-import { MoreVertical } from "lucide-react";
+import {useEffect, useState} from "react";
+import type {PolaroidCardProps} from "@/entities/myPlant/model/PolaroidCardProps.ts";
+import {MoreVertical} from "lucide-react";
 
 export default function PolaroidCard({
                                          imageUrl,
@@ -38,9 +38,11 @@ export default function PolaroidCard({
                 hover:scale-[1.015]
                 border border-[#e8e8e8]
             "
+
             style={{
                 width,
-                padding: "18px",
+                height: type === "diary" ? "370px" : "410px",
+                padding: type === "diary" ? "16px" : "18px",
                 boxSizing: "border-box",
             }}
         >
@@ -68,11 +70,18 @@ export default function PolaroidCard({
                     border: "1px solid #f6f6f6",
                 }}
             >
-                <img src={imageUrl} className="w-full h-full object-cover" alt="" />
+                <img src={imageUrl} className="w-full h-full object-cover" alt=""/>
             </div>
 
             {/* 텍스트 + 액션메뉴 */}
-            <div className="w-full text-center pt-3">
+            <div
+                className={`
+                               w-full text-center
+                               pt-3
+                              ${type === "diary" ? "pt-2 pb-1" : "pt-3 pb-4"}
+                            `}
+            >
+
                 {lines.map((line, i) => {
                     const isCommonName = i === 0 && type === "plant";
                     const isNickname = i === 1 && type === "plant";
@@ -91,7 +100,7 @@ export default function PolaroidCard({
                                         ? "text-gray-700 font-bold text-base"
                                         : "text-[13px] text-[#4a4a4a] leading-[1.4]"}
                                 `}
-                                style={{ flex: "1" }}
+                                style={{flex: "1"}}
                             >
                                 {line}
                             </p>
@@ -105,7 +114,7 @@ export default function PolaroidCard({
                                         setMenuOpen(prev => !prev);
                                     }}
                                 >
-                                    <MoreVertical size={14} className="text-gray-600" />
+                                    <MoreVertical size={14} className="text-gray-600"/>
                                 </button>
                             )}
 

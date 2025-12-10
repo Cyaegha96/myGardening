@@ -100,7 +100,7 @@ public class MyPlantController {
     public ResponseEntity<Void> updateMyPlant(
             @AuthenticationPrincipal UserTokenDTO userInfo,
             @RequestPart("myPlantInfo") MyPlantDTO dto,
-            @RequestPart(value = "file") MultipartFile file
+            @RequestPart(value = "file", required = false) MultipartFile file
     ) throws Exception {
 
         // 권한 체크 1 - 식물 소유자인지

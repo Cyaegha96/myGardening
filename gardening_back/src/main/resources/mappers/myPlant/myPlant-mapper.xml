@@ -17,8 +17,8 @@
         my_plant_seq.NEXTVAL,
         #{userUid},
         #{plantScientificName},
-        #{nickname},
-        #{memo},
+        #{nickname, jdbcType=VARCHAR},
+        #{memo, jdbcType=VARCHAR},
         #{acquiredAt}
         )
         <selectKey resultType="int" keyProperty="userPlantId" order="AFTER">
@@ -30,9 +30,9 @@
     <update id="update">
         UPDATE my_plant
         SET
-        plant_scientific_name = #{plant_scientific_name},
-        nickname = #{nickname},
-        memo = #{memo},
+        plant_scientific_name = #{plantScientificName},
+        nickname = #{nickname, jdbcType=VARCHAR},
+        memo = #{memo, jdbcType=VARCHAR},
         acquired_at = #{acquiredAt},
         updated_at = sysdate
 
