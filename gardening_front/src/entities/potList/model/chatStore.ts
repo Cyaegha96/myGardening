@@ -18,6 +18,12 @@ type ChatStore = {
     hasMore: boolean;
     isFetching: boolean;
 
+    lastChatUuid: string | undefined;
+
+    totalUnreadChatCount: number;
+
+    setLastChatUuid: (uuid: string | undefined) => void;
+
     setIsFetching: (flag: boolean) => void;
 
     subscriptions: StompSubscription[];
@@ -46,6 +52,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     hasMore: true,
     isFetching: false,
     subscriptions: [],
+    lastChatUuid: undefined,
+
+    totalUnreadChatCount: 0,
+
+    setLastChatUuid: (uuid) => set({lastChatUuid: uuid}),
 
     setIsFetching: (flag) => set({isFetching: flag}),
 
@@ -61,10 +72,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             const updatedRooms = state.chatRooms.map((room) => {
                 if (room.id !== roomId) return room;
 
-                const isDuplicate = room.messages.some((m) => m.id === message.id);
+                const isDuplicate = room.messages.some((m) => m.uuid === message.uuid);
                 if (isDuplicate) return room;
 
-                const newMessages = append ? [message, ...room.messages] : [...room.messages, message];
+                const newMessages = append ? [...room.messages, message] : [...room.messages, message];
+
+                let lastChat = message;
 
                 if (!append) {
                     newMessages.sort((a, b) => {
@@ -79,12 +92,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                         ...state.selectedRoom,
                         messages: newMessages,
                     };
+                    lastChat = newMessages[newMessages.length - 1];
                 }
 
                 return {
                     ...room,
                     messages: newMessages,
-                    lastChat: message.content,
+                    lastChat: lastChat.content,
                     lastMessageTime: message.sentAt || new Date().toISOString(),
                 };
             });
@@ -120,16 +134,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 return bTime - aTime;
             });
 
-            const state = get();
-            state.setChatRooms(rooms);
+            const totalUnreadCount = rooms
+                .map(room => room.unreadChatCount)
+                .reduce((sum, count) => sum! + count!, 0);
+
+            set({totalUnreadChatCount: totalUnreadCount});
+
+            get().setChatRooms(rooms);
 
             if (selectedPot) {
                 const newRoom = rooms.map((r) => ({...r, messages: []})).find(
                     (room) => room.potListingId === selectedPot
                 );
                 if (newRoom) {
-                    state.setSelectedRoom(newRoom);
-                    state.setSheetOpen(true);
+                    get().setSelectedRoom(newRoom);
+                    get().setSheetOpen(true);
                 }
             }
 
@@ -141,12 +160,57 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                         const chat = JSON.parse(message.body) as ChatDTO;
                         if (chat.senderUid === userUid) return;
 
-                        chat.isRead = "Y";
-                        state.addMessage(room.id!, chat, true);
-                        stompClient.publish({
-                            destination: `/chat.ack`,
-                            body: JSON.stringify(chat),
+                        const targetRoom = get().chatRooms.find(r => r.id === room.id);
+                        if (!targetRoom) return;
+
+                        // 이미 messages에 동일 uuid가 있으면 return
+                        if (targetRoom.messages.some(m => m.uuid === chat.uuid)) return;
+
+                        set(prev => {
+                            const updatedRooms = prev.chatRooms.map(r => {
+                                if (r.id !== chat.chatRoomId) return r;
+
+                                // 이미 메시지가 있으면 return
+                                if (r.messages.some(m => m.uuid === chat.uuid)) return r;
+
+                                return {
+                                    ...r,
+                                    messages: [...r.messages, chat],
+                                    unreadChatCount: (r.unreadChatCount || 0) + 1
+                                };
+                            });
+
+                            return {
+                                chatRooms: updatedRooms,
+                                totalUnreadChatCount: prev.totalUnreadChatCount + 1,
+                                lastChatUuid: chat.uuid,
+                            };
                         });
+
+                        if (get().selectedRoom?.id === room.id) {
+                            stompClient.publish({
+                                destination: `/chat.ack`,
+                                body: JSON.stringify(chat),
+                            });
+                            set(prev => {
+                                const targetRoom = prev.chatRooms.find(r => r.id === room.id);
+                                const unreadToClear = targetRoom?.unreadChatCount || 0;
+
+                                const updatedRooms = prev.chatRooms.map(r => {
+                                    if (r.id !== chat.chatRoomId) return r;
+
+                                    return {
+                                        ...r,
+                                        unreadChatCount: 0,
+                                    };
+                                });
+
+                                return {
+                                    chatRooms: updatedRooms,
+                                    totalUnreadChatCount: prev.totalUnreadChatCount - unreadToClear,
+                                };
+                            })
+                        }
                     });
 
                     const ackSub = stompClient.subscribe(`/topic/chat/ack/${room.id}`, (message) => {
@@ -158,7 +222,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                                 const updatedMessages = room.messages.map((m) =>
                                     m.uuid === chat.uuid ? {...m, isRead: "Y"} : m
                                 );
-                                return {...room, messages: updatedMessages};
+
+                                return {
+                                    ...room,
+                                    messages: updatedMessages
+                                };
                             });
 
                             const updatedSelectedRoom =
@@ -194,7 +262,40 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     toggleChatModal: () => set((state) => ({chatModal: !state.chatModal})),
     setSheetOpen: (open) => set(() => ({isSheetOpen: open})),
-    setSelectedRoom: (room) => set(() => ({selectedRoom: room, hasMore: true, cursorId: undefined})),
+    setSelectedRoom: (room) => {
+        if (!room) {
+            set({
+                selectedRoom: null,
+                hasMore: true,
+                cursorId: undefined,
+                lastChatUuid: undefined
+            });
+            return;
+        }
+
+        // 읽지 않은 메시지 확인
+        const unreadMessages = room?.messages.filter(msg => msg.senderUid !== userUid && msg.isRead === "N");
+
+        unreadMessages?.forEach(msg => {
+            stompClient.publish({
+                destination: `/chat.ack`,
+                body: JSON.stringify(msg),
+            });
+        });
+
+        set((prev) => ({
+            selectedRoom: {
+                ...room,
+                unreadChatCount: 0, // 선택 시 모든 읽지 않은 메시지 처리
+            },
+            hasMore: true,
+            cursorId: undefined,
+            lastChatUuid: room.messages.length > 0
+                ? room.messages[room.messages.length - 1].uuid // 마지막 메시지로 스크롤 가능
+                : undefined,
+            totalUnreadChatCount: prev.totalUnreadChatCount - unreadMessages.length,
+        }));
+    },
 
     fetchMessages: async () => {
         const state = get();
@@ -211,9 +312,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                     return;
                 }
 
+                if (!state.lastChatUuid) {
+                    set({lastChatUuid: data[0].uuid});
+                }
+
                 data.forEach((item) => {
-                    state.addMessage(roomId, item, true);
+                    state.addMessage(roomId, item, false);
                 });
+
+                console.log(get().lastChatUuid, data);
 
                 const oldestSentAt = data.reduce((prev, curr) =>
                     new Date(prev.sentAt!).getTime() < new Date(curr.sentAt!).getTime() ? prev : curr

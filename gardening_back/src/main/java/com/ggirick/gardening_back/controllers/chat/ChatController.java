@@ -45,10 +45,12 @@ public class ChatController {
             chatService.updateChatIsReadByUserUidAndChatRoomId(roomId, userInfo.getUid());
             // 접속중인 사용자라면 바로 확인 가능 하도록.
             chatList.forEach(chat -> {
-                messagingTemplate.convertAndSend(
-                        "/topic/chat/ack/" + chat.getChatRoomId(),
-                        chat
-                );
+                if (!chat.getSenderUid().equals(userInfo.getUid())) {
+                    messagingTemplate.convertAndSend(
+                            "/topic/chat/ack/" + chat.getChatRoomId(),
+                            chat
+                    );
+                }
             });
             return ResponseEntity.ok(chatList);
         }
