@@ -28,9 +28,11 @@ export function Hero() {
                     </p>
 
                     <div className="mt-8 flex justify-center">
-                        <Button size="lg" className="px-8 text-lg">
-                            내 식물 등록
-                        </Button>
+                        <Link to="/my-plants">
+                            <Button size="lg" className="px-8 text-lg">
+                                내 식물 등록
+                            </Button>
+                        </Link>
 
                     </div>
                 </div>
