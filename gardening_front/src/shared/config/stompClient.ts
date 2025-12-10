@@ -3,8 +3,10 @@ import {Client} from "@stomp/stompjs";
 // @ts-expect-error
 import SockJS from "sockjs-client/dist/sockjs.min";
 
+const baseUrl:string = import.meta.env.VITE_API_BASE_URL;
+
 export const stompClient = new Client({
-    webSocketFactory: () => new SockJS("http://localhost:8081/ws"),
+    webSocketFactory: () => new SockJS(baseUrl + "/ws"),
     connectHeaders: {
         Authorization: "Bearer " + localStorage.getItem("accessToken")
     },
