@@ -130,9 +130,11 @@ export default function PotDetailInfo() {
                             }
                         </span>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>{potDetail.location}</p>
-                        </TooltipContent>
+                        {potDetail && potDetail.location &&
+                            <TooltipContent>
+                                <p>{potDetail.location}</p>
+                            </TooltipContent>
+                        }
                     </Tooltip>
 
 
