@@ -86,33 +86,6 @@ export default function MinimalChatBox() {
     };
 
     return (
-        <MotionConfig transition={transition}>
-            <div className="fixed bottom-8 right-23 md:right-27 z-50 ms-2 md:ms-0">
-                <motion.div
-                    ref={chatRef}
-                    animate={{
-                        height: isOpen ? "400px" : "0px",
-                        width: isOpen ? "100%" : "0px",
-                    }}
-                    initial={false}
-                    className={"flex flex-col shadow-md overflow-hidden bg-white rounded-md"}
-                >
-                    {/* Header */}
-                    <div className={"flex items-center justify-between px-4 py-2 bg-green-700"}>
-                        {isOpen && <span className="font-medium text-white">AI한테 물어보기</span>}
-                        <div
-                            className="flex items-center justify-center w-8 h-8 rounded"
-                            onClick={() => setIsOpen(!isOpen)}
-                        >
-                            <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
-                                <Button
-                                    className="cursor-pointer relative bg-green-700 hover:bg-green-800 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
-                                    {!isOpen ?
-                                        <BotMessageSquare className="size-5 md:size-6"/>
-                                        :
-                                        <X className="size-5 md:size-6"/>
-                                    }
-                                </Button>
         <MotionConfig>
             <Button
                 onClick={() => setIsOpen(!isOpen)}
