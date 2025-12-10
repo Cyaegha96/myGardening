@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @RequestMapping("/chatRoom")
 @RequiredArgsConstructor
 public class ChatRoomController {
+    private final SimpMessagingTemplate messagingTemplate;
     private final ChatRoomService chatRoomService;
     private final ChatProcessService chatProcessService;
 
@@ -52,6 +54,10 @@ public class ChatRoomController {
                                                @RequestBody PotListDetailDTO potInfo) {
         if (userInfo != null) {
             chatProcessService.createChatRoom(potInfo, userInfo.getUid());
+            messagingTemplate.convertAndSend(
+                    "/topic/chatroom/ack/" + potInfo.getWriterUid(),
+                    potInfo.getWriterUid()
+            );
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();

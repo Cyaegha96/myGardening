@@ -13,12 +13,14 @@ public class ChatProcessService {
     private final ChatRoomParticipantsService chatRoomParticipantsService;
 
     @Transactional
-    public void createChatRoom(PotListDetailDTO potInfo, String userUid) {
+    public int createChatRoom(PotListDetailDTO potInfo, String userUid) {
         int chatRoomId = chatRoomService.insertChatRoom(ChatRoomDTO.builder()
                 .potListingId(potInfo.getId())
                 .build());
 
         chatRoomParticipantsService.insertParticipant(chatRoomId, potInfo.getWriterUid());
         chatRoomParticipantsService.insertParticipant(chatRoomId, userUid);
+
+        return chatRoomId;
     }
 }

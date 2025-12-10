@@ -77,6 +77,11 @@ export default function ChatDrawer() {
     // 초기 채팅방 로드 및 구독
     useEffect(() => {
         initialChatRooms(undefined);
+        const sub = stompClient.subscribe(`/topic/chatroom/ack/${userUid}`, () => {
+            useChatStore.getState().subscriptions.forEach((sub) => sub.unsubscribe());
+            initialChatRooms(undefined);
+        });
+        useChatStore.setState(prev => ({subscriptions: [...prev.subscriptions, sub]}));
 
         return () => {
             useChatStore.getState().subscriptions.forEach((sub) => sub.unsubscribe());
