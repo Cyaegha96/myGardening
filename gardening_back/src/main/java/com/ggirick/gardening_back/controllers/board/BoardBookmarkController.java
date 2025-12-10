@@ -2,7 +2,11 @@ package com.ggirick.gardening_back.controllers.board;
 
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.board.BoardResponseDTO;
+import com.ggirick.gardening_back.dto.notification.NotificationDTO;
+import com.ggirick.gardening_back.services.auth.UserService;
 import com.ggirick.gardening_back.services.board.BoardBookmarkService;
+import com.ggirick.gardening_back.services.board.BoardService;
+import com.ggirick.gardening_back.services.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +26,10 @@ import java.util.List;
 public class BoardBookmarkController {
 
     private final BoardBookmarkService boardBookmarkService;
+    private final BoardService boardService;
+    private final UserService userService;
+    private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Operation(summary = "북마크 여부 확인", description = "로그인 사용자가 해당 게시글을 북마크했는지 확인한다.")
     @ApiResponse(responseCode = "200", description = "확인 성공")
@@ -41,6 +50,18 @@ public class BoardBookmarkController {
             @AuthenticationPrincipal UserTokenDTO userInfo
     ) {
         boardBookmarkService.insertBookmark(boardId, userInfo.getUid());
+        BoardResponseDTO boardInfo = boardService.getDetailById(boardId, userInfo.getUid());
+        NotificationDTO notification = NotificationDTO.builder()
+                .type("board")
+                .userUid(boardInfo.getWriterUid())
+                .message(userService.getUserInfo(userInfo.getUid()).getNickname() + "님이 " + boardInfo.getTitle() + "에 북마크를 하였습니다.")
+                .referenceId(boardId)
+                .build();
+        notificationService.insertNotification(notification);
+        messagingTemplate.convertAndSend(
+                "/topic/notification/" + boardInfo.getWriterUid(),
+                notification
+        );
         return ResponseEntity.ok().build();
     }
 

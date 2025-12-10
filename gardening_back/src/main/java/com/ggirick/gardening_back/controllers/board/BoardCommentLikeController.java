@@ -1,12 +1,18 @@
 package com.ggirick.gardening_back.controllers.board;
 
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
+import com.ggirick.gardening_back.dto.board.BoardResponseDTO;
+import com.ggirick.gardening_back.dto.notification.NotificationDTO;
+import com.ggirick.gardening_back.services.auth.UserService;
 import com.ggirick.gardening_back.services.board.BoardCommentService;
+import com.ggirick.gardening_back.services.board.BoardService;
+import com.ggirick.gardening_back.services.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;

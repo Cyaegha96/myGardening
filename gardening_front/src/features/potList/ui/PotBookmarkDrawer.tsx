@@ -27,9 +27,9 @@ export default function PotBookmarkDrawer() {
         <div>
             <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
-                    <div className="fixed bottom-40 right-6 md:bottom-46 md:right-8 z-50">
+                    <div className="fixed bottom-57 right-6 md:bottom-65 md:right-8 z-50">
                         <Button
-                            className="cursor-pointer relative bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
+                            className="cursor-pointer relative bg-green-400 hover:bg-green-500 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
                             <Heart className="size-5 md:size-6"/>
                         </Button>
                     </div>
