@@ -27,7 +27,7 @@ export default function SearchPlantMainPage() {
                         </CardTitle>
                         <CardDescription className="text-gray-500">
                             {!imageLoading && <Skeleton className="w-full rounded-lg" />}
-                            <img src="public/assets/searchPlant/searchByImagePlant.png" alt="이미지로 식물 검색"
+                            <img src="/assets/searchPlant/searchByImagePlant.png" alt="이미지로 식물 검색"
                             onLoad={()=>setImageLoading(true)}/>
                             이미지를 업로드해서 식물을 검색해보세요. 카메라로 찍은 사진이나 갤러리 이미지를 바로 활용할 수 있습니다.
                         </CardDescription>
@@ -53,7 +53,7 @@ export default function SearchPlantMainPage() {
                         </CardTitle>
                         <CardDescription className="text-gray-500">
                             {!imageLoading && <Skeleton className="w-full rounded-lg" />}
-                            <img src="public/assets/searchPlant/searchByDictPlant.png" alt="식물 사전 검색"
+                            <img src="/assets/searchPlant/searchByDictPlant.png" alt="식물 사전 검색"
                                  onLoad={()=>setImageLoading(true)}/>
                             이미 등록된 식물들을 찾아보세요. 이름, 특징 등 키워드를 이용해 방대한 식물 정보를 탐색할 수 있습니다.
                         </CardDescription>

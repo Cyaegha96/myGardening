@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @Service
@@ -366,11 +367,23 @@ public class AuthService {
                 throw new RuntimeException("인증정보 생성 실패");
             }
 
+            // 1 ~ 70 사이의 랜덤 숫자 생성
+            int randomId = ThreadLocalRandom.current().nextInt(1, 71);
+
+            // 프로필 URL 생성
+            String profileUrl = "https://i.pravatar.cc/150?img=" + randomId;
+
+
             // user_info 등록
             UserInfoDTO userInfoDTO = UserInfoDTO.builder()
                     .uuid(userUid)
+                    .name("기본 이름을 수정해주세요")
+                    .profileUrl(profileUrl)
                     .bio("자기소개를 수정해주세요")
                     .nickname(userMapper.randomUserNickName())
+                    .address("기본 주소를 수정해주세요")
+                    .addressDetail("기본 상세 주소를 수정해주세요")
+
                     .build();
 
             //user_role. 등록
