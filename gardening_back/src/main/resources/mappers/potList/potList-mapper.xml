@@ -149,6 +149,11 @@
                 description = #{patchInfo.description},
             </if>
 
+            <!-- 상태 변경(구매, 판매 글) -->
+            <if test="patchInfo.type != null">
+                type = #{patchInfo.type},
+            </if>
+
             <!-- 상태 변경 (거래완료 포함) -->
             <if test="patchInfo.status != null">
                 status = #{patchInfo.status},
@@ -166,7 +171,12 @@
 
             <!-- 썸네일 수정 -->
             <if test="patchInfo.thumbnail != null">
-                thumbnail = #{patchInfo.thumbnail},
+                thumbnail = #{patchInfo.thumbnail, jdbcType=VARCHAR},
+            </if>
+
+            <!-- 썸네일 리셋(이미지가 없는 경우) -->
+            <if test="patchInfo.thumbnail == 'resetThumbnail'">
+                thumbnail = null,
             </if>
 
             <!-- 조회수 증가 -->

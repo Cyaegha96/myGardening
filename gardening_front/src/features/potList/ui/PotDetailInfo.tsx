@@ -24,6 +24,7 @@ import {usePotListWriteStore} from "@/entities/potList/model/potListWriteStore.t
 import type {PotListResponseDTO} from "@/shared/api";
 import {useNavigate} from "react-router-dom";
 import {Button} from "@/shared/shadcn/components/ui/button.tsx";
+import {useChatStore} from "@/entities/potList/model/chatStore.ts";
 
 export default function PotDetailInfo() {
     const potDetail = usePotDetailStore(state => state.potDetail);
@@ -43,6 +44,11 @@ export default function PotDetailInfo() {
     const setAfterTrade = usePotDetailStore(state => state.setAfterTrade);
     const setBeforeTrade = usePotDetailStore(state => state.setBeforeTrade);
     const setPendingTrade = usePotDetailStore(state => state.setPendingTrade);
+
+    const addChatRoom = useChatStore(state => state.addRoom);
+    const setChatSheetOpen = useChatStore(state => state.setSheetOpen);
+    const setSelectedRoom = useChatStore(state => state.setSelectedRoom);
+    const chatRooms = useChatStore(state => state.chatRooms);
 
     const setCursorId = usePotListStore(state => state.setCursorId);
 
@@ -324,8 +330,8 @@ export default function PotDetailInfo() {
                         <button
                             type="button"
                             className="px-4 py-2 rounded-md bg-destructive text-white hover:bg-red-600 transition"
-                            onClick={() => {
-                                deletePot();
+                            onClick={async () => {
+                                await deletePot();
                                 setCursorId(undefined);
                                 navigate("/pot-list");
                             }}
@@ -393,45 +399,61 @@ export default function PotDetailInfo() {
                 {`채팅 ${potDetail.chatroomCount}·찜 ${potDetail.bookmarkCount}·조회 ${potDetail.viewCount}`}
             </div>
 
-            <div className="mt-2 mb-0 grid grid-cols-10 gap-2 flex items-center justify-center">
-                <div
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (potDetail.id != null) {
-                            potListApi.toggleLike(potDetail.id).then(() => {
-                                fetchBookmarkPotLists();
-                                bookmarkPotLists.some(item => item.id === potDetail.id) ?
-                                    setBookmarkCount(potDetail.bookmarkCount! - 1)
-                                    :
-                                    setBookmarkCount(potDetail.bookmarkCount! + 1);
-                            });
-                        }
-                    }}
-                    className="group col-span-1 transition bg-white p-1 backdrop-blur-md rounded-full flex justify-center items-center gap-1">
-                    <Heart
-                        className={
-                            `w-10 h-10 text-red-500
-                            ${bookmarkPotLists.some(item => item.id === potDetail.id) ? "" : "transition group-hover:fill-gray-200"}`
-                        }
-                        fill={
-                            bookmarkPotLists.some(item => item.id === potDetail.id) ? "red" : "transparent"
-                        }
-                    />
-                </div>
-                <div className="col-span-9">
-                    <Button
-                        onClick={() => {
-                            // 채팅 시작 로직
-                            alert("채팅 시작 클릭!");
+            {potDetail.writerUid !== userUid &&
+                <div className="mt-2 mb-0 grid grid-cols-10 gap-2 flex items-center justify-center">
+                    <div
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (potDetail.id != null) {
+                                potListApi.toggleLike(potDetail.id).then(() => {
+                                    fetchBookmarkPotLists();
+                                    bookmarkPotLists.some(item => item.id === potDetail.id) ?
+                                        setBookmarkCount(potDetail.bookmarkCount! - 1)
+                                        :
+                                        setBookmarkCount(potDetail.bookmarkCount! + 1);
+                                });
+                            }
                         }}
-                        className="w-full p-0 bg-secondary hover:bg-accent/50 text-secondary-foreground font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
-                        disabled={potDetail.status === "AFTER_TRADE"}
-                    >
-                        채팅 시작
-                    </Button>
+                        className="group col-span-1 transition bg-white p-1 backdrop-blur-md rounded-full flex justify-center items-center gap-1">
+                        <Heart
+                            className={
+                                `w-10 h-10 text-red-500
+                            ${bookmarkPotLists.some(item => item.id === potDetail.id) ? "" : "transition group-hover:fill-gray-200"}`
+                            }
+                            fill={
+                                bookmarkPotLists.some(item => item.id === potDetail.id) ? "red" : "transparent"
+                            }
+                        />
+                    </div>
+                    <div className="col-span-9">
+                        <Button
+                            onClick={() => {
+                                if (!chatRooms) return;
+
+                                const existingRoom = chatRooms.find(
+                                    (room) => room.potListingId === potDetail.id
+                                );
+
+                                if (existingRoom) {
+                                    setSelectedRoom(existingRoom);
+                                    setChatSheetOpen(true);
+                                } else {
+                                    // 새 채팅방 생성
+                                    addChatRoom(potDetail);
+                                }
+                            }}
+                            className="w-full p-0 bg-secondary hover:bg-accent/50 text-secondary-foreground font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
+                            disabled={potDetail.status === "AFTER_TRADE"}
+                        >
+                            {chatRooms?.some(room => room.potListingId === potDetail.id)
+                                ? "채팅 보기"
+                                : "채팅 시작"
+                            }
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
     );
 }

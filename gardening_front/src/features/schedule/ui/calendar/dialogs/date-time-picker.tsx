@@ -118,10 +118,15 @@ export function DateTimePicker({form, field}: DatePickerProps) {
                                 <div className="flex sm:flex-col p-2">
                                     {Array.from({ length: use24HourFormat ? 24 : 12 }, (_, i) => i + (!use24HourFormat ? 1 : 0))
                                         .map((hour12) => {
-                                            // 12시간제에서는 1~12 표시, 내부적으로 0~11 / 12~23로 변환
-                                            let hour24 = hour12 % 12;
-                                            if (!use24HourFormat && field.value?.getHours() >= 12) {
-                                                hour24 += 12; // PM이면 12~23로 변환
+                                            let hour24;
+
+                                            if (use24HourFormat) {
+                                                hour24 = hour12;
+                                            } else {
+                                                hour24 = hour12 % 12;
+                                                if (field.value?.getHours() >= 12) {
+                                                    hour24 += 12;
+                                                }
                                             }
 
                                             const isSelected =

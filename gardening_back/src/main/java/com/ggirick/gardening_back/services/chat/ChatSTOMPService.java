@@ -1,7 +1,7 @@
-package com.ggirick.gardening_back.services.potList;
+package com.ggirick.gardening_back.services.chat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ggirick.gardening_back.dto.potList.ChatDTO;
+import com.ggirick.gardening_back.dto.chat.ChatDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ChatService {
+public class ChatSTOMPService {
     private final RabbitTemplate rabbitTemplate;
 
     public void sendMessage(ChatDTO chat) {

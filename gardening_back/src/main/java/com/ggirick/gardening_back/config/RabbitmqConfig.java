@@ -28,61 +28,82 @@ public class RabbitmqConfig {
     @Value("${spring.rabbitmq.port}")
     private int port;
 
-    /** 메인 익스체인지 */
+    /** Exchanges */
     @Bean
-    DirectExchange directExchange() {
-        return new DirectExchange("hello1.exchange");
+    DirectExchange appExchange() {
+        return new DirectExchange("exchange");
     }
 
-    /** DLX 익스체인지 */
     @Bean
     DirectExchange dlxExchange() {
         return new DirectExchange("dlx");
     }
 
-    /** 원본 큐 */
     @Bean
-    Queue queue() {
-        Queue queue = new Queue("hello1.queue", true);
-        queue.addArgument("x-dead-letter-exchange", "dlx");
-        queue.addArgument("x-dead-letter-routing-key", "delay.key");
-        return queue;
+    DirectExchange parkingExchange() {
+        return new DirectExchange("parking.exchange");
     }
 
-    /** 딜레이 큐 (TTL 1초) */
+    /** ---------- CHAT queues ---------- */
+    // Main chat queue: 메시지가 consumer에서 reject되면 DLX로 보냄
     @Bean
-    public Queue delayQueue() {
-        Queue queue = new Queue("hello1.dead.queue", true);
-        queue.addArgument("x-message-ttl", 1000);
-        queue.addArgument("x-dead-letter-exchange", "dlx");
-        queue.addArgument("x-dead-letter-routing-key", "main.key");
-        return queue;
+    Queue chatQueue() {
+        Queue q = new Queue("chat.queue", true);
+        q.addArgument("x-dead-letter-exchange", "dlx");
+        q.addArgument("x-dead-letter-routing-key", "chat.delay.key");
+        return q;
     }
 
-    /** 원본 큐 바인딩 */
+    // Delay queue for chat: TTL 1초, 만료되면 다시 app.exchange 로 되돌림 (main key)
     @Bean
-    Binding bindingMain() {
-        return BindingBuilder.bind(queue())
-                .to(dlxExchange())     // DLX가 재전송 시 여기로 보냄
-                .with("main.key");
+    Queue chatDelayQueue() {
+        Queue q = new Queue("chat.delay.queue", true);
+        q.addArgument("x-message-ttl", 1000); // 1s
+        q.addArgument("x-dead-letter-exchange", "exchange");
+        q.addArgument("x-dead-letter-routing-key", "chat.main.key");
+        return q;
     }
 
-    /** 딜레이 큐 바인딩 */
+    /** Bindings for chat */
     @Bean
-    Binding bindingDelay() {
-        return BindingBuilder.bind(delayQueue())
-                .to(dlxExchange())
-                .with("delay.key");
+    Binding bindChatMain() {
+        return BindingBuilder.bind(chatQueue()).to(appExchange()).with("chat.main.key");
     }
 
-    // Producer가 이용할 실제 exchange
     @Bean
-    Binding producerBinding() {
-        return BindingBuilder.bind(queue())
-                .to(directExchange())
-                .with("hello1.key");
+    Binding bindChatDelay() {
+        return BindingBuilder.bind(chatDelayQueue()).to(dlxExchange()).with("chat.delay.key");
     }
 
+    /** ---------- NOTIFICATION queues (same pattern) ---------- */
+    @Bean
+    Queue notificationQueue() {
+        Queue q = new Queue("notification.queue", true);
+        q.addArgument("x-dead-letter-exchange", "dlx");
+        q.addArgument("x-dead-letter-routing-key", "notification.delay.key");
+        return q;
+    }
+
+    @Bean
+    Queue notificationDelayQueue() {
+        Queue q = new Queue("notification.delay.queue", true);
+        q.addArgument("x-message-ttl", 1000); // 1s
+        q.addArgument("x-dead-letter-exchange", "exchange");
+        q.addArgument("x-dead-letter-routing-key", "notification.main.key");
+        return q;
+    }
+
+    @Bean
+    Binding bindNotificationMain() {
+        return BindingBuilder.bind(notificationQueue()).to(appExchange()).with("notification.main.key");
+    }
+
+    @Bean
+    Binding bindNotificationDelay() {
+        return BindingBuilder.bind(notificationDelayQueue()).to(dlxExchange()).with("notification.delay.key");
+    }
+
+    /** Connection / Template / Converter */
     @Bean
     ConnectionFactory connectionFactory() {
         CachingConnectionFactory factory = new CachingConnectionFactory();
@@ -90,6 +111,7 @@ public class RabbitmqConfig {
         factory.setPort(port);
         factory.setUsername(username);
         factory.setPassword(password);
+        // 필요시 factory.setVirtualHost(...) 등 추가
         return factory;
     }
 
@@ -105,4 +127,3 @@ public class RabbitmqConfig {
         return template;
     }
 }
-

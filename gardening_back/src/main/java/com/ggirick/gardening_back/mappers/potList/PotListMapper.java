@@ -37,7 +37,7 @@ public interface PotListMapper {
     // 분양글 수정
     // 분양글 끌어올리기(bump == true)
     // 분양글 조회수 증가(addViewCount == true)
-    int updatePotById(PotListPatchDTO patchInfo, @Param("addViewCount") boolean addViewCount, @Param("bump") boolean bump);
+    int updatePotById(@Param("patchInfo") PotListPatchDTO patchInfo, @Param("addViewCount") boolean addViewCount, @Param("bump") boolean bump);
 
     // 분양글 삭제
     int deletePotById(@Param("id") int id);

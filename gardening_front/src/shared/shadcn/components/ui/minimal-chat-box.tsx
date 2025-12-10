@@ -44,7 +44,7 @@ export default function MinimalChatBox() {
 
     return (
         <MotionConfig transition={transition}>
-            <div className="fixed bottom-8 right-23 md:right-27 z-100 ms-2 md:ms-0">
+            <div className="fixed bottom-8 right-23 md:right-27 z-50 ms-2 md:ms-0">
                 <motion.div
                     ref={chatRef}
                     animate={{

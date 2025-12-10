@@ -6,6 +6,7 @@ import com.ggirick.gardening_back.dto.potList.PotListPatchDTO;
 import com.ggirick.gardening_back.dto.potList.PotListTagMappingDTO;
 import com.ggirick.gardening_back.services.file.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +23,9 @@ public class PotListProcessService {
     private final PotListImageService potListImageService;
     private final PotListTagMappingService potListTagMappingService;
 
+    @Value("${spring.cloud.gcp.storage.bucket}")
+    private String bucketName;
+
     // 분양글 작성에 따른 흐름
     @Transactional
     public void insertPotProcess(List<MultipartFile> images, PotListInsertDTO insertInfo) throws Exception {
@@ -32,10 +36,12 @@ public class PotListProcessService {
         potListService.insertPot(insertInfo);
 
         if (images != null) {
-            List<String> imagesInfo = insertImagesAndGetThumbnail(potListSeq, images);
+            List<String> imageInfo = insertImagesStorage(potListSeq, images);
             PotListPatchDTO patchInfo = PotListPatchDTO.builder().id(insertInfo.getId()).build();
+            insertImages(potListSeq, imageInfo, insertInfo.getThumbnailIndex());
+            List<PotListImageDTO> imageList = potListImageService.getImagesByPotListingId(potListSeq);
 
-            patchInfo.setThumbnail(insertImages(potListSeq, imagesInfo, insertInfo.getThumbnailIndex()));
+            patchInfo.setThumbnail(imageList.get(insertInfo.getThumbnailIndex()).getUrl());
             potListService.updatePotById(potListSeq, patchInfo, false, false);
         }
 
@@ -46,21 +52,30 @@ public class PotListProcessService {
 
     // 분양글 수정에 따른 흐름
     @Transactional
-    public void updatePotProcess(int id, List<MultipartFile> images, List<Integer> deleteImageIdList, PotListPatchDTO patchInfo) throws Exception {
+    public void updatePotProcess(int id, List<MultipartFile> images, PotListPatchDTO patchInfo) throws Exception {
         // 기존 이미지 중, 삭제된 이미지 제거
-        if(deleteImageIdList != null && !deleteImageIdList.isEmpty()) {
-            for (Integer deleteImageId : deleteImageIdList) {
+        if(patchInfo.getToDeleteImageIds() != null && !patchInfo.getToDeleteImageIds().isEmpty()) {
+            for (Integer deleteImageId : patchInfo.getToDeleteImageIds()) {
                 if (deleteImageId != null) {
-                    fileService.deleteFile(potListImageService.getImageById(deleteImageId));
+                    String imageUrl = potListImageService.getImageById(deleteImageId);
+                    String imageName = imageUrl.substring(imageUrl.indexOf(bucketName) + bucketName.length() + 1);
+                    fileService.deleteFile(imageName);
                     potListImageService.deleteImageById(deleteImageId);
                 }
             }
         }
 
-        if (images != null) {
-            List<String> imagesInfo = insertImagesAndGetThumbnail(id, images);
+        List<PotListImageDTO> imageList = potListImageService.getImagesByPotListingId(id);
+        if (!imageList.isEmpty()) {
+            if(images != null) {
+                List<String> imagesInfo = insertImagesStorage(id, images);
+                insertImages(id, imagesInfo, patchInfo.getThumbnailIndex());
+            }
+            imageList = potListImageService.getImagesByPotListingId(id);
 
-            patchInfo.setThumbnail(insertImages(id, imagesInfo, patchInfo.getThumbnailIndex()));
+            patchInfo.setThumbnail(imageList.get(patchInfo.getThumbnailIndex()).getUrl());
+        } else {
+            patchInfo.setThumbnail("resetThumbnail");
         }
         potListService.updatePotById(id, patchInfo, false, false);
 
@@ -72,7 +87,7 @@ public class PotListProcessService {
                 .toList();
 
         List<PotListTagMappingDTO> tagsToDelete = existingTagIdList.stream()
-                .filter(existingId -> !patchInfo.getTags().contains(existingId.getId()))
+                .filter(existingId -> !patchInfo.getTags().contains(existingId.getPlantTagId()))
                 .toList();
 
         for (PotListTagMappingDTO tag : tagsToDelete) {
@@ -89,7 +104,7 @@ public class PotListProcessService {
     }
 
     // 이미지 등록 및 공개 url목록 가져오기
-    public List<String> insertImagesAndGetThumbnail(int id, List<MultipartFile> images) throws Exception {
+    public List<String> insertImagesStorage(int id, List<MultipartFile> images) throws Exception {
         List<String> urlList = new ArrayList<>();
 
         for (MultipartFile image : images) {

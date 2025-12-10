@@ -5,7 +5,7 @@
 <mapper namespace="com.ggirick.gardening_back.mappers.potList.PotListImageMapper">
     <!--    분양글 이미지 목록 조회-->
     <select id="getImagesByPotListingId" resultType="com.ggirick.gardening_back.dto.potList.PotListImageDTO">
-        SELECT url FROM pot_listing_image WHERE pot_listing_id = #{id} ORDER BY id
+        SELECT id, url FROM pot_listing_image WHERE pot_listing_id = #{id} ORDER BY id
     </select>
 
     <!--    id에 따른 이미지 url조회-->

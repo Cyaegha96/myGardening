@@ -12,7 +12,6 @@ export default function PotListPage() {
     const fetchPotList = usePotListStore(state => state.fetchPotList);
     const fetchPotTagList = usePotListStore(state => state.fetchPotTagList);
     const cursorId = usePotListStore(state => state.cursorId);
-    const setCursorId = usePotListStore(state => state.setCursorId);
     const tagFilterList = usePotListStore(state => state.tagFilterList);
     const selectedTags = usePotListStore(state => state.selectedTags);
     const toggleSelectedTags = usePotListStore(state => state.toggleSelectedTags);
@@ -31,9 +30,8 @@ export default function PotListPage() {
     }, [fetchPotList, fetchPotTagList]);
 
     useEffect(() => {
-        setCursorId(undefined);
-        fetchPotList();
-    }, [fetchPotList, selectedTags, setCursorId, location]);
+        fetchPotList(true);
+    }, [fetchPotList, selectedTags, location]);
 
     /* 마지막 아이템 감지 */
     useEffect(() => {
@@ -95,9 +93,17 @@ export default function PotListPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                        {potLists.map((item) =>
-                            <PotList key={item.id} {...item} />
-                        )}
+                        {(potLists != null && potLists.length > 0) ?
+                            potLists.map((item) =>
+                                <PotList key={item.id} {...item} />
+                            )
+                            :
+                            (
+                                <div className="flex justify-center">
+                                    검색된 결과가 없습니다.
+                                </div>
+                            )
+                        }
                     </div>
 
                     {cursorId != null &&

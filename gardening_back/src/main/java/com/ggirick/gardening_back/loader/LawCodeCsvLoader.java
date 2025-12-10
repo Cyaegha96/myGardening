@@ -50,7 +50,8 @@ public class LawCodeCsvLoader {
 
                 String code = arr[0].trim();
                 String provinceNameRaw = arr[1].trim();
-                String districtName = arr[2].trim();
+                String districtNameRaw = arr[2].trim();
+                String districtName = normalizeDistrictName(districtNameRaw);
                 String neighborhoodName = arr[3].trim();
                 String deleteDate = arr[7].trim(); // 삭제일자 컬럼
 
@@ -111,6 +112,24 @@ public class LawCodeCsvLoader {
                 list.sort(Comparator.comparing(Location::getName));
             }
         }
+    }
+
+    private String normalizeDistrictName(String districtName) {
+        if (districtName == null || districtName.isEmpty()) {
+            return districtName;
+        }
+
+        // "고양시덕양구", "성남시분당구", "용인시수지구" 등 처리
+        // "시"가 포함되어 있고 끝이 "구"로 끝나는 경우 분리
+        if (districtName.contains("시") && districtName.endsWith("구")) {
+            int idx = districtName.indexOf("시");
+            if (idx != -1) {
+                return districtName.substring(0, idx + 1); // "고양시", "성남시"
+            }
+        }
+
+        // 나머지는 그대로
+        return districtName;
     }
 
     private boolean containsByName(List<Location> list, String name) {

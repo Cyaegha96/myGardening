@@ -7,6 +7,7 @@ import {type AuthState, useAuthStore} from "@/entities/auth/useAuthStore.tsx";
 import useUserStore from "@/app/store/userStore";
 import {Toaster} from "sonner";
 import MinimalChatBox from "@/shared/shadcn/components/ui/minimal-chat-box.tsx";
+import {stompClient} from "@/shared/config/stompClient.ts";
 
 function App() {
     //기본 로그인
@@ -19,6 +20,7 @@ function App() {
             setTokens(access, refresh);
             // UID 저장
             initUser();
+            stompClient.activate();
         }
     }, [setTokens, initUser]);
 

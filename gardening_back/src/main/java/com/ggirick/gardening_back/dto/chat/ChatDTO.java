@@ -1,4 +1,4 @@
-package com.ggirick.gardening_back.dto.potList;
+package com.ggirick.gardening_back.dto.chat;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 @Builder
 public class ChatDTO {
     @Schema(description = "시퀀스번호")
-    int id;
+    long id;
     @Schema(description = "채팅방 번호")
     int chatRoomId;
     @Schema(description = "보낸이")
@@ -23,4 +23,6 @@ public class ChatDTO {
     String isRead;
     @Schema(description = "전송 일자")
     Timestamp sentAt;
+    @Schema(description = "확인용 개별 UUID")
+    String uuid;
 }
