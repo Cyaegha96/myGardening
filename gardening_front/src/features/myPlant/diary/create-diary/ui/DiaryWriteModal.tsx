@@ -269,6 +269,9 @@ export default function DiaryWriteModal({
                     <div className="flex justify-end">
                         <Button className="px-6 py-2" onClick={handleSave}>
                             {diary ? "수정" : "등록"}
+
+
+
                         </Button>
                     </div>
                 </div>
