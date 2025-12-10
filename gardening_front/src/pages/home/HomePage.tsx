@@ -1,7 +1,6 @@
-import {Button} from "@/shared/shadcn/components/ui/button";
-import DomeGallery from "@/shared/shadcn/components/DomeGallery.tsx";
+import { Button } from "@/shared/shadcn/components/ui/button";
+ import DomeGallery from "@/shared/shadcn/components/DomeGallery.tsx";
 import {Link} from "react-router-dom";
-
 // import PlantThree from "@/pages/test/PlantThree.tsx";
 
 export function Hero() {
@@ -34,11 +33,12 @@ export function Hero() {
                                 내 식물 등록
                             </Button>
                         </Link>
+
                     </div>
                 </div>
             </section>
-            <section style={{overflowX: 'hidden'}}>
-                <div style={{width: '100vw', height: '100vh'}}>
+            <section style={{ overflowX: 'hidden' }}>
+                <div style={{width: '100vw', height: '100vh'}} >
 
                     {<DomeGallery/>}
                 </div>
@@ -60,14 +60,14 @@ export function Hero() {
 
                 </div>
                 <Link to="/plant-search"
-                      style={{
-                          position: 'absolute',
-                          top: '110vh',
-                          left: '50%',
+                 style={{
+                     position: 'absolute',
+                     top: '110vh',
+                     left: '50%',
 
-                          transform: 'translateX(-50%)',
+                     transform: 'translateX(-50%)',
 
-                      }}>
+                 }}>
                     <Button size="lg" className="px-8 text-lg">
                         식물 검색하기
                     </Button>
@@ -79,8 +79,9 @@ export function Hero() {
 }
 
 
+
 export default function HomePage() {
     return (
-        <Hero/>
+       <Hero/>
     );
 }
