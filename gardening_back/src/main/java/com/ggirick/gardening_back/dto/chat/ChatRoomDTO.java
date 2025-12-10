@@ -1,5 +1,6 @@
 package com.ggirick.gardening_back.dto.chat;
 
+import com.ggirick.gardening_back.dto.potList.PotListDetailDTO;
 import com.ggirick.gardening_back.enums.chat.ChatRoomStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -24,4 +25,8 @@ public class ChatRoomDTO {
     String lastChat;
     @Schema(description = "마지막 채팅 일자")
     Timestamp lastMessageTime;
+    @Schema(description = "분양글 정보")
+    PotListDetailDTO potInfo;
+    @Schema(description = "안 읽은 채팅 수")
+    int unreadChatCount;
 }

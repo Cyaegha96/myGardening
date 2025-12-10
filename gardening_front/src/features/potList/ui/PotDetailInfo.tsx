@@ -428,7 +428,7 @@ export default function PotDetailInfo() {
                     </div>
                     <div className="col-span-9">
                         <Button
-                            onClick={ () => {
+                            onClick={() => {
                                 if (!chatRooms) return;
 
                                 const existingRoom = chatRooms.find(

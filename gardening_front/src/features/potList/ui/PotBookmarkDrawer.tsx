@@ -66,17 +66,37 @@ export default function PotBookmarkDrawer() {
                                     <img
                                         src={item.thumbnail}
                                         alt="썸네일"
-                                        className="w-16 h-16 object-cover rounded-md"
+                                        className="min-w-16 h-16 object-cover rounded-md"
                                     />
                                 ) : (
-                                    <div className="w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
+                                    <div
+                                        className="min-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
                                         등록된<br/>
                                         사진 없음
                                     </div>
                                 )}
 
                                 <div className="flex flex-col min-w-0">
-                                    <p className="font-semibold truncate w-full">{item.title}</p>
+                                    <div className="flex items-center gap-2 pe-20 min-w-0">
+                                        <p className="font-semibold truncate flex-1 min-w-0">{item.title}</p>
+                                        {/* 판매 상태 배지 */}
+                                        {item.status && item.status !== "BEFORE_TRADE" && (
+                                            <>
+                                                {item.status === "PENDING_TRADE" && (
+                                                    <span
+                                                        className="mb-1 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full shadow-sm flex-shrink-0">
+                                                    예약중
+                                                </span>
+                                                )}
+                                                {item.status === "AFTER_TRADE" && (
+                                                    <span
+                                                        className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded-full shadow-sm flex-shrink-0">
+                                                    거래완료
+                                                </span>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                     <p className="text-xs italic text-gray-600 dark:text-gray-400">
                                         {item.type === "SELL" ? (item.price && item.price! > 0 ? `${formatPrice(item.price)}원` : "무료 나눔") : "삽니다"}
                                     </p>
@@ -113,7 +133,6 @@ export default function PotBookmarkDrawer() {
                             </div>
                         ))}
                     </div>
-
                 </SheetContent>
             </Sheet>
         </div>

@@ -20,12 +20,41 @@
         WHERE id = #{id}
     </update>
 
+    <resultMap id="ChatRoomResultMap" type="com.ggirick.gardening_back.dto.chat.ChatRoomDTO">
+        <id property="id" column="id"/>
+        <result property="potListingId" column="potListingId"/>
+        <result property="status" column="chat_room_status" javaType="com.ggirick.gardening_back.enums.chat.ChatRoomStatus"/>
+        <result property="createdAt" column="createdAt"/>
+        <result property="lastChat" column="last_chat"/>
+        <result property="lastMessageTime" column="last_message_time"/>
+        <result property="unreadChatCount" column="unread_chat_count"/>
+
+        <association property="potInfo" javaType="com.ggirick.gardening_back.dto.potList.PotListDetailDTO">
+            <result property="title" column="potInfo_title"/>
+            <result property="type" column="potInfo_type" javaType="com.ggirick.gardening_back.enums.potList.PotListType"/>
+            <result property="price" column="potInfo_price"/>
+            <result property="thumbnail" column="potInfo_thumbnail"/>
+            <result property="status" column="potInfo_status" javaType="com.ggirick.gardening_back.enums.potList.PotListStatus"/>
+        </association>
+    </resultMap>
+
     <!-- 사용자 Uid에 따른 채팅방 목록 조회 -->
-    <select id="getChatRoomListByUserUid" resultType="com.ggirick.gardening_back.dto.chat.ChatRoomDTO">
+    <select id="getChatRoomListByUserUid" resultMap="ChatRoomResultMap">
         SELECT
         cr.*,
         cm.CONTENT AS last_chat,
-        cm.SENT_AT AS last_message_time
+        cm.SENT_AT AS last_message_time,
+        pl.title AS potInfo_title,
+        pl.type AS potInfo_type,
+        pl.price AS potInfo_price,
+        pl.thumbnail AS potInfo_thumbnail,
+        pl.status AS potInfo_status,
+        (SELECT COUNT(*)
+        FROM chat_message m
+        WHERE m.chat_room_id = cr.id
+        AND m.sender_uid != #{userUid}
+        AND m.is_read = 'N'
+        ) AS unread_chat_count
         FROM chatroom cr
         JOIN chatroom_participants crp ON cr.ID = crp.CHAT_ROOM_ID
         LEFT JOIN (
@@ -37,6 +66,7 @@
         )
         WHERE rn = 1
         ) cm ON cr.ID = cm.CHAT_ROOM_ID
+        LEFT JOIN pot_listing pl ON pl.id = cr.pot_listing_id
         WHERE crp.USER_UID = #{userUid}
         ORDER BY cr.CREATED_AT DESC
     </select>
