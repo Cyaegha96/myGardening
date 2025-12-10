@@ -176,7 +176,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                                 return {
                                     ...r,
                                     messages: [...r.messages, chat],
-                                    unreadChatCount: (r.unreadChatCount || 0) + 1
+                                    unreadChatCount: (r.unreadChatCount || 0) + 1,
+                                    lastChat: chat.content,
                                 };
                             });
 
@@ -273,26 +274,39 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             return;
         }
 
-        // 읽지 않은 메시지 확인
-        const unreadMessages = room?.messages.filter(msg => msg.senderUid !== userUid && msg.isRead === "N");
+        const userUid = useUserStore.getState().uid;
 
-        unreadMessages?.forEach(msg => {
+        // 현재 chatRooms에서 해당 방 가져오기
+        const existing = get().chatRooms.find(r => r.id === room.id);
+
+        // 메시지를 비우기
+        const resetRoom = {
+            ...existing,
+            messages: [],
+            unreadChatCount: 0,
+        };
+
+        // 읽지 않은 메시지 처리
+        const unreadMessages = existing?.messages.filter(
+            msg => msg.senderUid !== userUid && msg.isRead === "N"
+        ) ?? [];
+
+        unreadMessages.forEach(msg => {
             stompClient.publish({
                 destination: `/chat.ack`,
                 body: JSON.stringify(msg),
             });
         });
 
-        set((prev) => ({
-            selectedRoom: {
-                ...room,
-                unreadChatCount: 0, // 선택 시 모든 읽지 않은 메시지 처리
-            },
+        // chatRooms 배열에서 해당 방만 교체
+        set(prev => ({
+            chatRooms: prev.chatRooms.map(r =>
+                r.id === room.id ? resetRoom : r
+            ),
+            selectedRoom: resetRoom,
             hasMore: true,
             cursorId: undefined,
-            lastChatUuid: room.messages.length > 0
-                ? room.messages[room.messages.length - 1].uuid // 마지막 메시지로 스크롤 가능
-                : undefined,
+            lastChatUuid: undefined,
             totalUnreadChatCount: prev.totalUnreadChatCount - unreadMessages.length,
         }));
     },
@@ -319,8 +333,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 data.forEach((item) => {
                     state.addMessage(roomId, item, false);
                 });
-
-                console.log(get().lastChatUuid, data);
 
                 const oldestSentAt = data.reduce((prev, curr) =>
                     new Date(prev.sentAt!).getTime() < new Date(curr.sentAt!).getTime() ? prev : curr

@@ -22,9 +22,9 @@
 
     <resultMap id="ChatRoomResultMap" type="com.ggirick.gardening_back.dto.chat.ChatRoomDTO">
         <id property="id" column="id"/>
-        <result property="potListingId" column="potListingId"/>
+        <result property="potListingId" column="pot_listing_id"/>
         <result property="status" column="chat_room_status" javaType="com.ggirick.gardening_back.enums.chat.ChatRoomStatus"/>
-        <result property="createdAt" column="createdAt"/>
+        <result property="createdAt" column="created_at"/>
         <result property="lastChat" column="last_chat"/>
         <result property="lastMessageTime" column="last_message_time"/>
         <result property="unreadChatCount" column="unread_chat_count"/>
