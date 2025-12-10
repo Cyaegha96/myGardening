@@ -7,7 +7,7 @@ export interface CommentListProps {
     onLike: (id: number, liked: boolean) => void;
     onDelete: (id: number) => void;
     onEdit: (id: number, content: string) => void;
-    onReport: (id: number) => void;
+    onReport: (id: number, writerId:string) => void;
 
     // 답글 input용
     replyTarget?: { id: number; nickname: string } | null;

@@ -31,7 +31,8 @@ export function Header() {
     const [open, setOpen] = React.useState(false);
     const scrolled = useScroll(10);
     const navigate = useNavigate();
-    const accessToken = useAuthStore((s: AuthState) => s.accessToken);
+
+    const isLoggedIn = useAuthStore((s:AuthState) => s.isLoggedIn);
     const {userInfo, fetchUserInfo} = useUserInfoStore();
     React.useEffect(() => {
         if (open) {
@@ -44,9 +45,9 @@ export function Header() {
         };
     }, [open]);
     useEffect(() => {
-        if (!accessToken) return;
+        if (!isLoggedIn) return;
         fetchUserInfo();
-    }, [accessToken]);
+    }, [isLoggedIn]);
 
     return (
         <header
@@ -115,7 +116,7 @@ export function Header() {
                     </NavigationMenu>
                 </div>
                 <div className="hidden items-center gap-2 md:flex">
-                    {accessToken ? (
+                    {isLoggedIn ? (
                         <>
                             <div className="flex items-center gap-2 cursor-pointer"
                                  onClick={() => navigate('/auth/dashboard')}>
@@ -175,7 +176,7 @@ export function Header() {
                         ))}
                     </div>
                 </NavigationMenu>
-                {accessToken ? (
+                {isLoggedIn ? (
                     <>
                         <div className="flex items-center gap-2 cursor-pointer"
                              onClick={() => navigate('/auth/dashboard')}>

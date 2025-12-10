@@ -9,7 +9,7 @@ export interface CommentListContainerProps {
     // 수정/삭제/신고
     onDelete: (commentId: number) => void | Promise<void>;
     onEdit: (commentId: number, contents: string) => void | Promise<void>;
-    onReport: (commentId: number) => void | Promise<void>;
+    onReport: (commentId: number, wrtierId:string) => void | Promise<void>;
 
     // 답글 input용
     replyTarget?: { id: number; nickname: string } | null;
