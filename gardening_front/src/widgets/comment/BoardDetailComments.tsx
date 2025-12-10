@@ -2,11 +2,12 @@ import { useCommentSubmit } from "@/features/comment/write-comment/model/useComm
 import { useRef, useState } from "react";
 import CommentInput from "@/features/comment/write-comment/ui/CommentInput.tsx";
 import CommentListContainer from "@/features/comment/fetch-comments/ui/CommentListContainer.tsx";
-import { BoardCommentControllerApi } from "@/shared/api";
+import {BoardCommentControllerApi, ReportControllerApi} from "@/shared/api";
+import {type AuthState, useAuthStore} from "@/entities/auth/useAuthStore.tsx";
 
 export default function BoardDetailComments({ boardId }: { boardId: number }) {
     const { submit } = useCommentSubmit(boardId);
-
+    const isLoggedIn = useAuthStore((s:AuthState) => s.isLoggedIn);
     // 현재 답글 대상
     const [replyTarget, setReplyTarget] = useState<{ id: number; nickname: string } | null>(null);
 
@@ -44,25 +45,33 @@ export default function BoardDetailComments({ boardId }: { boardId: number }) {
     };
 
     // 댓글 신고
-    const handleReportComment = async (commentId: number) => {
+    const handleReportComment = async (commentId: number,wrtierId:string) => {
         console.log("신고 : " + commentId);
+        const api = new ReportControllerApi();
+        await api.createReport({
+            targetId:boardId,
+            targetType:"BOARD_COMMENT",
+            reason:"해당 게시판의 "+ wrtierId+"의 댓글이 신고되었습니다.",
+        });
+        alert("신고가 접수되었습니다.");
+
     };
 
     return (
         <div className="bg-white p-4 rounded-xl shadow mt-4 w-full max-w-2xl">
+            {isLoggedIn? /* 부모 댓글 입력 */
+                <CommentInput
+                    parentId={replyTarget?.id}
+                    parentNickname={replyTarget?.nickname}
+                    onSubmit={async (text) => {
+                        await submit(text, replyTarget?.id);
 
-            {/* 부모 댓글 입력 */}
-            <CommentInput
-                parentId={replyTarget?.id}
-                parentNickname={replyTarget?.nickname}
-                onSubmit={async (text) => {
-                    await submit(text, replyTarget?.id);
-
-                    refreshRef.current?.();
-                    setReplyTarget(null);
-                }}
-                onCancel={() => setReplyTarget(null)}
-            />
+                        refreshRef.current?.();
+                        setReplyTarget(null);
+                    }}
+                    onCancel={() => setReplyTarget(null)}
+                />: <span>로그인 중인 사용자만 댓글을 작성할 수 있습니다</span>}
+            
 
             <div className="mt-4 border-t pt-4">
                 <CommentListContainer
