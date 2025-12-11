@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -40,7 +41,7 @@ public class LawCodeCsvLoader {
     public void load() throws IOException {
         ClassPathResource csvPath = new ClassPathResource("data/koreanAddressData.csv");
 
-        try (BufferedReader br = Files.newBufferedReader(csvPath.getFile().toPath())) {
+        try (BufferedReader br =  new BufferedReader(new InputStreamReader(csvPath.getInputStream()))) {
             String line;
             br.readLine(); // header skip
 

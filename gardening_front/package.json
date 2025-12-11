@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "generate:api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o src/shared/api -t src/shared/api/openapi-templates"

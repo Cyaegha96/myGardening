@@ -1,7 +1,7 @@
 import { Group, Layer, Rect, Stage, Transformer } from "react-konva";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/shadcn/components/ui/button";
-import { Card, CardContent } from "@/shared/shadcn/components/ui/card";
+import { Card } from "@/shared/shadcn/components/ui/card";
 import { attachTransformer } from "@/features/terrarium/transformObject/ObjectTransformer.tsx";
 import { useCanvasStore } from "@/features/terrarium/model/useCanvasStore.ts";
 import { handleCanvasDrop } from "@/features/terrarium/drag&drop/handleCanvasDrop.ts";
@@ -64,6 +64,7 @@ export default function TerrariumCanvas() {
             setSelectedTerrariumId(null);
             setObjects([]); // 삭제 후 캔버스 초기화
             loadTerrariums(); // 삭제 후 리스트 갱신
+            alert("선택한 테라리움이 삭제되었습니다.")
         } catch (err) {
             console.error("삭제 실패:", err);
         }
@@ -71,59 +72,61 @@ export default function TerrariumCanvas() {
 
     return (
         <Card className="w-full h-full p-2 flex flex-col">
-            {/* 테라리움 생성 폼 */}
-            <CardContent className="flex gap-2 mb-2">
-                <Input placeholder="테라리움 제목" value={title} onChange={e => setTitle(e.target.value)} />
-                <Input placeholder="설명" value={description} onChange={e => setDescription(e.target.value)} />
-                <div className="flex items-center gap-2">
+            {/* 상단 콤팩트 폼 + 선택바 */}
+            <div className="flex flex-wrap items-center gap-2">
+                {/* 제목 + 설명 */}
+                <Input
+                    className="flex-1 min-w-[120px]"
+                    placeholder="테라리움 제목"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                />
+                <Input
+                    className="flex-1 min-w-[120px]"
+                    placeholder="설명"
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                />
+
+                {/* 공개 체크박스 */}
+                <div className="flex items-center gap-1">
                     <Checkbox checked={isPublic} onCheckedChange={checked => setIsPublic(Boolean(checked))} />
-                    <span>공개</span>
+                    <span className="text-sm">공개</span>
                 </div>
-                <Button
-                    onClick={async () => {
-                        const terrarium = await terrariumApi.createTerrarium({
-                            title,
-                            description,
-                            isPublic,
-                            width: size.width,
-                            height: size.height,
-                        });
-                        alert("저장완료!");
-                        const terrariumId = terrarium.data.id as number;
-                        await saveCanvas(terrariumId);
-                        loadTerrariums(); // 저장 후 리스트 갱신
-                    }}
-                >
+
+                {/* 저장 버튼 */}
+                <Button size="sm" onClick={async () => {
+                    const terrarium = await terrariumApi.createTerrarium({
+                        title,
+                        description,
+                        isPublic,
+                        width: size.width,
+                        height: size.height,
+                    });
+                    alert("저장완료!");
+                    const terrariumId = terrarium.data.id as number;
+                    await saveCanvas(terrariumId);
+                    loadTerrariums();
+                }}>
                     저장
                 </Button>
-            </CardContent>
 
-            {/* 테라리움 선택 + 삭제 + 불러오기 */}
-            <div className="flex items-center gap-2 mb-2">
-                <TerrariumSelector
-                    terrariums={terrariums}
-                    onSelect={id => setSelectedTerrariumId(id)}
-                />
+                {/* 테라리움 선택 + 삭제 + 불러오기 */}
+                <TerrariumSelector terrariums={terrariums} onSelect={id => setSelectedTerrariumId(id)} />
                 {selectedTerrariumId && (
                     <>
-                        <Button
-                            variant="destructive"
-                            onClick={() => handleDeleteTerrarium(selectedTerrariumId)}
-                        >
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteTerrarium(selectedTerrariumId)}>
                             삭제
                         </Button>
-                        <Button
-                            variant="secondary"
-                            onClick={async () => {
-                                await loadTerrarium(selectedTerrariumId);
-                            }}
-                        >
+                        <Button size="sm" variant="secondary" onClick={async () => await loadTerrarium(selectedTerrariumId)}>
                             불러오기
                         </Button>
                     </>
                 )}
             </div>
-
+            <p className="text-sm text-green-500">
+                케이스를 캔버스에 크기에 맞춰 넣고 흙과 테라리움 재료들을 각도와 크기를 설정해 이쁘게 꾸며보세요!
+            </p>
             {/* 캔버스 영역 */}
             <div
                 ref={containerRef}
@@ -131,14 +134,9 @@ export default function TerrariumCanvas() {
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleCanvasDrop(e, stageRef, addObject)}
             >
-                <Stage
-                    width={size.width}
-                    height={size.height}
-                    ref={stageRef}
-                    onMouseDown={e => {
-                        if (e.target === stageRef.current) setSelectedId(null);
-                    }}
-                >
+                <Stage width={size.width} height={size.height} ref={stageRef} onMouseDown={e => {
+                    if (e.target === stageRef.current) setSelectedId(null);
+                }}>
                     <Layer>
                         <Rect x={0} y={0} width={size.width} height={size.height} fill="#f8fafc" />
                     </Layer>
@@ -160,7 +158,6 @@ export default function TerrariumCanvas() {
                                     const node = e.currentTarget;
                                     const scaleX = node.scaleX();
                                     const scaleY = node.scaleY();
-
                                     setObjects(objects.map(obj => obj.id === o.id ? {
                                         ...obj,
                                         x: node.x(),
@@ -169,7 +166,6 @@ export default function TerrariumCanvas() {
                                         height: Math.max(5, obj.height * scaleY),
                                         rotation: node.rotation(),
                                     } : obj));
-
                                     node.scaleX(1);
                                     node.scaleY(1);
                                 }}
@@ -187,19 +183,17 @@ export default function TerrariumCanvas() {
             </div>
 
             {/* 캔버스 이미지 다운로드 */}
-            <Button
-                onClick={() => {
-                    if (stageRef.current) {
-                        const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
-                        const link = document.createElement("a");
-                        link.download = `${title || "terrarium"}.png`;
-                        link.href = uri;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    }
-                }}
-            >
+            <Button size="sm" onClick={() => {
+                if (stageRef.current) {
+                    const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+                    const link = document.createElement("a");
+                    link.download = `${title || "terrarium"}.png`;
+                    link.href = uri;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }}>
                 이미지 다운로드
             </Button>
         </Card>

@@ -7,7 +7,8 @@ export function LayersPanel() {
     const { objects, selectedId, setSelectedId, moveForward, moveBackward, deleteObject } = useCanvasStore();
 
     return (
-        <Card className="w-82 h-full flex flex-col">
+        <Card className="w-82 h-[calc(100vh-64px)] flex flex-col">
+            {/* h-[calc(100vh-64px)] : 화면 전체 높이에서 상단 헤더 64px 제외 */}
             <div className="p-3 border-b flex items-center justify-between">
                 <h2 className="text-lg font-semibold">레이어</h2>
                 {selectedId && (
@@ -17,14 +18,14 @@ export function LayersPanel() {
                 )}
             </div>
 
-            <ScrollArea className="flex-1 p-2">
+            <ScrollArea className="flex-1 overflow-auto p-2">
                 <div className="flex flex-col gap-2">
                     {objects.map((obj) => (
                         <Card
                             key={obj.id}
                             className={`p-2 cursor-pointer flex items-center justify-between
-                                ${selectedId === obj.id ? "bg-blue-100 font-semibold" : ""}
-                            `}
+                        ${selectedId === obj.id ? "bg-blue-100 font-semibold" : ""}
+                    `}
                             onClick={() => setSelectedId(obj.id)}
                         >
                             <span>{obj.id}</span>

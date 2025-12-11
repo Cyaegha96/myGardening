@@ -178,45 +178,6 @@ export default function ChatDrawer() {
             });
         }
     }
-
-    // 스크롤 이벤트 기반 과거 메시지 로드
-    // useEffect(() => {
-    //     const scrollContainer = scrollRef.current;
-    //     if (!scrollContainer) return;
-    //
-    //     let ticking = false; // requestAnimationFrame 중복 방지
-    //
-    //     const handleScroll = () => {
-    //         if (!hasMore || isFetching) return;
-    //
-    //         if (!ticking) {
-    //             ticking = true;
-    //             requestAnimationFrame(() => {
-    //                 if (scrollContainer.scrollTop < 50) {
-    //                     setIsFetching(true);
-    //                     const prevScrollHeight = scrollContainer.scrollHeight;
-    //
-    //                     fetchMessages().finally(() => {
-    //                         const newScrollHeight = scrollContainer.scrollHeight;
-    //                         const scrollDiff = newScrollHeight - prevScrollHeight;
-    //
-    //                         // 부드럽게 이동 (animate)
-    //                         scrollContainer.scrollBy({top: scrollDiff, behavior: "smooth"});
-    //
-    //                         setIsFetching(false);
-    //                         ticking = false;
-    //                     });
-    //                 } else {
-    //                     ticking = false;
-    //                 }
-    //             });
-    //         }
-    //     };
-    //
-    //     scrollContainer.addEventListener("scroll", handleScroll);
-    //     return () => scrollContainer.removeEventListener("scroll", handleScroll);
-    // }, [selectedRoom, hasMore, isFetching]);
-
     // 선택된 채팅방 메시지가 10개 미만일 경우 초기 fetch
     useEffect(() => {
         if (selectedRoom) {
@@ -298,11 +259,11 @@ export default function ChatDrawer() {
                                         <img
                                             src={item.potInfo.thumbnail}
                                             alt="썸네일"
-                                            className="min-w-16 h-16 object-cover rounded-md"
+                                            className="min-w-16 max-w-16 h-16 object-cover rounded-md"
                                         />
                                     ) : (
                                         <div
-                                            className="min-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
+                                            className="min-w-16 max-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
                                             등록된<br/>
                                             사진 없음
                                         </div>
