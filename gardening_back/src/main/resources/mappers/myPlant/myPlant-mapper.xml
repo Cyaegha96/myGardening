@@ -19,8 +19,7 @@
         #{plantScientificName},
         #{nickname, jdbcType=VARCHAR},
         #{memo, jdbcType=VARCHAR},
-        #{acquiredAt}
-        )
+        TO_TIMESTAMP(#{acquiredAt}, 'YYYY-MM-DD')
         <selectKey resultType="int" keyProperty="userPlantId" order="AFTER">
             select my_plant_seq.currval from dual
         </selectKey>
@@ -33,7 +32,7 @@
         plant_scientific_name = #{plantScientificName},
         nickname = #{nickname, jdbcType=VARCHAR},
         memo = #{memo, jdbcType=VARCHAR},
-        acquired_at = #{acquiredAt},
+        TO_TIMESTAMP(#{acquiredAt}, 'YYYY-MM-DD'),
         updated_at = sysdate
 
         <if test="status != null">
