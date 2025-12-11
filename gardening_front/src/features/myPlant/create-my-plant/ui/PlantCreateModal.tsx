@@ -148,7 +148,7 @@ export function PlantCreateModal({
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    // 제출
+// 제출
     const handleSubmit = () => {
         // create 모드에서 분석 중이면 저장 막기
         if (mode === "create" && isLoading) {
@@ -156,41 +156,54 @@ export function PlantCreateModal({
             return;
         }
 
-        // create 모드에서는 file state 기준으로 검사
+        // YYYY-MM-DD 포맷 안전 생성기
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const year = startDate.getFullYear();
+        const month = pad(startDate.getMonth() + 1);
+        const day = pad(startDate.getDate());
+        const formattedDate = `${year}-${month}-${day}`;
+
+        // CREATE 모드
         if (mode === "create") {
             if (!file) {
                 toast.error("이미지를 업로드해주세요!");
                 return;
             }
+
             if (detectFailed || !plantScientificName) {
                 toast.error("식물 분석 실패! 다른 사진으로 시도해주세요.");
                 return;
             }
 
+            console.log("acquiredAt(create):", formattedDate);
+
             onSend?.({
                 plantInfo: {
-                    plantScientificName: plantScientificName,
+                    plantScientificName,
                     nickname: nickname.trim() || undefined,
                     memo: memoText.trim() || undefined,
-                    acquiredAt: startDate.toISOString().slice(0, 10),
+                    acquiredAt: formattedDate,   // ← 정답
                 },
                 file,
             });
             return;
         }
 
-        // 수정 모드 → 파일 없어도 기존 정보로 수정 허용
+        // EDIT 모드
+        console.log("acquiredAt(edit):", formattedDate);
+
         onUpdate?.({
             plantInfo: {
                 userPlantId: defaultValues!.userPlantId,
-                plantScientificName: plantScientificName,
+                plantScientificName,
                 nickname: nickname.trim() || undefined,
                 memo: memoText.trim() || undefined,
-                acquiredAt: startDate.toISOString().slice(0, 10),
+                acquiredAt: formattedDate,   // ← EDIT도 동일하게 적용
             },
             file: file ?? undefined,
         });
     };
+
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
