@@ -65,7 +65,33 @@ export default function NotificationFloatingBox() {
 
     return (
         <MotionConfig transition={transition}>
-            <div className="fixed bottom-8 right-23 md:right-27 z-50 ms-2 md:ms-0">
+            <div
+                className="flex items-center justify-center w-8 h-8 rounded"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className="fixed bottom-23 right-6 md:bottom-27 md:right-8 z-50">
+                    <Button
+                        className="cursor-pointer relative bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg w-12 h-12 md:w-16 md:h-16 transition-transform hover:scale-105">
+                        {!isOpen ?
+                            <Bell className="size-5 md:size-6"/>
+                            :
+                            <X className="size-5 md:size-6"/>
+                        }
+                    </Button>
+
+                    {!isOpen && totalNotificationCount > 0 && (
+                        <Badge
+                            className="absolute top-0 right-0 w-5 h-5 md:w-6 md:h-6"
+                            variant="destructive"
+                        >
+                            {totalNotificationCount}
+                        </Badge>
+                    )}
+                </div>
+
+                {isOpen && <X size={18} className="cursor-pointer text-white"/>}
+            </div>
+            <div className="fixed bottom-8 right-23 md:right-27 z-50 ms-2 md:ms-0 ">
                 <motion.div
                     ref={notificationRef}
                     animate={{
@@ -81,33 +107,6 @@ export default function NotificationFloatingBox() {
                                 <span className="font-medium text-white">알림 목록</span>
                             </>
                         )}
-
-                        <div
-                            className="flex items-center justify-center w-8 h-8 rounded"
-                            onClick={() => setIsOpen(!isOpen)}
-                        >
-                            <div className="fixed bottom-23 right-6 md:bottom-27 md:right-8 z-50">
-                                <Button
-                                    className="cursor-pointer relative bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg w-14 h-14 md:w-16 md:h-16 transition-transform hover:scale-105">
-                                    {!isOpen ?
-                                        <Bell className="size-5 md:size-6"/>
-                                        :
-                                        <X className="size-5 md:size-6"/>
-                                    }
-                                </Button>
-
-                                {!isOpen && totalNotificationCount > 0 && (
-                                    <Badge
-                                        className="absolute top-0 right-0 w-5 h-5 md:w-6 md:h-6"
-                                        variant="destructive"
-                                    >
-                                        {totalNotificationCount}
-                                    </Badge>
-                                )}
-                            </div>
-
-                            {isOpen && <X size={18} className="cursor-pointer text-white"/>}
-                        </div>
                     </div>
 
                     {/* 알림 리스트 */}

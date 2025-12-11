@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:api": "openapi-generator-cli generate -i http://localhost:8081/v3/api-docs -g typescript-axios -o src/shared/api -t src/shared/api/openapi-templates"
+    "generate:api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript-axios -o src/shared/api -t src/shared/api/openapi-templates"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
