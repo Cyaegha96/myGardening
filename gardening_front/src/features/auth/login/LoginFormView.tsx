@@ -83,7 +83,7 @@ export default function LoginFormView({ id, setId, password, setPassword, loadin
               </Button>
             </Link>
               <Link to="/auth/login/temp" className="w-full text-center text-sm text-blue-600 hover:underline">
-                  임시 비밀번호로 로그인
+                  비밀 번호 변경
               </Link>
 
             {/*<SocialLoginButtons onSocialLogin={handleSocialLogin} loading={loading} />*/}
