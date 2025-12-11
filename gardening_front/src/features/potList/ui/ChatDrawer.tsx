@@ -259,11 +259,11 @@ export default function ChatDrawer() {
                                         <img
                                             src={item.potInfo.thumbnail}
                                             alt="썸네일"
-                                            className="min-w-16 h-16 object-cover rounded-md"
+                                            className="min-w-16 max-w-16 h-16 object-cover rounded-md"
                                         />
                                     ) : (
                                         <div
-                                            className="min-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
+                                            className="min-w-16 max-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
                                             등록된<br/>
                                             사진 없음
                                         </div>
