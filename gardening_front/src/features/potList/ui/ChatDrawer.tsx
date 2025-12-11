@@ -259,11 +259,11 @@ export default function ChatDrawer() {
                                         <img
                                             src={item.potInfo.thumbnail}
                                             alt="썸네일"
-                                            className="min-w-16 h-16 object-cover rounded-md"
+                                            className="min-w-16 max-w-16 h-16 object-cover rounded-md"
                                         />
                                     ) : (
                                         <div
-                                            className="min-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
+                                            className="min-w-16 max-w-16 h-16 rounded-md bg-secondary flex items-center justify-center text-center text-secondary-foreground text-xs">
                                             등록된<br/>
                                             사진 없음
                                         </div>
@@ -340,7 +340,7 @@ export default function ChatDrawer() {
 
                                     return (
                                         <div>
-                                            {showDateSeparator && hasMore && (
+                                            {idx === currentRoom.messages.length - 1 && hasMore && (
                                                 <div className="flex justify-center my-2">
                                                     <span
                                                         className="text-xs text-gray-500 bg-gray-200 cursor-pointer hover:bg-gray-400 px-2 py-1 rounded"
