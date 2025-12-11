@@ -27,30 +27,37 @@ export function PlantCreateModal({
     const [detectFailed, setDetectFailed] = useState(false);
 
     const [imagePreview, setImagePreview] = useState<string>("noImage");
-    const [scientificName, setScientificName] = useState("");
+    const [plantScientificName, setPlantScientificName] = useState("");
     const [commonName, setCommonName] = useState("");
 
     const [nickname, setNickname] = useState("");
     const [memoText, setMemoText] = useState("");
     const [memoLines, setMemoLines] = useState<MemoLine[]>([]);
     const [startDate, setStartDate] = useState<Date>(today);
-    const [isPortrait, setIsPortrait] = useState(true);
+    const [file, setFile] = useState<File | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    /** 수정모드 데이터 세팅 */
+    const [isDragging, setIsDragging] = useState(false); // 드래그 상태
+
+    const isSubmitDisabled =
+        mode === "create"
+            ? (!file || isLoading || detectFailed || !plantScientificName)
+            : false;
+
+    // 수정모드 데이터 세팅
     useEffect(() => {
         if (mode !== "edit" || !defaultValues) return;
 
         setImagePreview(defaultValues.imageUrl);
         setCommonName(defaultValues.commonName ?? "");
-        setScientificName(defaultValues.scientificName ?? "");
+        setPlantScientificName(defaultValues.plantScientificName ?? "");
         setNickname(defaultValues.nickname ?? "");
         setMemoText(defaultValues.memo ?? "");
         setStartDate(defaultValues.acquiredAt ? new Date(defaultValues.acquiredAt) : today);
     }, [mode, defaultValues]);
 
-    /** AI 식별 */
+    // AI 식별
     const analyzePlant = async (file: File) => {
         setIsLoading(true);
         setDetectFailed(false);
@@ -67,7 +74,7 @@ export function PlantCreateModal({
                 return;
             }
 
-            setScientificName(data.scientificName);
+            setPlantScientificName(data.scientificName);
             setCommonName(data.commonName || "확실하지 않아요");
         } catch {
             setDetectFailed(true);
@@ -77,25 +84,49 @@ export function PlantCreateModal({
         }
     };
 
-    /** 이미지 변경 처리 */
-    const handleFile = useCallback((file: File) => {
-        const preview = URL.createObjectURL(file);
-        const img = new Image();
-        img.src = preview;
-        img.onload = () => {
-            setIsPortrait(img.height >= img.width);
-            setImagePreview(preview);
-        };
-
-        analyzePlant(file);
+    // 이미지 변경 처리
+    const handleFile = useCallback((selectedFile: File) => {
+        const preview = URL.createObjectURL(selectedFile);
+        setFile(selectedFile);
+        setImagePreview(preview);
+        analyzePlant(selectedFile);
     }, []);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) handleFile(file);
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) handleFile(selectedFile);
     };
 
-    /** 메모 */
+    // 드래그 오버
+    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    // 드래그 리브
+    const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    // 드롭 처리
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        const droppedFile = e.dataTransfer.files?.[0];
+        if (!droppedFile) return;
+        if (!droppedFile.type.startsWith("image/")) {
+            toast.error("이미지 파일만 업로드 가능합니다.");
+            return;
+        }
+
+        handleFile(droppedFile);
+
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    // 메모
     const MAX_LINES = 3;
     const updateMemoText = (value: string) => {
         const lines = value.split("\n");
@@ -107,33 +138,38 @@ export function PlantCreateModal({
         setMemoLines(lines.map(text => ({ text, align: "center" })));
     };
 
-    /** 이미지 제거 */
+    // 이미지 제거
     const clearImage = () => {
         setImagePreview("noImage");
-        setScientificName("");
+        setPlantScientificName("");
         setCommonName("");
         setDetectFailed(false);
+        setFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    /** 제출 */
+    // 제출
     const handleSubmit = () => {
-        const file = fileInputRef.current?.files?.[0];
+        // create 모드에서 분석 중이면 저장 막기
+        if (mode === "create" && isLoading) {
+            toast.error("식물 분석이 끝난 후에 저장할 수 있습니다.");
+            return;
+        }
 
-        // 🔹 등록 모드 → 반드시 식별 성공해야 저장 가능
+        // create 모드에서는 file state 기준으로 검사
         if (mode === "create") {
             if (!file) {
                 toast.error("이미지를 업로드해주세요!");
                 return;
             }
-            if (detectFailed || !scientificName) {
+            if (detectFailed || !plantScientificName) {
                 toast.error("식물 분석 실패! 다른 사진으로 시도해주세요.");
                 return;
             }
 
             onSend?.({
                 plantInfo: {
-                    plantScientificName: scientificName,
+                    plantScientificName: plantScientificName,
                     nickname: nickname.trim() || undefined,
                     memo: memoText.trim() || undefined,
                     acquiredAt: startDate.toISOString().slice(0, 10),
@@ -143,11 +179,11 @@ export function PlantCreateModal({
             return;
         }
 
-        // 🔹 수정 모드 → 파일 없어도 기존 정보로 수정 허용
+        // 수정 모드 → 파일 없어도 기존 정보로 수정 허용
         onUpdate?.({
             plantInfo: {
                 userPlantId: defaultValues!.userPlantId,
-                plantScientificName: scientificName,
+                plantScientificName: plantScientificName,
                 nickname: nickname.trim() || undefined,
                 memo: memoText.trim() || undefined,
                 acquiredAt: startDate.toISOString().slice(0, 10),
@@ -182,25 +218,33 @@ export function PlantCreateModal({
                 <PlantImageUploader
                     mode="plant"
                     imagePreview={imagePreview}
-                    isPortrait={isPortrait}
+                    fileInputRef={fileInputRef}
+                    onImageChange={handleImageChange}
+                    onClearImage={clearImage}
+                    isDragging={isDragging}
                     commonName={commonName}
                     nickname={nickname}
                     memoLines={memoLines}
-                    onImageChange={handleImageChange}
-                    onClearImage={clearImage}
-                    fileInputRef={fileInputRef}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
                 />
 
-                {/* 🔥 식별 실패 메시지 */}
-                {detectFailed && (
-                    <p className="text-center text-sm text-red-600 font-semibold my-2">
-                        식별 실패! 더 선명한 사진을 업로드해주세요!
+                {/* 식별 상태 표시 */}
+                {!detectFailed && (
+                    <p className="text-center text-sm font-medium my-3">
+                        {isLoading ? (
+                            <span className="text-blue-600">🌿 학명 분석 중...</span>
+                        ) : (
+                            commonName && <span className="text-green-700">{commonName}</span>
+                        )}
                     </p>
                 )}
 
-                {commonName && !detectFailed && (
-                    <p className="text-center text-sm text-green-700 font-medium mb-3">
-                        {commonName}
+                {/* 식별 실패 메시지 */}
+                {detectFailed && (
+                    <p className="text-center text-sm text-red-600 font-semibold my-3">
+                        식별 실패! 더 선명한 사진을 업로드해주세요!
                     </p>
                 )}
 
@@ -226,6 +270,7 @@ export function PlantCreateModal({
                     mode={mode}
                     onSubmit={handleSubmit}
                     onResetAll={mode === "create" ? clearImage : undefined}
+                    disabled={isSubmitDisabled}
                 />
             </div>
         </div>

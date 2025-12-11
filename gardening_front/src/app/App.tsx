@@ -22,6 +22,10 @@ function App() {
             initUser();
             stompClient.activate();
         }
+
+        return () => {
+            stompClient.deactivate();
+        }
     }, [setTokens, initUser]);
 
     return (

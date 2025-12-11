@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ggirick.gardening_back.mappers.myPlant.diary.MyPlantDiaryImageMapper">
     <!-- 등록한 식물의 모든 다이어리 이미지 조회 -->
-    <select id="getImageByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO">
+    <select id="getImagesByPlantId" resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO">
         SELECT *
         FROM my_plant_diary_image i
         JOIN my_plant_diary d ON i.diary_id = d.diary_id
@@ -25,7 +25,7 @@
         WHERE diary_id = #{diaryId}
     </select>
 
-    <!-- 이미지 등록 -->
+    <!-- 다이어리 이미지 등록 -->
     <insert id="insert">
         INSERT INTO my_plant_diary_image (
             image_id,
@@ -36,14 +36,30 @@
             hash
         )
         VALUES (
-                   my_plant_image_seq.NEXTVAL,
+                   my_plant_diary_image_seq.NEXTVAL,
                    #{diaryId},
                    #{oriName},
                    #{sysName},
                    #{url},
                    #{hash}
                )
+        <selectKey resultType="int" keyProperty="imageId" order="AFTER">
+            select my_plant_diary_image_seq.currval from dual
+        </selectKey>
     </insert>
+
+    <!-- 다이어리 이미지 수정 -->
+    <update id="update"
+            parameterType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO">
+
+        UPDATE my_plant_diary_image
+        SET ori_name = #{oriName},
+            sys_name = #{sysName},
+            url = #{url},
+            hash = #{hash}
+        WHERE image_id = #{imageId}
+
+    </update>
 
     <!-- imageId로 이미지 개별 삭제 -->
     <delete id="deleteByImageId">
@@ -56,17 +72,6 @@
         DELETE FROM my_plant_diary_image
         WHERE diary_id = #{diaryId}
     </delete>
-
-    <!-- 중복 이미지 존재 여부 조회 (유저별) -->
-    <select id="findByHashAndUserUid"
-            resultType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageResponseDTO">
-        SELECT i.image_id, i.url
-        FROM my_plant_diary_image i
-                 JOIN my_plant_diary d ON i.diary_id = d.diary_id
-                 JOIN my_plant p ON d.user_plant_id = p.user_plant_id
-        WHERE i.hash = #{hash}
-          AND p.user_uid = #{loginUid}
-    </select>
 
     <!-- 권한 체크용 - 해당 식물의 등록자인지 -->
     <select id="getOwnerUidByDiaryImageId" resultType="string">

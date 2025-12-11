@@ -6,11 +6,11 @@ export interface DiaryWriteModalProps {
     diary: MyPlantDiaryResponseDTO | null;
 
     onClose: () => void;
-    onSubmit: (params: {
+    onSubmit: ({content, weather, deleteImage, file,}: {
         content: string;
         weather: string;
+        deleteImage?: boolean;
         file: File | null;
-        isDeleteImage?: boolean;
     }) => void;
 
     // 저장/수정 성공 시 후처리 (목록 새로고침 등)

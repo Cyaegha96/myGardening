@@ -74,17 +74,53 @@ export default function ChatDrawer() {
 
     const navigate = useNavigate();
 
+    function waitForConnection(client, timeout = 5000) {
+        return new Promise((resolve, reject) => {
+            const start = Date.now();
+
+            function check() {
+                if (client.connected) {
+                    return resolve(true);
+                }
+                if (Date.now() - start > timeout) {
+                    return reject(new Error("STOMP connection timeout"));
+                }
+                setTimeout(check, 50); // 50ms 간격으로 연결여부 검사
+            }
+
+            check();
+        });
+    }
+
     // 초기 채팅방 로드 및 구독
     useEffect(() => {
-        initialChatRooms(undefined);
-        const sub = stompClient.subscribe(`/topic/chatroom/ack/${userUid}`, () => {
-            useChatStore.getState().subscriptions.forEach((sub) => sub.unsubscribe());
-            initialChatRooms(undefined);
-        });
-        useChatStore.setState(prev => ({subscriptions: [...prev.subscriptions, sub]}));
+        let sub;
+
+        const runAsync = async () => {
+            try {
+                // 연결될 때까지 기다림
+                await waitForConnection(stompClient);
+
+
+                initialChatRooms(undefined);
+                // 안전하게 구독 가능
+                sub = stompClient.subscribe(`/topic/chatroom/ack/${userUid}`, () => {
+                    useChatStore.getState().subscriptions.forEach(s => s.unsubscribe());
+                    initialChatRooms(undefined);
+                });
+
+                useChatStore.setState(prev => ({
+                    subscriptions: [...prev.subscriptions, sub]
+                }));
+            } catch (e) {
+                console.error("STOMP subscribe failed:", e);
+            }
+        };
+
+        runAsync();
 
         return () => {
-            useChatStore.getState().subscriptions.forEach((sub) => sub.unsubscribe());
+            if (sub) sub.unsubscribe();
         };
     }, []);
 

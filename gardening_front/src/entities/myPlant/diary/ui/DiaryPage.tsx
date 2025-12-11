@@ -1,10 +1,9 @@
 // DiaryPage.tsx
-// 다이어리를 카드 또는 텍스트 형태로 표현
 
 import PolaroidCard from "@/entities/myPlant/ui/PolaroidCard.tsx";
 import { useState } from "react";
 import type { DiaryPageProps } from "@/entities/myPlant/diary/model/DiaryPageProps.ts";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Sun, Cloud, CloudRain, Snowflake } from "lucide-react";
 
 export default function DiaryPage({ diary, onEdit, onDelete }: DiaryPageProps) {
 
@@ -17,6 +16,7 @@ export default function DiaryPage({ diary, onEdit, onDelete }: DiaryPageProps) {
     }
 
     const [menuOpen, setMenuOpen] = useState(false);
+
     const formattedDate = diary.createdAt
         ? new Date(diary.createdAt).toLocaleDateString("ko-KR")
         : "";
@@ -26,39 +26,64 @@ export default function DiaryPage({ diary, onEdit, onDelete }: DiaryPageProps) {
         onDelete(diary.diaryId);
     };
 
-    return (
-        <div className="mb-6 relative px-4"> {/* 변경: mb-8 → mb-6 */}
+    // WeatherType enum 기반 아이콘 매핑
+    const weatherIcon = (() => {
+        switch (diary.weather) {
+            case "SUNNY":
+                return <Sun size={14} className="text-yellow-500" />;
+            case "CLOUDY":
+                return <Cloud size={14} className="text-gray-500" />;
+            case "RAINY":
+                return <CloudRain size={14} className="text-blue-500" />;
+            case "SNOWY":
+                return <Snowflake size={14} className="text-blue-400" />;
+            default:
+                return null;
+        }
+    })();
 
-            {/* 날짜 + 메뉴 */}
+    return (
+        <div className="mb-6 relative px-4">
+
+            {/* 날짜 + 날씨 + 메뉴 */}
             <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-500">{formattedDate}</span>
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">{formattedDate}</span>
+
+                    {/* 날씨 아이콘 (있을 때만) */}
+                    {weatherIcon}
+                </div>
 
                 <button
                     type="button"
                     onClick={() => setMenuOpen(prev => !prev)}
                     className="p-1 rounded hover:bg-gray-200"
                 >
-                    <MoreVertical size={16} />
+                    <MoreVertical size={16}/>
                 </button>
 
                 {menuOpen && (
                     <div className="absolute right-0 mt-6 w-24 bg-white border rounded shadow text-xs z-50">
-                        <button className="block w-full px-3 py-2 text-left hover:bg-gray-100"
-                                onClick={() => { setMenuOpen(false); onEdit(); }}>
+                        <button
+                            className="block w-full px-3 py-2 text-left hover:bg-gray-100"
+                            onClick={() => {
+                                setMenuOpen(false);
+                                onEdit();
+                            }}>
                             수정
                         </button>
-                        <button className="block w-full px-3 py-2 text-left text-red-500 hover:bg-red-50"
-                                onClick={handleDeleteClick}>
+                        <button
+                            className="block w-full px-3 py-2 text-left text-red-500 hover:bg-red-50"
+                            onClick={handleDeleteClick}>
                             삭제
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* 이미지가 있을 경우 폴라로이드로 표시 */}
+            {/* 이미지 / 내용 */}
             {diary.imageUrl ? (
                 <div className="flex justify-center">
-                    {/* 변경: preview 카드도 동일한 폴라로이드 UI 적용 */}
                     <PolaroidCard
                         type="diary"
                         variant="tape"

@@ -3,5 +3,6 @@ export interface PlantCreateModalFooterProps {
     mode: "create" | "edit";
     onResetAll?: () => void;
     onSubmit: () => void;
+    disabled: boolean;
 }
 
