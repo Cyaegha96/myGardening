@@ -284,4 +284,13 @@
 
     </select>
 
+    <select id="findPlantsByKeyword"
+            parameterType="string"
+            resultType="com.ggirick.gardening_back.dto.plant.PlantInfoDTO">
+        SELECT *
+        FROM plant_info
+        WHERE LOWER(scientific_name) LIKE '%' || LOWER(#{keyword}) || '%'
+           OR LOWER(common_name) LIKE '%' || LOWER(#{keyword}) || '%'
+    </select>
+
 </mapper>

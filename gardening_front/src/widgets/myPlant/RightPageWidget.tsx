@@ -30,9 +30,10 @@ export default function RightPageWidget({
 
     return (
         <section
-            className="w-1/2 h-[750px] overflow-visible
+            className="w-full sm:w-1/2 h-[750px] overflow-visible
             bg-[url('/assets/diary-paper-a.png')] bg-cover bg-center
             p-10 relative"
+            style={{ pointerEvents: 'auto' }}
         >
 
             {/* 다이어리 블록 리스트 */}
@@ -93,13 +94,12 @@ export default function RightPageWidget({
                 size="icon"
                 disabled={!hasNext}
                 onClick={onNext}
-                className="absolute bottom-6 right-10 z-30"
+                className="absolute bottom-6 right-10 z-150"
             >
                 ▶
             </Button>
 
             {/* 다이어리 작성 버튼 */}
-            {/* 변경: handleWriteComplete 제거, 상위에서 onOpenWrite만 호출 */}
             <Button
                 variant="default"
                 onClick={() => onOpenWrite()}

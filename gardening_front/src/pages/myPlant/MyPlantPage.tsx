@@ -124,6 +124,7 @@ export default function MyPlantPage() {
                             defaultValues={{
                                 userPlantId: editTarget.userPlantId!,
                                 imageUrl: editTarget.url ?? "",
+                                plantScientificName: editTarget.plantScientificName ?? "",
                                 commonName: editTarget.commonName ?? "",
                                 nickname: editTarget.nickname ?? "",
                                 memo: editTarget.memo ?? "",

@@ -26,4 +26,7 @@ public interface PlantMapper {
     List<PlantInfoDTO> findPlants(int offset, int limit, String sortField, String sortOrder, Map<String, Object> filters);
 
     int countPlants(Map<String, Object> filters);
+
+    // 부분 검색 지원
+    List<PlantInfoDTO> findPlantsByKeyword(String keyword);
 }
