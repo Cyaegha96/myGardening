@@ -340,7 +340,7 @@ export default function ChatDrawer() {
 
                                     return (
                                         <div>
-                                            {showDateSeparator && hasMore && (
+                                            {idx === currentRoom.messages.length - 1 && hasMore && (
                                                 <div className="flex justify-center my-2">
                                                     <span
                                                         className="text-xs text-gray-500 bg-gray-200 cursor-pointer hover:bg-gray-400 px-2 py-1 rounded"
