@@ -1,10 +1,8 @@
 package com.ggirick.gardening_back.services.myPlant.diary;
 
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO;
-import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryImageDTO;
 import com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryResponseDTO;
 import com.ggirick.gardening_back.mappers.myPlant.diary.MyPlantDiaryMapper;
-import com.ggirick.gardening_back.utils.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,45 +43,18 @@ public class MyPlantDiaryService {
 
         // 선택 이미지 있을 경우 업로드
         if (file != null && !file.isEmpty()) {
-            diaryImageService.insert(file, diaryId, dto.getUserPlantId(), loginUid);
+            diaryImageService.insert(file, diaryId, dto.getUserPlantId());
         }
     }
 
     // 다이어리 수정
     @Transactional
-    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file, String loginUid) throws Exception {
+    public void updateDiary(MyPlantDiaryDTO dto, MultipartFile file) throws Exception {
 
-        // 텍스트 수정
+        // 1. 텍스트 수정
         diaryMapper.updateDiary(dto);
-
-        // 기존 이미지 조회
-        MyPlantDiaryImageDTO oldImage = diaryImageService.getImageByDiaryId(dto.getDiaryId());
-
-        // 기존 이미지 없음 → 신규 업로드만
-        if (oldImage == null) {
-            if (file != null && !file.isEmpty()) {
-                diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId(), loginUid);
-            }
-            return;
-        }
-
-        // 기존 이미지 있음
-        if (file == null || file.isEmpty()) {
-            // 클라이언트에서 이미지를 제거한 상태
-            diaryImageService.deleteByImageId(oldImage.getImageId());
-            return;
-        }
-
-        // 새 파일 hash 검사 (동일 파일인지 체크)
-        String newHash = HashUtil.sha256(file);
-        if (newHash.equals(oldImage.getHash())) {
-            // 동일 이미지 → 변경 없이 종료
-            return;
-        }
-
-        // 이미지 교체 처리
-        diaryImageService.deleteByImageId(oldImage.getImageId());
-        diaryImageService.insert(file, dto.getDiaryId(), dto.getUserPlantId(), loginUid);
+        // 2. 다이어리 이미지 수정 - 여기서 알아서 케이스 별로 처리.
+        diaryImageService.update(file, dto.getUserPlantId(), dto.getDiaryId(), dto.isDeleteImage());
     }
 
     // 다이어리 삭제 (이미지 CASCADE 설정된 경우 자동 삭제)

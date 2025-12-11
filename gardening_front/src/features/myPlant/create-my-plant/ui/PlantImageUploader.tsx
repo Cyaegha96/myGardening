@@ -1,11 +1,10 @@
 // 이미지 업로드 + 미리보기 + 제목/메모 미리보기
-import type { PlantImageUploaderProps } from "@/features/myPlant/create-my-plant/model/PlantImageUploaderProps.ts";
+import type {PlantImageUploaderProps} from "@/features/myPlant/create-my-plant/model/PlantImageUploaderProps.ts";
 
 export default function PlantImageUploader({
                                                mode,
                                                imagePreview,
                                                isDragging,
-                                               isPortrait,
                                                commonName,
                                                nickname,
                                                memoLines,
@@ -27,7 +26,7 @@ export default function PlantImageUploader({
     const inputId = mode === "diary" ? "diary-image" : "plant-image";
 
     return (
-        <div className="mb-4 relative flex flex-col items-center w-full">
+        <div className="max-h-full mb-4 relative flex flex-col justify-center items-center w-full">
 
             {/* 이미지 삭제(X) 버튼 */}
             {showClearBtn && (
@@ -71,12 +70,12 @@ export default function PlantImageUploader({
                     <img
                         src={imagePreview}
                         className="
-        cursor-pointer mx-auto
-        object-contain
-        h-48
-        max-w-full
-        rounded-md
-    "
+                                    cursor-pointer mx-auto
+                                    object-contain
+                                    h-48
+                                    max-w-full
+                                    rounded-md
+                                "
                         onClick={() => fileInputRef.current?.click()}
                     />
 

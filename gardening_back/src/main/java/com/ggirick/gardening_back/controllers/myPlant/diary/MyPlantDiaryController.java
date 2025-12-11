@@ -104,13 +104,13 @@ public class MyPlantDiaryController {
     @ApiResponse(responseCode = "200", description = "수정 성공")
     @PutMapping(value = "/{diaryId}", consumes = "multipart/form-data")
     public ResponseEntity<Void> updateDiary(
-            @PathVariable int userPlantId,
-            @PathVariable int diaryId,
+            @PathVariable("userPlantId") int userPlantId,
+            @PathVariable("diaryId") int diaryId,
             @RequestPart("myPlantDiary") MyPlantDiaryDTO dto,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal UserTokenDTO userInfo
-    ) throws Exception {
-        String loginUid = userInfo.getUid();
+    ) throws Exception{
+    String loginUid = userInfo.getUid();
 
         // 권한 체크
         if (!checkOwner(userPlantId, loginUid)
@@ -121,7 +121,7 @@ public class MyPlantDiaryController {
         dto.setDiaryId(diaryId);
         dto.setUserPlantId(userPlantId);
 
-        diaryService.updateDiary(dto, file, loginUid);
+        diaryService.updateDiary(dto, file);
 
         return ResponseEntity.ok().build();
     }

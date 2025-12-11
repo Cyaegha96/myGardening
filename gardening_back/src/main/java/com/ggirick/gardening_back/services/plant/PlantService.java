@@ -726,4 +726,9 @@ PlantService {
     public List<String> randomSearchRequestFile(){
         return plantMapper.randomSearchRequestFile();
     }
+
+    // 부분 검색 지원
+    public List<PlantInfoDTO> searchPlantsByKeyword(String keyword) {
+        return plantMapper.findPlantsByKeyword(keyword);
+    }
 }

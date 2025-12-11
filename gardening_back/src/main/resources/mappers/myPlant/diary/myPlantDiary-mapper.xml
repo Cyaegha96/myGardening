@@ -77,8 +77,8 @@
     <!-- 다이어리 수정 -->
     <update id="updateDiary" parameterType="com.ggirick.gardening_back.dto.myPlant.diary.MyPlantDiaryDTO">
         UPDATE my_plant_diary
-        SET content    = #{content},
-            weather    = #{weather},
+        SET content    = #{content, jdbcType=VARCHAR},
+            weather    = #{weather, jdbcType=VARCHAR},
             updated_at = CURRENT_TIMESTAMP
         WHERE diary_id = #{diaryId}
     </update>

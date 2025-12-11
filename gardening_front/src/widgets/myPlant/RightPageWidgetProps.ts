@@ -1,6 +1,7 @@
 import type { MyPlantDiaryResponseDTO } from "@/shared/api";
 
 export interface RightPageWidgetProps {
+    diariesOnPage:[];
     diary?: MyPlantDiaryResponseDTO;
     pageIdx: number;
     totalPages: number;

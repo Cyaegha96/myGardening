@@ -21,15 +21,14 @@ public interface MyPlantDiaryImageMapper {
     // 이미지 등록
     void insert(MyPlantDiaryImageDTO dto);
 
+    // 이미지 수정
+    void update(MyPlantDiaryImageDTO dto);
+
     // imageId로 개별 이미지 삭제
     void deleteByImageId(int imageId);
 
     // diaryId로 이미지 삭제
     void deleteByDiaryId(int diaryId);
-
-    // 중복 이미지 존재 여부 조회 (유저별)
-    MyPlantDiaryImageResponseDTO findByHashAndUserUid(@Param("hash") String hash,
-                                                      @Param("loginUid") String loginUid);
 
     // 권한 체크용 - 해당 식물의 등록자인지
     String getOwnerUidByDiaryImageId(int imageId);
