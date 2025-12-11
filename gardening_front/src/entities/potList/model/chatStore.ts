@@ -32,6 +32,7 @@ type ChatStore = {
     setChatRooms: (rooms: ChatRoomDTO[]) => void;
 
     initialChatRooms: (selectedPot: number | undefined) => void;
+    selectRoomById: (roomId: number) => void;
     addRoom: (potInfo: PotListDetailDTO) => void;
 
     toggleChatModal: () => void;
@@ -120,9 +121,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         });
     },
 
-    initialChatRooms: (selectedPot) => {
+    selectRoomById: async (roomId: number) => {
+        await get().initialChatRooms();
+
+        const target = get().chatRooms.find(r => r.id === roomId);
+        console.log(target);
+        if (!target) return;
+
+        get().setSelectedRoom(target);
+
+        set({isSheetOpen: true});
+    },
+
+    initialChatRooms: async (selectedPot) => {
         set({cursorId: undefined, hasMore: true});
-        chatRoomApi.getChatroomList().then((resp) => {
+        await chatRoomApi.getChatroomList().then((resp) => {
             const rooms = resp.data;
             rooms.sort((a, b) => {
                 const aTime = a.lastMessageTime

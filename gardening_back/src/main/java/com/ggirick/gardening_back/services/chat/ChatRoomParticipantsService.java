@@ -12,4 +12,8 @@ public class ChatRoomParticipantsService {
     public void insertParticipant(int chatRoomId, String userUid) {
         chatRoomParticipantsMapper.insertParticipant(chatRoomId, userUid);
     }
+
+    public String getParticipantByPotIdAndNotUserUid(int chatRoomId, String userUid) {
+        return chatRoomParticipantsMapper.getParticipantByPotIdAndNotUserUid(chatRoomId, userUid);
+    }
 }

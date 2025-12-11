@@ -1,7 +1,13 @@
 package com.ggirick.gardening_back.consumers.chat;
 
 import com.ggirick.gardening_back.dto.chat.ChatDTO;
+import com.ggirick.gardening_back.dto.chat.ChatRoomDTO;
+import com.ggirick.gardening_back.dto.notification.NotificationDTO;
+import com.ggirick.gardening_back.services.auth.UserService;
+import com.ggirick.gardening_back.services.chat.ChatRoomParticipantsService;
+import com.ggirick.gardening_back.services.chat.ChatRoomService;
 import com.ggirick.gardening_back.services.chat.ChatService;
+import com.ggirick.gardening_back.services.notification.NotificationService;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
@@ -20,8 +26,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ChatRabbitConsumer {
     private final SimpMessagingTemplate messagingTemplate;
-    private final RabbitTemplate rabbitTemplate;
     private final ChatService chatService;
+    private final ChatRoomService chatRoomService;
+    private final NotificationService notificationService;
+    private final UserService userService;
+    private final ChatRoomParticipantsService chatRoomParticipantsService;
 
     @RabbitListener(queues = "chat.queue", ackMode = "MANUAL")
     public void receiveChatMessage(Message message, Channel channel) throws IOException {
@@ -41,6 +50,23 @@ public class ChatRabbitConsumer {
         }
 
         if (retryCount >= 3) {
+//            List<ChatRoomDTO> chatRoomList = chatRoomService.getChatRoomListByUserUid(chat.getSenderUid());
+//            ChatRoomDTO targetRoom = chatRoomList.stream()
+//                    .filter(r -> r.getPotListingId() == chat.getChatRoomId())
+//                    .findFirst()
+//                    .orElse(null);
+//            NotificationDTO notification = NotificationDTO.builder()
+//                    .type("chatroom")
+//                    .userUid(chatRoomParticipantsService.getParticipantByPotIdAndNotUserUid(targetRoom.getId(), chat.getSenderUid()))
+//                    .message(userService.getUserInfo(chat.getSenderUid()).getNickname() + "님이 " + targetRoom.getPotInfo().getTitle() + "에 메시지를 남겼습니다.")
+//                    .referenceId(chat.getChatRoomId())
+//                    .build();
+//            notificationService.insertNotification(notification);
+//            messagingTemplate.convertAndSend(
+//                    "/topic/notification/" + chatRoomParticipantsService.getParticipantByPotIdAndNotUserUid(targetRoom.getId(), chat.getSenderUid()),
+//                    notification
+//            );
+
             System.out.println("메시지 폐기: " + chat);
             channel.basicAck(deliveryTag, false);
             return; // 3회 이상이면 폐기

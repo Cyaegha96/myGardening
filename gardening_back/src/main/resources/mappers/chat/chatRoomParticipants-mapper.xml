@@ -9,4 +9,8 @@
         INTO chatroom_participants(id, chat_room_id, user_uid)
         VALUES(chatroom_participants_seq.nextval, #{chatRoomId}, #{userUid})
     </insert>
+
+    <select id="getParticipantByPotIdAndNotUserUid" resultType="String">
+        SELECT user_uid FROM chatroom_participants WHERE user_uid != #{userUid} AND chat_room_id = #{chatRoomId}
+    </select>
 </mapper>

@@ -25,13 +25,13 @@ export default function PotListPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchPotList();
+        fetchPotList(true);
         fetchPotTagList();
     }, [fetchPotList, fetchPotTagList]);
 
     useEffect(() => {
         fetchPotList(true);
-    }, [fetchPotList, selectedTags, location]);
+    }, [selectedTags, location, fetchPotList]);
 
     /* 마지막 아이템 감지 */
     useEffect(() => {
@@ -41,7 +41,7 @@ export default function PotListPage() {
             (entries) => {
                 if (entries[0].isIntersecting) {
                     if (cursorId !== undefined) {
-                        fetchPotList();
+                        fetchPotList(null);
                     }
                 }
             },
