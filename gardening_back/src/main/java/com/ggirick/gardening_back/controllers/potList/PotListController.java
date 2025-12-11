@@ -167,6 +167,7 @@ public class PotListController {
             PotListDetailDTO potInfo = potListService.getPotById(id);
             if (potInfo.getWriterUid().equals(userInfo.getUid())) {
                 potListService.completeTrade(id);
+
                 return ResponseEntity.ok().build();
             }
         }

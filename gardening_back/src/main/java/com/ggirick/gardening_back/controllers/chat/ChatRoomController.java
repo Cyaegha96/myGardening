@@ -2,9 +2,12 @@ package com.ggirick.gardening_back.controllers.chat;
 
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.chat.ChatRoomDTO;
+import com.ggirick.gardening_back.dto.notification.NotificationDTO;
 import com.ggirick.gardening_back.dto.potList.PotListDetailDTO;
+import com.ggirick.gardening_back.services.auth.UserService;
 import com.ggirick.gardening_back.services.chat.ChatProcessService;
 import com.ggirick.gardening_back.services.chat.ChatRoomService;
+import com.ggirick.gardening_back.services.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -26,6 +29,8 @@ public class ChatRoomController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatRoomService chatRoomService;
     private final ChatProcessService chatProcessService;
+    private final NotificationService notificationService;
+    private final UserService userService;
 
     @Operation(
             summary = "채팅방 목록 조회",
@@ -53,11 +58,24 @@ public class ChatRoomController {
     public ResponseEntity<Void> insertChatRoom(@AuthenticationPrincipal UserTokenDTO userInfo,
                                                @RequestBody PotListDetailDTO potInfo) {
         if (userInfo != null) {
-            chatProcessService.createChatRoom(potInfo, userInfo.getUid());
+            int chatroomId = chatProcessService.createChatRoom(potInfo, userInfo.getUid());
             messagingTemplate.convertAndSend(
                     "/topic/chatroom/ack/" + potInfo.getWriterUid(),
                     potInfo.getWriterUid()
             );
+
+            NotificationDTO notification = NotificationDTO.builder()
+                    .type("chatroom")
+                    .userUid(potInfo.getWriterUid())
+                    .message(userService.getUserInfo(userInfo.getUid()).getNickname() + "님이 " + potInfo.getTitle() + "에 대한 채팅방을 생성하였습니다.")
+                    .referenceId(chatroomId)
+                    .build();
+            notificationService.insertNotification(notification);
+            messagingTemplate.convertAndSend(
+                    "/topic/notification/" + potInfo.getWriterUid(),
+                    notification
+            );
+
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();

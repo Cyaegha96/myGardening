@@ -8,4 +8,7 @@ public interface ChatRoomParticipantsMapper {
     // 채팅방 참여자 삽입
     public void insertParticipant(@Param("chatRoomId") int chatRoomId,
                                   @Param("userUid") String userUid);
+
+    public String getParticipantByPotIdAndNotUserUid(@Param("chatRoomId") int chatRoomId,
+                                                     @Param("userUid") String userUid);
 }

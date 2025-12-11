@@ -3,7 +3,12 @@ package com.ggirick.gardening_back.controllers.board;
 import com.ggirick.gardening_back.dto.auth.UserTokenDTO;
 import com.ggirick.gardening_back.dto.board.BoardCommentDTO;
 import com.ggirick.gardening_back.dto.board.BoardCommentResponseDTO;
+import com.ggirick.gardening_back.dto.board.BoardResponseDTO;
+import com.ggirick.gardening_back.dto.notification.NotificationDTO;
+import com.ggirick.gardening_back.services.auth.UserService;
 import com.ggirick.gardening_back.services.board.BoardCommentService;
+import com.ggirick.gardening_back.services.board.BoardService;
+import com.ggirick.gardening_back.services.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +29,10 @@ import java.util.List;
 public class BoardCommentController {
 
     private final BoardCommentService boardCommentService;
+    private final BoardService boardService;
+    private final UserService userService;
+    private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 댓글 목록 조회
     @Operation(
@@ -77,6 +87,18 @@ public class BoardCommentController {
         dto.setWriterUid(user.getUid());
 
         boardCommentService.insertComment(dto);
+        BoardResponseDTO boardInfo = boardService.getDetailById(boardId, user.getUid());
+        NotificationDTO notification = NotificationDTO.builder()
+                .type("board")
+                .userUid(boardInfo.getWriterUid())
+                .message(userService.getUserInfo(user.getUid()).getNickname() + "님이 " + boardInfo.getTitle() + "에 댓글을 작성하였습니다.")
+                .referenceId(boardId)
+                .build();
+        notificationService.insertNotification(notification);
+        messagingTemplate.convertAndSend(
+                "/topic/notification/" + boardInfo.getWriterUid(),
+                notification
+        );
 
         return ResponseEntity.ok().build();
     }
