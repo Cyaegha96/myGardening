@@ -187,3 +187,9 @@
 - **Infra**: Docker, Cloud Run / Firebase Hosting
 
 ---
+## ERD 다이어그램
+
+[마이가드닝 erd](https://dbdiagram.io/d/%EB%A7%88%EC%9D%B4%EA%B0%80%EB%93%9C%EB%8B%9D-%EC%B5%9C%EC%A2%85%EB%B3%B8-6938c2f8e877c6307432bacb)
+
+---
+
